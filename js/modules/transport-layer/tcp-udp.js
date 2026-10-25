@@ -16,6 +16,8 @@
  *   - ../../core/checksums.js (parity-free error-detection math: Internet checksum, CRC-8, CRC-32): sum16
  *   - ../../simulations/transport.js (TCP/UDP header layouts, example scenarios and handshake steps): SCENARIOS, TCP_HDR, UDP_HDR, blankHdr
  *   - ../../simulations/packet-builders.js (byte-accurate Ethernet / IPv4 / TCP / UDP builders): FL, flagNames, pseudoHdr, tcpSegment, udpDatagram
+ *   - ../../core/storage.js (saved progress and shared state): P
+ *   - ../../app/progress.js (persistent statistics): stat
  *   - ../registry.js (learning-module registry and group definitions): regMod
  *
  * Exports: (none)
@@ -26,6 +28,7 @@
 import { p4 } from '../../core/addressing.js';
 import { sum16 } from '../../core/checksums.js';
 import { bytesOf, hex, rd16, rd32 } from '../../core/encoding.js';
+import { P } from '../../core/storage.js';
 import {
   chipRow,
   hdrDiagram,
@@ -47,6 +50,7 @@ import {
   udpDatagram,
 } from '../../simulations/packet-builders.js';
 import { blankHdr, SCENARIOS, TCP_HDR, UDP_HDR } from '../../simulations/transport.js';
+import { stat } from '../../app/progress.js';
 import { regMod } from '../registry.js';
 
 /* Register "TCP and UDP". The router calls mount(root) when the learner opens #/m/tcpudp and calls the returned function (if any) when they leave. */
@@ -233,44 +237,111 @@ regMod({
           render(p) {
             let i = 0,
               score = 0,
+              asked = 0,
+              streak = 0,
               answered = false;
+
             p.innerHTML = panel(
               'Which protocol fits?',
-              '<div id="pq"></div><div id="pf"></div>',
+              '<div id="pq"></div><div id="pf"></div>' +
+                statRow([
+                  [score + '/' + asked, 'correct'],
+                  [streak, 'streak'],
+                  [P.stats.protocolOk || 0, 'total correct (all time)'],
+                ]).replace('stats wide', 'stats wide" id="protocolStats'),
               'Eight real-world situations. Choose the transport protocol you would use.'
             );
+
+            // Keep the score cards in sync with the current session and saved total.
+            const updateStats = () => {
+              $('#protocolStats', p).innerHTML = [
+                [score + '/' + asked, 'correct'],
+                [streak, 'streak'],
+                [P.stats.protocolOk || 0, 'total correct (all time)'],
+              ]
+                .map(
+                  ([value, label]) =>
+                    '<div class="stat"><b>' +
+                    value +
+                    '</b><span>' +
+                    label +
+                    '</span></div>'
+                )
+                .join('');
+            };
+
             const show = () => {
+              updateStats();
+
               if (i >= SCENARIOS.length) {
                 $('#pq', p).innerHTML =
-                  `<div class="quizq"><p class="big">${score} of ${SCENARIOS.length} correct</p></div><button class="btn" id="pr">Try again</button>`;
+                  '<div class="quizq"><p class="big">' +
+                  score +
+                  ' of ' +
+                  SCENARIOS.length +
+                  ' correct</p></div><button class="btn" id="pr">Try again</button>';
+
                 $('#pf', p).innerHTML = '';
+
                 $('#pr', p).onclick = () => {
                   i = 0;
                   score = 0;
+                  asked = 0;
+                  streak = 0;
                   show();
                 };
+
                 return;
               }
+
               answered = false;
+
               $('#pq', p).innerHTML =
-                `<div class="quizq"><small>Question ${i + 1} of ${SCENARIOS.length}</small><p class="big">${SCENARIOS[i][0]}</p><div class="btnrow"><button class="btn" data-a="TCP">TCP</button><button class="btn" data-a="UDP">UDP</button></div></div>`;
+                '<div class="quizq"><small>Question ' +
+                (i + 1) +
+                ' of ' +
+                SCENARIOS.length +
+                '</small><p class="big">' +
+                SCENARIOS[i][0] +
+                '</p><div class="btnrow"><button class="btn" data-a="TCP">TCP</button><button class="btn" data-a="UDP">UDP</button></div></div>';
+
               $('#pf', p).innerHTML = '';
             };
+
             on(p, 'click', '[data-a]', (e, b) => {
               if (answered) return;
+
               answered = true;
+
               const ok = b.dataset.a === SCENARIOS[i][1];
-              if (ok) score++;
+              asked++;
+
+              if (ok) {
+                score++;
+                streak++;
+                stat('protocolOk');
+              } else {
+                streak = 0;
+              }
+
+              updateStats();
+
               $('#pf', p).innerHTML =
                 (ok
                   ? vd('ok', 'Correct.', SCENARIOS[i][2])
-                  : vd('bad', `Not quite, it is ${SCENARIOS[i][1]}.`, SCENARIOS[i][2])) +
+                  : vd(
+                      'bad',
+                      'Not quite, it is ' + SCENARIOS[i][1] + '.',
+                      SCENARIOS[i][2]
+                    )) +
                 '<div class="btnrow"><button class="btn" id="pn">Next</button></div>';
+
               $('#pn', p).onclick = () => {
                 i++;
                 show();
               };
             });
+
             show();
           },
         },
