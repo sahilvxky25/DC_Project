@@ -15,6 +15,15 @@
 import { bytesOf } from '../core/encoding.js';
 
 /**
+ * Mutable, in-memory resources used by the HTTP method demo.
+ * Changes last until the page is reloaded.
+ */
+const API_USERS = new Map([
+  [1, { id: 1, name: 'Ada' }],
+  [2, { id: 2, name: 'Alan' }],
+]);
+
+/**
  * The virtual site: path -> method -> [status, content type, body, extra headers].
  */
 export const HTTP_ROUTES = {
@@ -25,6 +34,14 @@ export const HTTP_ROUTES = {
   '/api/users': {
     GET: [200, 'application/json', '[{"id":1,"name":"Ada"},{"id":2,"name":"Alan"}]'],
     POST: [201, 'application/json', '{"id":3,"created":true}', { Location: '/api/users/3' }],
+  },
+  '/api/users/1': {
+    GET: [200, 'application/json', '{"id":1,"name":"Ada"}'],
+    PUT: [200, 'application/json', '{"id":1,"name":"Ada"}'],
+  },
+  '/api/users/2': {
+    GET: [200, 'application/json', '{"id":2,"name":"Alan"}'],
+    PUT: [200, 'application/json', '{"id":2,"name":"Alan"}'],
   },
   '/secret': {
     GET: [
@@ -72,14 +89,56 @@ export const STATUS_CLASS = {
  * @param {string} [body]
  * @returns {{code:number, headers:Object, text:string, body:string}} text is the complete raw response (status line, headers, blank line, body).
  */
-export function httpServe(method, path, body) {
+export function httpServe(method, path, body = '') {
   const r = HTTP_ROUTES[path],
     m = method === 'HEAD' ? 'GET' : method;
   let code,
     type = 'text/plain',
     text = '',
     extra = {};
-  if (!r) {
+  const userMatch = path.match(/^\/api\/users\/(\d+)$/);
+
+  if (userMatch && ['GET', 'HEAD', 'PUT'].includes(method)) {
+    const id = Number(userMatch[1]);
+    const current = API_USERS.get(id);
+
+    if (!current) {
+      code = 404;
+      type = 'text/plain';
+      text = 'User not found.';
+    } else if (method === 'GET' || method === 'HEAD') {
+      code = 200;
+      type = 'application/json';
+      text = JSON.stringify(current);
+    } else if (!body.trim()) {
+      code = 400;
+      type = 'text/plain';
+      text = 'PUT needs a JSON body.';
+    } else {
+      try {
+        const replacement = JSON.parse(body);
+        if (
+          !replacement ||
+          typeof replacement !== 'object' ||
+          Array.isArray(replacement) ||
+          typeof replacement.name !== 'string' ||
+          !replacement.name.trim()
+        ) {
+          throw new Error('Invalid user representation');
+        }
+
+        const updated = { ...replacement, id };
+        API_USERS.set(id, updated);
+        code = 200;
+        type = 'application/json';
+        text = JSON.stringify(updated);
+      } catch {
+        code = 400;
+        type = 'text/plain';
+        text = 'PUT body must be valid JSON with a non-empty name.';
+      }
+    }
+  } else if (!r) {
     code = 404;
     text = 'No such page.';
   } else if (!r[m]) {
