@@ -1,4 +1,4 @@
-# Data Comms Lab
+# BitSecure
 
 An interactive data-communications simulator. You type a message and follow it through every layer of the network: text -> UTF-8 bytes -> packets -> a lossy link with retries -> reassembly. Around that core lab sit 20 learning modules (framing, error detection, ARQ protocols, subnetting, routing, TCP, DNS, HTTP/TLS, packet capture, troubleshooting, quizzes ...).
 
