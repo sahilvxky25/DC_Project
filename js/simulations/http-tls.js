@@ -98,7 +98,7 @@ export function httpServe(method, path, body) {
   const head = [
     `HTTP/1.1 ${code} ${STATUS_TEXT[code] || ''}`,
     'Server: lab/1.0',
-    'Date: Sat, 24 Oct 2026 12:00:00 GMT',
+    `Date: ${new Date().toUTCString()}`,
     `Content-Type: ${type}`,
     `Content-Length: ${bytesOf(text).length}`,
     ...Object.entries(extra).map(([k, v]) => `${k}: ${v}`),
