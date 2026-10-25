@@ -77,7 +77,7 @@ regMod({
                 'Compose a request',
                 `<div class="controls"><div class="field"><label for="hm">Method</label>${sel(
                   'hm',
-                  ['GET', 'POST', 'HEAD', 'DELETE'].map(x => [x, x]),
+                  ['GET', 'POST', 'PUT', 'HEAD', 'DELETE'].map(x => [x, x]),
                   'GET'
                 )}</div>
           <div class="field grow"><label for="hpth">Path</label><input id="hpth" type="text" value="/about" list="hpl" spellcheck="false"><datalist id="hpl">${Object.keys(
@@ -87,7 +87,7 @@ regMod({
             .join('')}<option value="/missing"></datalist></div>
           <div class="field"><label for="hh">Host</label><input id="hh" type="text" value="example.com"></div></div>
           <div class="field" id="hbw" hidden><label for="hb">Body</label><textarea id="hb" rows="2" spellcheck="false">{"name":"Grace"}</textarea></div>
-          <div class="presets" id="hs">${['/', '/about', '/old', '/api/users', '/secret', '/missing', '/error'].map(x => `<button class="chipbtn">${x}</button>`).join('')}</div>
+          <div class="presets" id="hs">${['/', '/about', '/old', '/api/users', '/api/users/1', '/secret', '/missing', '/error'].map(x => `<button class="chipbtn">${x}</button>`).join('')}</div>
           <label class="check"><input type="checkbox" id="hf" checked> Follow redirects</label><div class="btnrow"><button class="btn" id="hgo">Send request</button></div>`
               ) + '<div id="hout"></div>';
             const f = () => {
@@ -95,17 +95,18 @@ regMod({
                 path = $('#hpth', p).value.trim() || '/',
                 host = $('#hh', p).value.trim() || 'example.com',
                 body = $('#hb', p).value;
-              $('#hbw', p).hidden = method !== 'POST';
+              $('#hbw', p).hidden = !['POST', 'PUT'].includes(method);
               const rounds = [];
               for (let i = 0; i < 3; i++) {
-                const bt = method === 'POST' ? body : '',
+                const sendsBody = ['POST', 'PUT'].includes(method),
+                  bt = sendsBody ? body : '',
                   req =
                     [
                       `${method} ${path} HTTP/1.1`,
                       `Host: ${host}`,
                       'User-Agent: DataCommsLab/2.0',
                       'Accept: */*',
-                      ...(bt
+                      ...(sendsBody
                         ? [
                             'Content-Type: application/json',
                             `Content-Length: ${bytesOf(bt).length}`,
