@@ -90,3 +90,5 @@ DC.mods.sort(
   (a, b) => GROUPS.findIndex(x => x.id === a.group) - GROUPS.findIndex(x => x.id === b.group)
 );
 document.addEventListener('auth-success', boot);
+// Handle the case where Firebase restores a verified session before this listener is registered.
+if (window.__bitSecureAuthenticated) boot();
