@@ -89,4 +89,4 @@ function boot() {
 DC.mods.sort(
   (a, b) => GROUPS.findIndex(x => x.id === a.group) - GROUPS.findIndex(x => x.id === b.group)
 );
-document.addEventListener('demo-login-success', boot);
+document.addEventListener('auth-success', boot);
