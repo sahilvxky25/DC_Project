@@ -150,7 +150,7 @@ loginForm.addEventListener('submit', async event => {
     }
 
     setMessage('');
-    showApp();
+    // onAuthStateChanged opens the app once Firebase confirms the verified session.
   } catch (error) {
     // If signup created an unverified account but a later step failed, clear that temporary session.
     if (auth.currentUser && !auth.currentUser.emailVerified) {
