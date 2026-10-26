@@ -147,8 +147,10 @@ loginForm.addEventListener('submit', async event => {
 
     const credential = await signInWithEmailAndPassword(auth, email, password);
     if (!credential.user.emailVerified) {
+      // A retry here gives users another verification email if the original was missed.
+      await sendEmailVerification(credential.user);
       await signOut(auth);
-      setMessage('Please verify your email using the link we sent when you signed up, then sign in again.');
+      setMessage('Your email is not verified yet. We sent a fresh verification email. Check your inbox and spam folder, verify your address, then sign in again.');
       return;
     }
 
