@@ -152,6 +152,10 @@ loginForm.addEventListener('submit', async event => {
     setMessage('');
     showApp();
   } catch (error) {
+    // If signup created an unverified account but a later step failed, clear that temporary session.
+    if (auth.currentUser && !auth.currentUser.emailVerified) {
+      await signOut(auth).catch(() => {});
+    }
     setMessage(friendlyError(error));
   } finally {
     submitBtn.disabled = false;
@@ -216,8 +220,6 @@ onAuthStateChanged(auth, user => {
   }
 
   showLogin();
-  // Never let an unverified Firebase user remain signed in behind the login screen.
-  if (user && !user.emailVerified) {
-    signOut(auth).catch(() => {});
-  }
+  // Unverified users remain on the login screen. Signup signs out after sending
+  // the verification email; sign-in explicitly signs out any unverified account.
 });
