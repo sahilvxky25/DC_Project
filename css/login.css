@@ -1,4 +1,4 @@
-/* Demo login screen — uses the existing BitSecure design tokens. */
+/* Firebase authentication screen — uses the existing BitSecure design tokens. */
 .login-screen {
   min-height: 100vh;
   display: grid;
@@ -46,7 +46,7 @@
 .login-remember input { accent-color: var(--accent); }
 .login-submit { width: 100%; justify-content: center; min-height: 46px; margin-top: 2px; cursor: pointer; }
 .login-error { min-height: 1.25em; margin: 0; color: var(--bad); font-size: .88rem; }
-.login-demo-note { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--faint); font-size: .78rem; line-height: 1.5; }
+.login-security-note { margin: 22px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--faint); font-size: .78rem; line-height: 1.5; }
 #logoutBtn { white-space: nowrap; }
 @media (max-width: 560px) {
   .login-options { align-items: flex-start; flex-direction: column; }
@@ -63,3 +63,9 @@
 .auth-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .login-field[hidden] { display: none !important; }
 .login-submit:disabled { opacity: .65; cursor: wait; }
+
+.login-forgot { color: var(--accent); text-decoration: none; }
+.login-forgot:hover { text-decoration: underline; }
+.login-forgot[hidden] { display: none !important; }
+.login-forgot[aria-disabled="true"] { opacity: .65; pointer-events: none; }
+.login-error.is-success { color: var(--accent); }
