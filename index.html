@@ -48,8 +48,16 @@
         </div>
         <p class="login-eyebrow">Interactive networking lab</p>
         <h1 id="login-title">Welcome back.</h1>
-        <p class="login-intro">Sign in to explore protocols, simulate networks, and follow a message end to end.</p>
+        <p class="login-intro" id="login-intro">Sign in to explore protocols, simulate networks, and follow a message end to end.</p>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button class="auth-tab is-active" id="signin-tab" type="button" role="tab" aria-selected="true" aria-controls="login-form">Sign In</button>
+          <button class="auth-tab" id="signup-tab" type="button" role="tab" aria-selected="false" aria-controls="login-form">Sign Up</button>
+        </div>
         <form class="login-form" id="login-form" novalidate>
+          <div class="login-field" id="name-field" hidden>
+            <label for="login-name">Full name</label>
+            <input id="login-name" name="name" type="text" autocomplete="name" placeholder="Your name" />
+          </div>
           <div class="login-field">
             <label for="login-email">Email address</label>
             <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required />
@@ -57,7 +65,7 @@
           <div class="login-field">
             <label for="login-password">Password</label>
             <div class="login-password-wrap">
-              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter any demo password" required />
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="At least 8 characters" required />
               <button class="login-show-password" id="show-password" type="button" aria-pressed="false">Show</button>
             </div>
           </div>
@@ -65,9 +73,9 @@
             <label class="login-remember"><input id="remember-me" type="checkbox" /> Remember me on this device</label>
           </div>
           <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
-          <button class="btn login-submit" type="submit">Continue to BitSecure <span aria-hidden="true">→</span></button>
+          <button class="btn login-submit" id="login-submit" type="submit">Sign In <span aria-hidden="true">→</span></button>
         </form>
-        <p class="login-demo-note">Demo login only: enter any valid email and a non-empty password. No credentials are verified or saved. This screen does not provide account security.</p>
+        <p class="login-demo-note">Demo accounts are stored only in this browser and are not secure. Do not use a real or reused password. This is not production authentication.</p>
       </div>
     </section>
     <a class="skip" href="#view">Skip to content</a>
