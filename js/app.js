@@ -57,7 +57,10 @@ import { GROUPS } from './modules/registry.js';
 /**
  * One-time start-up: theme, navigation, core-lab controls, global handlers and the first route().
  */
+let hasBooted = false;
 function boot() {
+  if (hasBooted) return;
+  hasBooted = true;
   applyTheme(P.theme);
   buildNav();
   labInit();
@@ -86,4 +89,4 @@ function boot() {
 DC.mods.sort(
   (a, b) => GROUPS.findIndex(x => x.id === a.group) - GROUPS.findIndex(x => x.id === b.group)
 );
-boot();
+document.addEventListener('demo-login-success', boot);
