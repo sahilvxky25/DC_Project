@@ -28,6 +28,7 @@
     <link rel="stylesheet" href="css/modules.css" />
     <link rel="stylesheet" href="css/learning.css" />
     <link rel="stylesheet" href="css/responsive.css" />
+    <link rel="stylesheet" href="css/login.css" />
     <link rel="icon" type="image/png" href="/favicon.png">
     <script>
       try {
@@ -39,8 +40,38 @@
     </script>
   </head>
   <body>
+    <section class="login-screen" id="login-screen" aria-labelledby="login-title">
+      <div class="login-card">
+        <div class="login-brand">
+          <img src="./favicon.png" alt="" aria-hidden="true" />
+          <div><strong>BitSecure</strong><span>Data Communications Lab</span></div>
+        </div>
+        <p class="login-eyebrow">Interactive networking lab</p>
+        <h1 id="login-title">Welcome back.</h1>
+        <p class="login-intro">Sign in to explore protocols, simulate networks, and follow a message end to end.</p>
+        <form class="login-form" id="login-form" novalidate>
+          <div class="login-field">
+            <label for="login-email">Email address</label>
+            <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required />
+          </div>
+          <div class="login-field">
+            <label for="login-password">Password</label>
+            <div class="login-password-wrap">
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter any demo password" required />
+              <button class="login-show-password" id="show-password" type="button" aria-pressed="false">Show</button>
+            </div>
+          </div>
+          <div class="login-options">
+            <label class="login-remember"><input id="remember-me" type="checkbox" /> Remember me on this device</label>
+          </div>
+          <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
+          <button class="btn login-submit" type="submit">Continue to BitSecure <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="login-demo-note">Demo login only: enter any valid email and a non-empty password. No credentials are verified or saved. This screen does not provide account security.</p>
+      </div>
+    </section>
     <a class="skip" href="#view">Skip to content</a>
-    <div class="app">
+    <div class="app" hidden>
       <aside class="sidebar" id="sidebar" aria-label="Main navigation">
         <div class="brand">
   <img
@@ -91,6 +122,7 @@
             ><span class="tstat"><b id="n2">0</b> packets</span
             ><span class="tstat"><b id="n3">0</b> retries</span>
           </div>
+          <button class="btn ghost sm" id="logoutBtn" type="button">Log out</button>
           <button
             class="icon-btn"
             id="themeBtn"
@@ -317,5 +349,6 @@
 
     <!-- One entry point. type="module" turns on import/export; it must be served over http:// (see README). -->
     <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/auth/login.js"></script>
   </body>
 </html>
