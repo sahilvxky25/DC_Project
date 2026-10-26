@@ -38,12 +38,15 @@ function setMessage(message, kind = 'error') {
 }
 
 function showApp() {
+  // Keep a durable signal in case the application module finishes loading after this module.
+  window.__bitSecureAuthenticated = true;
   loginScreen.hidden = true;
   appScreen.hidden = false;
   document.dispatchEvent(new CustomEvent('auth-success'));
 }
 
 function showLogin({ focus = false } = {}) {
+  window.__bitSecureAuthenticated = false;
   appScreen.hidden = true;
   loginScreen.hidden = false;
   passwordInput.value = '';
