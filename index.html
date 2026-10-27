@@ -30,6 +30,7 @@
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/login.css" />
     <link rel="stylesheet" href="css/profile.css" />
+    <link rel="stylesheet" href="css/search.css" />
     <link rel="icon" type="image/png" href="/favicon.png">
     <script>
       try {
@@ -150,6 +151,14 @@
             </svg>
           </button>
           <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
+          <div class="module-search">
+            <label class="module-search-field" for="moduleSearch">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <input id="moduleSearch" type="search" placeholder="Search learning modules…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="moduleSearchResults" aria-expanded="false" aria-label="Search learning modules" />
+              <span class="module-search-shortcut" aria-hidden="true">Ctrl K</span>
+            </label>
+            <div class="module-search-results" id="moduleSearchResults" role="listbox" aria-label="Search results" hidden></div>
+          </div>
           <div class="top-stats" aria-label="Current run totals">
             <span class="tstat"><b id="n1">0</b> bytes</span
             ><span class="tstat"><b id="n2">0</b> packets</span
