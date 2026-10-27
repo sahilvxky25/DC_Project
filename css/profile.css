@@ -1,0 +1,50 @@
+/* Signed-in user profile dropdown and password dialog. */
+.profile-menu { position: relative; flex-shrink: 0; }
+.profile-trigger { display: inline-flex; align-items: center; gap: 9px; }
+.profile-avatar {
+  display: grid; place-items: center; width: 28px; height: 28px;
+  border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  font-weight: 700;
+}
+.profile-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 1000;
+  display: grid; gap: 4px; min-width: 230px; padding: 8px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); box-shadow: var(--shadow);
+}
+.profile-dropdown[hidden] { display: none !important; }
+.profile-summary {
+  display: grid; gap: 4px; padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--line); overflow-wrap: anywhere;
+}
+.profile-summary span { color: var(--muted); font-size: .82rem; }
+.profile-menu-item {
+  width: 100%; padding: 10px 12px; border: 0; border-radius: 7px;
+  background: transparent; color: var(--text); font: inherit;
+  text-align: left; cursor: pointer;
+}
+.profile-menu-item:hover, .profile-menu-item:focus-visible { background: var(--bg2); }
+.profile-menu-item.danger { color: var(--bad); }
+.password-dialog {
+  box-sizing: border-box; width: min(420px, calc(100% - 32px));
+  max-width: 420px; padding: 0; border: 1px solid var(--line);
+  border-radius: 16px; background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow);
+}
+.password-dialog::backdrop { background: rgba(0, 0, 0, .58); }
+.password-dialog form { display: grid; gap: 16px; padding: 24px; }
+.password-dialog h2 { margin: 0; }
+.password-dialog label { display: grid; gap: 7px; font-size: .9rem; font-weight: 600; }
+.password-dialog input {
+  box-sizing: border-box; width: 100%; min-height: 44px; padding: 10px 12px;
+  border: 1px solid var(--line2); border-radius: var(--radius-sm);
+  background: var(--bg2); color: var(--text); font: inherit;
+}
+.password-dialog input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.password-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.password-message { min-height: 1.3em; margin: 0; color: var(--bad); font-size: .88rem; }
+.password-message.is-success { color: var(--accent); }
+@media (max-width: 560px) {
+  .profile-trigger { gap: 5px; }
+  .password-dialog form { padding: 20px; }
+}
