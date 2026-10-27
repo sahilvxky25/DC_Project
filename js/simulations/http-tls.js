@@ -98,7 +98,7 @@ export function httpServe(method, path, body = '') {
     extra = {};
   const userMatch = path.match(/^\/api\/users\/(\d+)$/);
 
-  if (userMatch && ['GET', 'HEAD', 'PUT'].includes(method)) {
+  if (userMatch && ['GET', 'HEAD', 'PUT', 'DELETE'].includes(method)) {
     const id = Number(userMatch[1]);
     const current = API_USERS.get(id);
 
@@ -110,6 +110,12 @@ export function httpServe(method, path, body = '') {
       code = 200;
       type = 'application/json';
       text = JSON.stringify(current);
+    } else if (method === 'DELETE') {
+      API_USERS.delete(id);
+      code = 204;
+      type = 'text/plain';
+      text = '';
+      extra = {};
     } else if (!body.trim()) {
       code = 400;
       type = 'text/plain';
