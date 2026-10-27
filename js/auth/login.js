@@ -250,6 +250,25 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') closeProfileMenu();
 });
 
+// Toggle visibility independently for each password field in the change-password dialog.
+document.querySelectorAll('.password-visibility-btn[data-password-target]').forEach(button => {
+  button.addEventListener('click', () => {
+    const input = document.getElementById(button.dataset.passwordTarget);
+    if (!input) return;
+
+    const reveal = input.type === 'password';
+    input.type = reveal ? 'text' : 'password';
+    button.textContent = reveal ? 'Hide' : 'Show';
+    button.setAttribute('aria-pressed', String(reveal));
+    const fieldLabel = input.id === 'currentPassword'
+      ? 'current password'
+      : input.id === 'newPassword'
+        ? 'new password'
+        : 'password confirmation';
+    button.setAttribute('aria-label', `${reveal ? 'Hide' : 'Show'} ${fieldLabel}`);
+  });
+});
+
 changePasswordBtn.addEventListener('click', () => {
   closeProfileMenu();
   changePasswordForm.reset();
