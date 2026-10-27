@@ -223,6 +223,24 @@
 .icon-btn.menu {
   display: none;
 }
+.sidebar-toggle {
+  display: none;
+}
+
+/* Desktop users can collapse the sidebar to give simulations more workspace. */
+@media (min-width: 861px) {
+  .icon-btn.sidebar-toggle {
+    display: grid;
+  }
+
+  .app.sidebar-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app.sidebar-collapsed > .sidebar {
+    display: none;
+  }
+}
 .crumbs {
   flex: 1;
   min-width: 0;
