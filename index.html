@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="css/learning.css" />
     <link rel="stylesheet" href="css/responsive.css" />
     <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/profile.css" />
     <link rel="icon" type="image/png" href="/favicon.png">
     <script>
       try {
@@ -131,7 +132,22 @@
             ><span class="tstat"><b id="n2">0</b> packets</span
             ><span class="tstat"><b id="n3">0</b> retries</span>
           </div>
-          <button class="btn ghost sm" id="logoutBtn" type="button">Log out</button>
+          <div class="profile-menu" id="profileMenu">
+            <button class="btn ghost sm profile-trigger" id="profileBtn" type="button"
+              aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
+              <span class="profile-avatar" id="profileAvatar" aria-hidden="true">U</span>
+              <span>User Profile</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" hidden>
+              <div class="profile-summary">
+                <strong id="profileName">User</strong>
+                <span id="profileEmail"></span>
+              </div>
+              <button class="profile-menu-item" id="changePasswordBtn" type="button">Change Password</button>
+              <button class="profile-menu-item danger" id="logoutBtn" type="button">Log out</button>
+            </div>
+          </div>
           <button
             class="icon-btn"
             id="themeBtn"
@@ -353,6 +369,25 @@
           Data Comms Lab · every simulator runs locally in your browser
         </footer>
       </div>
+      <dialog class="password-dialog" id="changePasswordDialog" aria-labelledby="passwordDialogTitle">
+        <form id="changePasswordForm">
+          <h2 id="passwordDialogTitle">Change Password</h2>
+          <label for="currentPassword">Current Password
+            <input id="currentPassword" type="password" autocomplete="current-password" required />
+          </label>
+          <label for="newPassword">New Password
+            <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <label for="confirmNewPassword">Confirm New Password
+            <input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
+          </label>
+          <p class="password-message" id="passwordChangeMessage" role="status" aria-live="polite"></p>
+          <div class="password-actions">
+            <button class="btn ghost" id="cancelPasswordChange" type="button">Cancel</button>
+            <button class="btn" id="passwordChangeSubmit" type="submit">Update Password</button>
+          </div>
+        </form>
+      </dialog>
     </div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
 
