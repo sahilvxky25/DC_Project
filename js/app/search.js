@@ -10,9 +10,9 @@ const SEARCH_TERMS = {
   handshake: ['tcp handshake', 'three-way handshake', 'syn', 'syn-ack', 'ack', 'connection establishment'],
   subnets: ['subnet mask', 'subnetting', 'ipv4', 'cidr', 'network address', 'broadcast address', 'usable hosts', 'vlsm'],
   dns: ['dns cache', 'dns resolution', 'domain lookup', 'ttl', 'cached records'],
-  'http-tls': ['http put', 'put method', 'http methods', 'request body', 'headers', 'update resource', 'https', 'tls'],
-  'packet-capture': ['packet capture', 'packets', 'capture analyzer', 'protocol inspection', 'wireshark'],
-  'tcp-udp': ['tcp', 'udp', 'ports', 'transport protocol'],
+  http: ['http put', 'put method', 'http methods', 'request body', 'headers', 'update resource', 'https', 'tls'],
+  capture: ['packet capture', 'packets', 'capture analyzer', 'protocol inspection', 'wireshark'],
+  tcpudp: ['tcp', 'udp', 'ports', 'transport protocol'],
 };
 
 const normalize = value => String(value || '').toLocaleLowerCase().trim();
