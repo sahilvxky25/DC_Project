@@ -373,13 +373,22 @@
         <form id="changePasswordForm">
           <h2 id="passwordDialogTitle">Change Password</h2>
           <label for="currentPassword">Current Password
-            <input id="currentPassword" type="password" autocomplete="current-password" required />
+            <span class="password-input-wrap">
+              <input id="currentPassword" type="password" autocomplete="current-password" required />
+              <button class="password-visibility-btn" type="button" data-password-target="currentPassword" aria-label="Show current password" aria-pressed="false">Show</button>
+            </span>
           </label>
           <label for="newPassword">New Password
-            <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+            <span class="password-input-wrap">
+              <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+              <button class="password-visibility-btn" type="button" data-password-target="newPassword" aria-label="Show new password" aria-pressed="false">Show</button>
+            </span>
           </label>
           <label for="confirmNewPassword">Confirm New Password
-            <input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
+            <span class="password-input-wrap">
+              <input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
+              <button class="password-visibility-btn" type="button" data-password-target="confirmNewPassword" aria-label="Show password confirmation" aria-pressed="false">Show</button>
+            </span>
           </label>
           <p class="password-message" id="passwordChangeMessage" role="status" aria-live="polite"></p>
           <div class="password-actions">
