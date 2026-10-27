@@ -417,8 +417,11 @@ regMod({
                 `<button type="button" class="http-status-card ${statusClass(code)}" data-code="${code}" aria-pressed="false"><span class="http-status-code">${code}</span><span class="http-status-card-copy"><strong>${esc(name)}</strong><small>${category} · ${category === '1xx' ? 'Informational' : category === '2xx' ? 'Success' : category === '3xx' ? 'Redirection' : category === '4xx' ? 'Client error' : 'Server error'}</small></span></button>`
               ).join('') : '<p class="hint">No registered status codes match this search. Try another number or keyword.</p>';
               const first = matches[0];
-              if (first && !matches.some(item => String(item[0]) === detail.dataset.code)) showDetail(first[0]);
-              if (!first) { detail.innerHTML = '<p class="hint">Select a matching code to inspect its details.</p>'; detail.dataset.code = ''; }
+              if (first) {
+                const selected = matches.find(item => String(item[0]) === detail.dataset.code) || first;
+                showDetail(selected[0]);
+              }
+              if (!first) { detail.innerHTML = '<p class="hint">No registered status codes match this search. Try another number or keyword.</p>'; detail.dataset.code = ''; }
             };
             const showDetail = code => {
               const item = HTTP_STATUS_CODES.find(row => row[0] === Number(code));
