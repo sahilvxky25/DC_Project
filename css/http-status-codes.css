@@ -1,0 +1,26 @@
+.http-status-controls { align-items: end; }
+.http-status-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 0.85fr); gap: 1rem; align-items: start; }
+.http-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); gap: 0.55rem; max-height: 650px; overflow: auto; padding: 2px; }
+.http-status-card { display: flex; align-items: center; gap: 0.7rem; width: 100%; text-align: left; padding: 0.7rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); cursor: pointer; }
+.http-status-card:hover, .http-status-card:focus-visible { border-color: var(--accent); outline-offset: 2px; }
+.http-status-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+.http-status-code { display: inline-flex; align-items: center; justify-content: center; min-width: 3.3rem; min-height: 2.4rem; padding: 0.3rem; border-radius: 8px; background: var(--bg2); border: 1px solid var(--line); font: 700 1rem var(--mono); }
+.http-status-card-copy { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.http-status-card-copy strong { overflow-wrap: anywhere; }
+.http-status-card-copy small, .http-status-badge { color: var(--muted); font-size: 0.75rem; }
+.http-status-detail { position: sticky; top: 0.75rem; border: 1px solid var(--line); border-radius: 12px; padding: 1rem; background: var(--surface); min-width: 0; }
+.http-status-detail-head { display: flex; align-items: center; gap: 0.8rem; }
+.http-status-detail-head h3 { margin: 0 0 0.25rem; }
+.http-status-detail h4 { margin: 1rem 0 0.3rem; }
+.http-status-detail p { overflow-wrap: anywhere; }
+.http-status-badge { display: inline-block; border: 1px solid var(--line); border-radius: 99px; padding: 0.15rem 0.5rem; }
+.http-status-card.informational .http-status-code, .http-status-code.informational { border-color: var(--c0); }
+.http-status-card.success .http-status-code, .http-status-code.success { border-color: var(--ok); }
+.http-status-card.redirect .http-status-code, .http-status-code.redirect { border-color: var(--c1); }
+.http-status-card.client-error .http-status-code, .http-status-code.client-error { border-color: var(--warn); }
+.http-status-card.server-error .http-status-code, .http-status-code.server-error { border-color: var(--bad); }
+@media (max-width: 760px) {
+  .http-status-layout { grid-template-columns: 1fr; }
+  .http-status-grid { max-height: none; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+  .http-status-detail { position: static; }
+}
