@@ -37,6 +37,7 @@ import { $, $$, esc } from '../../core/utils.js';
 import { HTTP_ROUTES, httpServe, STATUS_CLASS, STATUS_TEXT } from '../../simulations/http-tls.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
+import { HTTP_STATUS_CODES, HTTP_STATUS_GROUPS, HTTP_COMMON_CODES } from './http-status-codes.js';
 
 /**
  * Syntax-highlights raw HTTP text: the first line gets class "hs", header names get class "hk". Text is escaped first.
@@ -386,6 +387,63 @@ regMod({
             };
             $('#ken', p).onclick = () => send(false);
             $('#ktam', p).onclick = () => send(true);
+          },
+        },
+        {
+          label: 'Status code explorer',
+          render(p) {
+            p.innerHTML = panel(
+              'HTTP status code explorer',
+              `<p class="hint">Browse the registered HTTP status codes from the IANA registry. Search by number, name, meaning, or practical example. Registry entries that are temporary, unused, deprecated, or obsoleted are labelled.</p>
+              <div class="controls http-status-controls">
+                <div class="field grow"><label for="hscq">Search codes</label><input id="hscq" type="search" placeholder="e.g. 404, authentication, timeout" autocomplete="off"></div>
+                <div class="field"><label for="hscf">Category</label><select id="hscf">${HTTP_STATUS_GROUPS.map(g => `<option value="${g.value}">${g.label}</option>`).join('')}</select></div>
+              </div>
+              <p class="hint" id="hsc-count" aria-live="polite"></p>
+              <div class="http-status-layout"><div class="http-status-grid" id="hsc-list"></div><div id="hsc-detail" class="http-status-detail" aria-live="polite"></div></div>
+              <p class="hint">Source of truth: <a href="https://www.iana.org/assignments/http-status-codes" target="_blank" rel="noopener noreferrer">IANA HTTP Status Code Registry</a>. This reference includes registered entries, not every unassigned number in the 100–599 range.</p>`,
+              'Choose a code to see its meaning, category, practical example, sample response, and registration note.'
+            );
+            const q = $('#hscq', p), filter = $('#hscf', p), list = $('#hsc-list', p), detail = $('#hsc-detail', p), count = $('#hsc-count', p);
+            const statusClass = code => code < 200 ? 'informational' : code < 300 ? 'success' : code < 400 ? 'redirect' : code < 500 ? 'client-error' : 'server-error';
+            const renderList = () => {
+              const query = q.value.trim().toLowerCase(), group = filter.value;
+              const matches = HTTP_STATUS_CODES.filter(([code, name, category, meaning, example, sample, note]) => {
+                const text = [code, name, category, meaning, example, note].join(' ').toLowerCase();
+                return (!query || text.includes(query)) && (group === 'all' || (group === 'common' ? HTTP_COMMON_CODES.has(code) : category === group));
+              });
+              count.textContent = `${matches.length} registered code${matches.length === 1 ? '' : 's'} shown`;
+              list.innerHTML = matches.length ? matches.map(([code, name, category]) =>
+                `<button type="button" class="http-status-card ${statusClass(code)}" data-code="${code}" aria-pressed="false"><span class="http-status-code">${code}</span><span class="http-status-card-copy"><strong>${esc(name)}</strong><small>${category} · ${category === '1xx' ? 'Informational' : category === '2xx' ? 'Success' : category === '3xx' ? 'Redirection' : category === '4xx' ? 'Client error' : 'Server error'}</small></span></button>`
+              ).join('') : '<p class="hint">No registered status codes match this search. Try another number or keyword.</p>';
+              const first = matches[0];
+              if (first && !matches.some(item => String(item[0]) === detail.dataset.code)) showDetail(first[0]);
+              if (!first) { detail.innerHTML = '<p class="hint">Select a matching code to inspect its details.</p>'; detail.dataset.code = ''; }
+            };
+            const showDetail = code => {
+              const item = HTTP_STATUS_CODES.find(row => row[0] === Number(code));
+              if (!item) return;
+              const [number, name, category, meaning, example, sample, note] = item;
+              detail.dataset.code = String(number);
+              detail.innerHTML = `<div class="http-status-detail-head"><span class="http-status-code ${statusClass(number)}">${number}</span><div><h3>${esc(name)}</h3><span class="http-status-badge">${category} · ${category === '1xx' ? 'Informational' : category === '2xx' ? 'Success' : category === '3xx' ? 'Redirection' : category === '4xx' ? 'Client error' : 'Server error'}</span></div></div>
+                <h4>Meaning</h4><p>${esc(meaning)}</p>
+                <h4>Practical example</h4><p>${esc(example)}</p>
+                <h4>Sample status line</h4><pre class="http"><code>${esc(sample)}</code></pre>
+                <h4>Registry / usage note</h4><p>${esc(note)}. See the <a href="https://www.iana.org/assignments/http-status-codes" target="_blank" rel="noopener noreferrer">IANA registry</a> for the authoritative description and specification.</p>
+                <p class="hint">Examples are illustrative; a status code does not guarantee that every server will use it in exactly this scenario.</p>`;
+              $('.http-status-card', list).forEach(button => {
+                const selected = Number(button.dataset.code) === number;
+                button.classList.toggle('selected', selected);
+                button.setAttribute('aria-pressed', String(selected));
+              });
+            };
+            list.addEventListener('click', event => {
+              const button = event.target.closest('[data-code]');
+              if (button) showDetail(button.dataset.code);
+            });
+            q.addEventListener('input', renderList);
+            filter.addEventListener('change', renderList);
+            renderList();
           },
         },
         {
