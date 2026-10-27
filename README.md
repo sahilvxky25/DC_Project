@@ -8,7 +8,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Link layer:** framing and stuffing, error detection, Stop-and-Wait, and sliding-window ARQ.
 - **Network layer:** IPv4/subnet practice, IP headers, and routing.
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, and sockets.
-- **Application layer:** DNS resolution and caching, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
+- **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
 - **Learning tools:** tutorials, challenges/quizzes, glossary, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
