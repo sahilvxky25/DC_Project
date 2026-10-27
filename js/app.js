@@ -31,6 +31,7 @@ import { buildNav } from './app/navigation.js';
 import { route } from './app/router.js';
 import { applyTheme } from './app/theme.js';
 import { labInit } from './lab/lab-init.js';
+import { initModuleSearch } from './app/search.js';
 import './modules/link-layer/framing.js';
 import './modules/link-layer/error-detection.js';
 import './modules/link-layer/stop-and-wait.js';
@@ -63,6 +64,7 @@ function boot() {
   hasBooted = true;
   applyTheme(P.theme);
   buildNav();
+  initModuleSearch();
   labInit();
   // Toggle the theme and remember the choice in saved progress (an empty theme means "follow the
   // operating system").
