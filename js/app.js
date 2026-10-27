@@ -73,6 +73,32 @@ function boot() {
     applyTheme(t);
   };
   $('#menuBtn').onclick = () => document.body.classList.toggle('nav-open');
+  // Desktop sidebar toggle. Keep the preference across reloads without affecting the mobile drawer.
+  const appShell = $('.app');
+  const sidebarToggleBtn = $('#sidebarToggleBtn');
+  const updateSidebarToggle = collapsed => {
+    sidebarToggleBtn.setAttribute('aria-expanded', String(!collapsed));
+    sidebarToggleBtn.setAttribute('aria-label', collapsed ? 'Show sidebar' : 'Hide sidebar');
+    sidebarToggleBtn.setAttribute('title', collapsed ? 'Show sidebar' : 'Hide sidebar');
+  };
+
+  try {
+    const savedSidebarState = localStorage.getItem('bitsecure-sidebar-collapsed') === 'true';
+    appShell.classList.toggle('sidebar-collapsed', savedSidebarState);
+    updateSidebarToggle(savedSidebarState);
+  } catch (error) {
+    // The toggle remains usable even when browser storage is unavailable.
+  }
+
+  sidebarToggleBtn.onclick = () => {
+    const collapsed = appShell.classList.toggle('sidebar-collapsed');
+    updateSidebarToggle(collapsed);
+    try {
+      localStorage.setItem('bitsecure-sidebar-collapsed', String(collapsed));
+    } catch (error) {
+      // Do not block the UI if browser storage is unavailable.
+    }
+  };
   $('#scrim').onclick = () => document.body.classList.remove('nav-open');
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') document.body.classList.remove('nav-open');
