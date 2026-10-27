@@ -4,13 +4,16 @@ import {
   browserLocalPersistence,
   browserSessionPersistence,
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
+  reauthenticateWithCredential,
   setPersistence,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile
+  updateProfile,
+  updatePassword
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
 
 const loginScreen = document.getElementById('login-screen');
@@ -21,6 +24,21 @@ const passwordInput = document.getElementById('login-password');
 const errorBox = document.getElementById('login-error');
 const showPasswordBtn = document.getElementById('show-password');
 const logoutBtn = document.getElementById('logoutBtn');
+const profileMenu = document.getElementById('profileMenu');
+const profileBtn = document.getElementById('profileBtn');
+const profileDropdown = document.getElementById('profileDropdown');
+const profileName = document.getElementById('profileName');
+const profileEmail = document.getElementById('profileEmail');
+const profileAvatar = document.getElementById('profileAvatar');
+const changePasswordBtn = document.getElementById('changePasswordBtn');
+const changePasswordDialog = document.getElementById('changePasswordDialog');
+const changePasswordForm = document.getElementById('changePasswordForm');
+const currentPasswordInput = document.getElementById('currentPassword');
+const newPasswordInput = document.getElementById('newPassword');
+const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+const passwordChangeMessage = document.getElementById('passwordChangeMessage');
+const passwordChangeSubmit = document.getElementById('passwordChangeSubmit');
+const cancelPasswordChange = document.getElementById('cancelPasswordChange');
 const signInTab = document.getElementById('signin-tab');
 const signUpTab = document.getElementById('signup-tab');
 const nameField = document.getElementById('name-field');
@@ -37,9 +55,24 @@ function setMessage(message, kind = 'error') {
   errorBox.classList.toggle('is-success', kind === 'success');
 }
 
-function showApp() {
+function closeProfileMenu() {
+  profileDropdown.hidden = true;
+  profileBtn.setAttribute('aria-expanded', 'false');
+}
+
+function renderProfile(user) {
+  const name = user.displayName?.trim() || user.email?.split('@')[0] || 'User';
+  profileName.textContent = name;
+  profileEmail.textContent = user.email || '';
+  profileAvatar.textContent = name.charAt(0).toUpperCase();
+  profileBtn.setAttribute('aria-label', `User Profile: ${name}`);
+}
+
+function showApp(user = auth.currentUser) {
   // Keep a durable signal in case the application module finishes loading after this module.
   window.__bitSecureAuthenticated = true;
+  if (user) renderProfile(user);
+  closeProfileMenu();
   loginScreen.hidden = true;
   appScreen.hidden = false;
   document.dispatchEvent(new CustomEvent('auth-success'));
@@ -203,6 +236,89 @@ showPasswordBtn.addEventListener('click', () => {
   showPasswordBtn.setAttribute('aria-pressed', String(reveal));
 });
 
+profileBtn.addEventListener('click', () => {
+  const shouldOpen = profileDropdown.hidden;
+  profileDropdown.hidden = !shouldOpen;
+  profileBtn.setAttribute('aria-expanded', String(shouldOpen));
+});
+
+document.addEventListener('click', event => {
+  if (!profileMenu.contains(event.target)) closeProfileMenu();
+});
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeProfileMenu();
+});
+
+changePasswordBtn.addEventListener('click', () => {
+  closeProfileMenu();
+  changePasswordForm.reset();
+  passwordChangeMessage.textContent = '';
+  passwordChangeMessage.classList.remove('is-success');
+  changePasswordDialog.showModal();
+  currentPasswordInput.focus();
+});
+
+cancelPasswordChange.addEventListener('click', () => {
+  changePasswordDialog.close();
+  changePasswordForm.reset();
+  passwordChangeMessage.textContent = '';
+  passwordChangeMessage.classList.remove('is-success');
+});
+
+function setPasswordMessage(message, success = false) {
+  passwordChangeMessage.textContent = message;
+  passwordChangeMessage.classList.toggle('is-success', success);
+}
+
+changePasswordForm.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const currentPassword = currentPasswordInput.value;
+  const newPassword = newPasswordInput.value;
+  const confirmPassword = confirmNewPasswordInput.value;
+
+  if (newPassword.length < 8) {
+    setPasswordMessage('The new password must contain at least 8 characters.');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setPasswordMessage('The new password and confirmation do not match.');
+    return;
+  }
+  if (currentPassword === newPassword) {
+    setPasswordMessage('Choose a new password different from the current one.');
+    return;
+  }
+
+  const user = auth.currentUser;
+  if (!user || !user.email) {
+    setPasswordMessage('Your session is unavailable. Please sign in again.');
+    return;
+  }
+
+  passwordChangeSubmit.disabled = true;
+  setPasswordMessage('');
+  try {
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+    changePasswordForm.reset();
+    setPasswordMessage('Your password has been changed successfully.', true);
+  } catch (error) {
+    const messages = {
+      'auth/invalid-credential': 'Your current password is incorrect.',
+      'auth/wrong-password': 'Your current password is incorrect.',
+      'auth/weak-password': 'Please choose a stronger password.',
+      'auth/requires-recent-login': 'Please sign in again before changing your password.',
+      'auth/network-request-failed': 'Network error. Check your connection and try again.'
+    };
+    setPasswordMessage(messages[error?.code] || 'Unable to change the password. Please try again.');
+  } finally {
+    passwordChangeSubmit.disabled = false;
+  }
+});
+
 logoutBtn.addEventListener('click', async () => {
   try {
     await signOut(auth);
@@ -220,7 +336,7 @@ localStorage.removeItem('bitsecure.demo-accounts');
 
 onAuthStateChanged(auth, user => {
   if (user?.emailVerified) {
-    showApp();
+    showApp(user);
     return;
   }
 
