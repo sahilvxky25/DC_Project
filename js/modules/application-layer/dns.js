@@ -54,7 +54,9 @@ regMod({
   mount(root) {
     const cache = new Map();
     let now = 0,
-      last = null;
+      last = null,
+      stepIndex = 0,
+      playTimer = null;
     root.innerHTML = '<div id="dnstabs"></div>';
     const tabs = tabset(
       $('#dnstabs', root),
@@ -75,11 +77,14 @@ regMod({
             ['A', 'AAAA', 'MX', 'CNAME', 'NS', 'TXT'].map(x => [x, x]),
             'A'
           )}</div>
-          <div class="btnrow"><button class="btn" id="dgo">Resolve</button></div></div>
+          <div class="field"><label for="dmode">Resolution mode</label>${sel('dmode', [['recursive','Recursive'],['iterative','Iterative']], 'recursive')}</div>
+          <div class="field"><label for="dttl">Answer TTL</label>${sel('dttl', [['default','Default by type'],['30','30 seconds'],['60','1 minute'],['300','5 minutes'],['900','15 minutes']], 'default')}</div>
+          <div class="btnrow"><button class="btn" id="dgo">Resolve</button><button class="btn ghost" id="dcompare">Compare cache</button></div></div>
           <div class="presets" id="dsamp">${['www.example.com', 'mail.example.com', 'cdn.example.com', 'docs.example.org', 'example.com', 'nope.example.com', 'host.invalid'].map(x => `<button class="chipbtn">${x}</button>`).join('')}</div>`,
                 'Resolve the same name twice to see the cache. Use the clock buttons to let cached answers expire.'
               ) +
               '<div id="dres"></div>' +
+              panel('Resolution walkthrough', '<div class="btnrow wrap"><button class="btn sm" id="dprev">Previous step</button><button class="btn sm" id="dnext">Next step</button><button class="btn sm" id="dplay">Play</button><button class="btn ghost sm" id="dreset">Reset steps</button><span class="hint" id="dstepcount"></span></div><div id="dstepdetail" class="stepmsg" aria-live="polite">Resolve a name to inspect each DNS message.</div><div id="dstepladder"></div><div id="dcompareout"></div>', 'Step through client, resolver, root, TLD and authoritative DNS messages. This is a simulated teaching network.') +
               panel(
                 'Resolver cache',
                 `<div class="btnrow wrap"><span class="hint" id="dclk"></span><button class="btn ghost sm" id="d1">Wait 1 minute</button><button class="btn ghost sm" id="d2">Wait 10 minutes</button><button class="btn ghost sm" id="dfl">Flush cache</button></div><div id="dcache"></div>`
@@ -104,8 +109,11 @@ regMod({
                 type = $('#dt', p).value,
                 key = name.trim().toLowerCase().replace(/\.$/, '') + '|' + type,
                 was = cache.get(key) && cache.get(key).exp > now;
-              const r = dnsLookup(name, type, cache, now);
+              const ttlValue = $('#dttl', p).value;
+              const r = dnsLookup(name, type, cache, now, { mode: $('#dmode', p).value, ttlOverride: ttlValue === 'default' ? undefined : Number(ttlValue) });
               last = r;
+              stepIndex = 0;
+              stopPlayback();
               if (r.cached && was) flag('dnsCache');
               const total = r.ms + 2;
               $('#dres', p).innerHTML =
@@ -165,6 +173,51 @@ regMod({
                                 ))
                     );
               drawCache();
+              drawWalkthrough();
+            };
+            const stopPlayback = () => {
+              if (playTimer) clearInterval(playTimer);
+              playTimer = null;
+              const b = $('#dplay', p);
+              if (b) b.textContent = 'Play';
+            };
+            const drawWalkthrough = () => {
+              const host = $('#dstepladder', p), detail = $('#dstepdetail', p), count = $('#dstepcount', p);
+              if (!host || !detail || !count) return;
+              const msgs = last && last.msgs ? last.msgs : [];
+              if (!msgs.length) {
+                host.innerHTML = hn('No upstream DNS messages. A cached answer is served locally.');
+                detail.textContent = last && last.cached ? 'Cache hit: the resolver returns the saved answer without contacting root, TLD, or authoritative servers.' : 'Resolve a valid name to begin stepping through the lookup.';
+                count.textContent = '0 messages'; return;
+              }
+              stepIndex = Math.max(0, Math.min(stepIndex, msgs.length - 1));
+              const m = msgs[stepIndex];
+              count.textContent = 'Step ' + (stepIndex + 1) + ' of ' + msgs.length;
+              detail.textContent = (m.dir === 'lr' ? 'Query / referral request: ' : 'Response / referral: ') + m.label + ' · Mode: ' + (last.mode || 'recursive');
+              host.innerHTML = ladder({ left: 'Resolver / requester', right: 'DNS hierarchy', msgs: msgs.slice(0, stepIndex + 1), marks: last.marks || [], maxH: 460 });
+            };
+            $('#dprev', p).onclick = () => { stopPlayback(); stepIndex--; drawWalkthrough(); };
+            $('#dnext', p).onclick = () => { if (last && last.msgs) stepIndex = Math.min(stepIndex + 1, last.msgs.length - 1); drawWalkthrough(); };
+            $('#dreset', p).onclick = () => { stopPlayback(); stepIndex = 0; drawWalkthrough(); };
+            $('#dplay', p).onclick = () => {
+              if (playTimer) { stopPlayback(); return; }
+              if (!last || !last.msgs || !last.msgs.length) return;
+              if (stepIndex >= last.msgs.length - 1) stepIndex = -1;
+              $('#dplay', p).textContent = 'Pause';
+              playTimer = setInterval(() => { if (!last || stepIndex >= last.msgs.length - 1) { stopPlayback(); return; } stepIndex++; drawWalkthrough(); }, 900);
+            };
+            $('#dcompare', p).onclick = () => {
+              const name = $('#dn', p).value, type = $('#dt', p).value;
+              const opts = { mode: $('#dmode', p).value, ttlOverride: $('#dttl', p).value === 'default' ? undefined : Number($('#dttl', p).value) };
+              const cold = dnsLookup(name, type, new Map(), now, opts), warmCache = new Map();
+              dnsLookup(name, type, warmCache, now, opts);
+              const warm = dnsLookup(name, type, warmCache, now, opts);
+              $('#dcompareout', p).innerHTML = panel('Cold vs warm resolver cache', tbl(['Metric', 'Uncached lookup', 'Cached lookup'], [
+                ['Upstream DNS queries', cold.queryCount || cold.msgs.filter(m => m.dir === 'lr').length, warm.queryCount || warm.msgs.filter(m => m.dir === 'lr').length],
+                ['Simulated latency', (cold.ms || 0) + ' ms', (warm.ms || 0) + ' ms'],
+                ['Server contacts', cold.serverCount || new Set(cold.servers || []).size, warm.serverCount || new Set(warm.servers || []).size],
+                ['Result', cold.rcode, warm.rcode]
+              ]), 'Counts come from the generated message trace. Cached delegation records may reduce an uncached lookup too.');
             };
             $('#dgo', p).onclick = go;
             $('#dn', p).onkeydown = e => {
@@ -187,8 +240,11 @@ regMod({
             };
             $('#dfl', p).onclick = () => {
               cache.clear();
+              $('#dcompareout', p).innerHTML = '';
               drawCache();
             };
+            $('#dmode', p).onchange = go;
+            $('#dttl', p).onchange = go;
             drawCache();
             go();
           },
@@ -294,6 +350,6 @@ regMod({
       0
     );
     // Cleanup: tabset runs the active tab's own cleanup function.
-    return () => tabs.destroy();
+    return () => { if (playTimer) clearInterval(playTimer); tabs.destroy(); };
   },
 });
