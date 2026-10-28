@@ -47,6 +47,7 @@ regMod({
   mount(root) {
     let topology = loadTopology();
     let selectedId = topology.devices[0]?.id || null;
+    let selectedLinkId = null;
     let connectMode = false;
     let connectFrom = null;
     let drag = null;
@@ -79,6 +80,7 @@ regMod({
               <div class="topology-empty" id="topology-empty" hidden>Choose a device from the palette to begin.</div>
             </div>
             <div class="topology-legend"><span><i class="is-up"></i> Cable up</span><span><i class="is-down"></i> Cable down</span><span>Red outline = configuration issue</span></div>
+            <div class="topology-connection-actions" id="topology-connection-actions" hidden><span id="topology-selected-connection" class="hint"></span><button type="button" class="btn danger sm" id="topology-delete-connection">Delete connection</button><button type="button" class="btn ghost sm" id="topology-cancel-connection">Cancel</button></div>
           </div>
         </div>
         <div class="topology-lower-grid">
@@ -125,7 +127,7 @@ regMod({
         const a = findDevice(link.source), b = findDevice(link.target);
         if (!a || !b) return '';
         const p1 = point(a), p2 = point(b);
-        const selected = link.id === selectedId;
+        const selected = link.id === selectedLinkId;
         return `<g class="topology-link-group"><line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" class="topology-link ${link.status === 'down' ? 'is-down' : 'is-up'} ${selected ? 'is-selected' : ''}" data-link-id="${link.id}" /><text x="${(p1.x + p2.x) / 2}" y="${(p1.y + p2.y) / 2 - 7}" class="topology-link-label">${link.status === 'down' ? 'DOWN' : ''}</text></g>`;
       }).join('');
       nodes.innerHTML = topology.devices.map(device => {
@@ -135,6 +137,10 @@ regMod({
         </button>`;
       }).join('');
       $('#topology-empty', root).hidden = topology.devices.length > 0;
+      const selectedLink = topology.links.find(link => link.id === selectedLinkId);
+      const connectionActions = $('#topology-connection-actions', root);
+      connectionActions.hidden = !selectedLink;
+      if (selectedLink) $('#topology-selected-connection', root).textContent = (findDevice(selectedLink.source)?.name || 'Device') + ' ↔ ' + (findDevice(selectedLink.target)?.name || 'Device');
       renderSelects();
     }
     function renderSelects() {
@@ -281,22 +287,30 @@ regMod({
         return;
       }
       if (drag?.moved) return;
-      selectedId = id; render();
+      selectedId = id; selectedLinkId = null; render();
     });
     cables.addEventListener('click', event => {
       const line = event.target.closest('[data-link-id]');
       if (!line) return;
       const link = topology.links.find(item => item.id === line.dataset.linkId);
       if (!link) return;
-      const action = window.confirm('OK = toggle this cable up/down. Cancel = delete this cable.');
-      if (action) {
-        link.status = link.status === 'up' ? 'down' : 'up';
-        addLog(`Cable status changed to ${link.status}.`);
-      } else {
-        topology.links = topology.links.filter(item => item.id !== link.id);
-        addLog('Deleted a virtual cable.');
-      }
+      selectedLinkId = link.id;
+      selectedId = null;
+      render();
+    });
+    $('#topology-delete-connection', root).addEventListener('click', () => {
+      const link = topology.links.find(item => item.id === selectedLinkId);
+      if (!link) return;
+      const sourceName = findDevice(link.source)?.name || 'Device';
+      const targetName = findDevice(link.target)?.name || 'Device';
+      topology.links = topology.links.filter(item => item.id !== link.id);
+      selectedLinkId = null;
+      addLog(`Deleted connection between ${sourceName} and ${targetName}.`);
       persist(); render();
+    });
+    $('#topology-cancel-connection', root).addEventListener('click', () => {
+      selectedLinkId = null;
+      renderBoard();
     });
     $('#topology-connect', root).addEventListener('click', event => {
       connectMode = !connectMode; connectFrom = null;
