@@ -97,7 +97,7 @@ regMod({
                   k.startsWith('ns|')
                     ? { h: `<span class="pill">delegation</span> ${k.slice(3)}` }
                     : k.replace('|', '  '),
-                  v.rrs ? v.rrs.map(r => r.v).join(', ') : 'name servers',
+                  v.negative ? 'Negative answer (' + v.rcode + ')' : v.rrs ? v.rrs.map(r => r.v).join(', ') : 'name servers',
                   `${v.exp - now} s`,
                 ]);
               $('#dcache', p).innerHTML = rows.length
