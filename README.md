@@ -12,6 +12,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
 - **Learning tools:** tutorials, challenges/quizzes, glossary, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
+- **Cloud progress:** Firestore synchronization of existing saved progress, achievements, run history, quiz statistics, notes, theme, and last visited screen for the signed-in account.
 - **Responsive interface:** desktop sidebar controls and a mobile navigation drawer.
 
 Most networking demonstrations are simulations intended for learning; the HTTP server and network scenarios shown in the modules are not real remote services.
@@ -20,7 +21,7 @@ Most networking demonstrations are simulations intended for learning; the HTTP s
 
 - A modern browser with JavaScript modules and the Web Crypto API (for the cryptography demonstration).
 - Python 3 or another local static HTTP server.
-- A Firebase project configured for the authentication features.
+- A Firebase project with Authentication and Cloud Firestore configured.
 
 ## Run locally
 
@@ -44,8 +45,36 @@ The sign-in and account features use Firebase Authentication from the browser.
 2. Register a Web app in the Firebase project and copy its web-app configuration.
 3. In **Authentication → Sign-in method**, enable **Email/Password**.
 4. In **Authentication → Settings → Authorized domains**, add the local and deployed hostnames you use. Do not include URL paths.
-5. Update the configuration in `js/auth/firebase-client.js` to match your Firebase Web app.
+5. Update the configuration in `js/auth/firebase-client.js` to match the Firebase Web app.
 6. Run the app through a local HTTP server and test sign-up, sign-in, email verification, password reset, password change, and sign-out.
+
+## Firebase Cloud Firestore progress setup
+
+The application synchronizes each signed-in user's existing progress state to Firestore. It uses the path `users/{uid}/progress/overview`, where `{uid}` is the Firebase Authentication UID. The app reads the cloud document before showing the learning interface, merges it with that user's local cache, and debounces subsequent writes. Progress remains cached locally if a cloud request fails; a cloud read must succeed before this client uploads a merged snapshot.
+
+1. In the [Firebase console](https://console.firebase.google.com/), open **Build → Firestore Database** and create a database if one does not already exist.
+2. Open the **Rules** tab and publish rules that restrict reads and writes to the signed-in user’s own UID path. For example:
+
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /users/{userId}/{document=**} {
+         allow read, write: if request.auth != null
+                            && request.auth.uid == userId;
+       }
+     }
+   }
+   ```
+
+3. Confirm the project's Firebase web configuration in `js/auth/firebase-client.js` and deploy the site over HTTP(S).
+4. Sign in with a verified account, visit a few modules, complete a quiz, and wait briefly for the debounced cloud write.
+5. In Firestore's **Data** tab, confirm that a document appears at `users/{your-auth-uid}/progress/overview`.
+6. Sign in with that same account on another browser/device and verify that the visited screens, achievements, statistics, and last visited screen are restored. Then sign out and sign in as a different account to verify the progress is isolated.
+
+**Existing local progress note:** progress in the old `dcl.v2` global localStorage key has no Firebase UID attached, so it is not automatically assigned to a signed-in account. This conservative choice prevents one person's old browser cache from being uploaded to another person's account. The old key is left intact; the new account-specific cache uses `dcl.v2.user.{uid}`.
+
+**Security note:** these rules verify document ownership but do not validate the correctness of client-submitted fields or quiz scores. Any score stored directly from a browser can be modified by that browser's owner. Add stricter field/type/size validation in Firestore rules, and use trusted server-side validation if quiz results must be tamper-resistant. Never place service-account private keys or Admin SDK credentials in browser code.
 
 ### Firebase configuration and security
 
@@ -74,7 +103,7 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 └── js/
     ├── app.js                  Application entry point; imports modules and boots UI
     ├── auth/
-    │   ├── firebase-client.js  Firebase app and Auth initialization
+    │   ├── firebase-client.js  Firebase app, Auth, and Firestore initialization
     │   └── login.js            Sign-in, sign-up, reset, verification, profile, and sign-out flows
     ├── core/                   Shared state, storage, encoding, checksums, addressing, UI helpers
     ├── simulations/            Protocol and network simulation logic
@@ -88,7 +117,6 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
         ├── application-layer/  DNS and HTTP/TLS
         ├── advanced/           Encapsulation, packet capture, troubleshooting
         └── learning/            Journey, tutorials, challenges, glossary
-```
 
 ## How the app is organised
 
@@ -96,7 +124,7 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 - `js/app.js` imports each learning module. Each module registers itself through `regMod()` in `js/modules/registry.js`.
 - The router displays a module based on the URL hash (for example, `#/m/http`).
 - UI modules live in `js/modules/`; protocol calculations and simulated server logic live in `js/simulations/`; shared helpers live in `js/core/`.
-- Most learning progress and the selected theme are saved in browser `localStorage` under `dcl.v2`. This data is local to that browser/device and is not a cross-device progress database.
+- After authentication, each user's progress is cached in a UID-specific localStorage entry and synchronized with Firestore at `users/{uid}/progress/overview`. The legacy `dcl.v2` key is not automatically assigned to an account because it is not associated with a user ID.
 - The desktop sidebar collapsed state is stored separately in `localStorage` as `bitsecure-sidebar-collapsed`.
 
 ### Add a learning module
@@ -130,10 +158,10 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 | Sign-in says the domain is unauthorized | Add the hostname in Firebase Authentication → Settings → Authorized domains. |
 | Email/password sign-in is unavailable | Enable Email/Password in Firebase Authentication → Sign-in method. |
 | Authentication configuration error | Check `js/auth/firebase-client.js` against the Firebase Web app configuration. |
-| Old progress appears during testing | Clear the site's local storage or use the app's Reset progress control if available. |
+| Firestore `permission-denied` | Verify that the user is signed in and your rules allow access only when `request.auth.uid == userId` for their UID path. |
+| Progress differs between devices | Confirm both devices use the same Firebase project and account, then inspect the document at `users/{uid}/progress/overview`. |
+| Old progress appears during testing | Check the account-specific `dcl.v2.user.{uid}` cache and the Firestore document. The legacy global cache is intentionally not auto-imported. |
 | CSS changes do not appear | Hard-refresh the page to bypass cached stylesheets. |
-
-For browser debugging, open Developer Tools and inspect **Console** for JavaScript errors and **Network** to check that HTML, CSS, and JavaScript files load successfully.
 
 ## Manual smoke-test checklist
 
@@ -145,8 +173,10 @@ Before publishing a change, test the following in a browser:
 4. Exercise the relevant learning modules, including DNS, HTTP methods, TLS, TCP/UDP, and subnetting.
 5. Switch the theme and reload; confirm it persists.
 6. Collapse and restore the desktop sidebar; check the mobile navigation at a narrow viewport.
-7. Test authentication flows against your configured Firebase project.
-8. Check keyboard navigation, focus visibility, and responsive layout.
+7. Sign in and confirm Firestore progress is loaded before the dashboard opens.
+8. Visit modules and finish a quiz; verify progress syncs to Firestore and restores on another device.
+9. Sign out, sign in as a different user, and confirm the first user's progress is not shown or uploaded to the second account.
+10. Test offline mode; local changes should remain cached and a failed cloud read must not trigger a blind overwrite.
 
 ## Contributing
 
