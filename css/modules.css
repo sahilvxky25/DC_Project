@@ -576,3 +576,39 @@ td.info {
 .term .err {
   color: var(--bad);
 }
+
+
+/* DNS resolution visualizer */
+.dns-walkthrough {
+  display: grid;
+  gap: 0.65rem;
+}
+#dstepdetail {
+  min-height: 3.2rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+#dstepladder .ladder {
+  max-height: 460px;
+}
+#dcompareout {
+  margin-top: 0.8rem;
+}
+#dcompareout table {
+  width: 100%;
+}
+#dnstabs .controls {
+  align-items: end;
+}
+#dnstabs #dmode,
+#dnstabs #dttl {
+  min-width: 9rem;
+}
+@media (max-width: 640px) {
+  #dnstabs .controls > .field {
+    min-width: min(100%, 9rem);
+  }
+  #dstepdetail {
+    font-size: 0.9rem;
+  }
+}
