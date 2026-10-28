@@ -75,3 +75,11 @@
   .topology-node { width: 84px; }
   .topology-legend { font-size: .7rem; }
 }
+
+/* Explicit controls for a selected virtual cable. */
+.topology-connection-actions { display: flex; align-items: center; flex-wrap: wrap; gap: .55rem; margin-top: .65rem; padding: .7rem; border: 1px solid var(--line, #475569); border-radius: 10px; }
+.topology-connection-actions[hidden] { display: none; }
+.topology-connection-actions .hint { flex: 1 1 150px; }
+.topology-connection-actions .btn.danger { border-color: #ef4444; color: #ef7777; }
+.topology-link { cursor: pointer; pointer-events: stroke; }
+.topology-link.is-selected { stroke-width: 5px; }
