@@ -1,5 +1,6 @@
 /* Real email/password authentication through Firebase Auth. */
 import { auth } from './firebase-client.js';
+import { activateProgressForUser, deactivateProgressUser, flushProgressSync } from '../core/storage.js';
 import {
   browserLocalPersistence,
   browserSessionPersistence,
@@ -340,6 +341,8 @@ changePasswordForm.addEventListener('submit', async event => {
 
 logoutBtn.addEventListener('click', async () => {
   try {
+    // Flush this account's latest progress before the Firebase session is cleared.
+    await flushProgressSync();
     await signOut(auth);
     setMessage('You have been signed out.', 'success');
     showLogin({ focus: true });
@@ -353,12 +356,20 @@ sessionStorage.removeItem('bitsecure.demo-session');
 localStorage.removeItem('bitsecure.demo-remembered');
 localStorage.removeItem('bitsecure.demo-accounts');
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if (user?.emailVerified) {
+    // Do not expose the application until this account's cloud/local progress has been restored.
+    await activateProgressForUser(user.uid);
+
+    // Auth events can overlap while a slow Firestore request is in flight. Do not display stale
+    // progress if the user signed out or changed accounts before this restore finished.
+    if (auth.currentUser?.uid !== user.uid || !auth.currentUser?.emailVerified) return;
     showApp(user);
     return;
   }
 
+  // Clear the in-memory state on sign-out so it cannot be reused by the next account.
+  deactivateProgressUser();
   showLogin();
   // Unverified users remain on the login screen. Signup signs out after sending
   // the verification email; sign-in explicitly signs out any unverified account.
