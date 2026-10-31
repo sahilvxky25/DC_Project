@@ -39,6 +39,7 @@ import './modules/link-layer/sliding-window.js';
 import './modules/network-layer/subnets.js';
 import './modules/network-layer/ip-headers.js';
 import './modules/network-layer/routing.js';
+import './modules/network-layer/firewall-lab.js';
 import './modules/network-layer/topology-builder.js';
 import './modules/transport-layer/tcp-udp.js';
 import './modules/transport-layer/handshake.js';
