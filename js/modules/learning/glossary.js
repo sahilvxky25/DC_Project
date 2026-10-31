@@ -624,6 +624,11 @@ regMod({
                   <button class="chipbtn" type="button" data-category="registered">Registered (1024–49151)</button>
                   
                 </div>
+                <div class="port-browse-controls">
+                  <button class="btn ghost sm" id="prevPortRange" type="button" disabled>← Previous 100 ports</button>
+                  <button class="btn sm" id="nextPortRange" type="button">Next 100 ports →</button>
+                  <span class="hint">Browse assigned ports 0–49151 in blocks of 100.</span>
+                </div>
                 <p class="hint" id="portCount" aria-live="polite"></p>
                 <div class="port-table-wrap" id="portTable"></div>
                 <div id="portDetail" aria-live="polite"></div>
@@ -714,7 +719,26 @@ regMod({
                   <p class="hint"><strong>Remember:</strong> A port number identifies a service endpoint convention; it does not itself encrypt traffic or prove which application is listening.</p>
                 </div>`;
             };
-            $('#portSearch', p).addEventListener('input', renderPorts);
+            $('#portSearch', p).addEventListener('input', () => {
+              clearTimeout(renderPorts.timer);
+              renderPorts.timer = setTimeout(renderPorts, 250);
+            });
+            $('#prevPortRange', p).addEventListener('click', () => {
+              portWindowStart = Math.max(0, portWindowStart - 100);
+              $('#prevPortRange', p).disabled = portWindowStart === 0;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49100;
+              loadRange();
+            });
+            $('#nextPortRange', p).addEventListener('click', () => {
+              portWindowStart = Math.min(49100, portWindowStart + 100);
+              $('#prevPortRange', p).disabled = portWindowStart === 0;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49100;
+              loadRange();
+            });
+            const loadRange = () => {
+              $('#portSearch', p).value = '';
+              renderPorts();
+            };
             $('#portTransportFilters', p).addEventListener('click', event => {
               const button = event.target.closest('[data-transport]');
               if (!button) return;
