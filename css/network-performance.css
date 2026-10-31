@@ -99,3 +99,103 @@
     min-height: 0;
   }
 }
+
+.npa-animation-panel {
+  overflow: hidden;
+}
+.npa-progress-track {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line2);
+  margin: 0.8rem 0 1.1rem;
+}
+#npa-progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+.npa-live-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+.npa-live-stats > div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  min-width: 0;
+}
+.npa-live-stats b {
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+.npa-live-stats span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.npa-flow-animated .npa-link {
+  min-width: 0;
+}
+.npa-track {
+  height: 3px;
+  width: 100%;
+  position: relative;
+  background: var(--line2);
+  margin: 0.8rem 0;
+}
+.npa-packet-dot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  transform: translate(-50%, -50%);
+  animation: npa-packet-travel 650ms ease-in-out forwards;
+}
+.npa-packet-lost {
+  background: var(--bad);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 18%, transparent);
+  animation: npa-packet-drop 500ms ease-in forwards !important;
+}
+.npa-active {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.npa-received {
+  border-color: var(--ok);
+}
+.npa-dropped {
+  border-color: var(--bad);
+}
+@keyframes npa-packet-travel {
+  from { left: 0; }
+  to { left: 100%; }
+}
+@keyframes npa-packet-drop {
+  0% { left: 50%; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { left: 100%; opacity: 0.15; transform: translate(-50%, -50%) scale(0.55); }
+}
+@media (max-width: 560px) {
+  .npa-live-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .npa-packet-dot,
+  .npa-packet-lost {
+    animation-duration: 1ms !important;
+  }
+  #npa-progress-fill {
+    transition: none;
+  }
+}
