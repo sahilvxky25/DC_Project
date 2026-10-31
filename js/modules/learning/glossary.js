@@ -726,13 +726,13 @@ regMod({
             $('#prevPortRange', p).addEventListener('click', () => {
               portWindowStart = Math.max(0, portWindowStart - 100);
               $('#prevPortRange', p).disabled = portWindowStart === 0;
-              $('#nextPortRange', p).disabled = portWindowStart >= 49142;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49150;
               loadRange();
             });
             $('#nextPortRange', p).addEventListener('click', () => {
-              portWindowStart = Math.min(49142, portWindowStart + 10);
+              portWindowStart = Math.min(49150, portWindowStart + 10);
               $('#prevPortRange', p).disabled = portWindowStart === 0;
-              $('#nextPortRange', p).disabled = portWindowStart >= 49142;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49150;
               loadRange();
             });
             const loadRange = () => {
