@@ -142,6 +142,8 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 | Change protocol/simulation logic | `js/simulations/<topic>.js` |
 | Change Wi-Fi simulator UI | `js/modules/network-layer/wifi-simulator.js` and `css/wifi-simulator.css` |
 | Change Wi-Fi signal/interference model | `js/simulations/wifi-simulation.js` |
+| Change Wi-Fi simulator UI | `js/modules/network-layer/wifi-simulator.js` and `css/wifi-simulator.css` |
+| Change Wi-Fi signal/interference model | `js/simulations/wifi-simulation.js` |
 | Change module groups or ordering | `js/modules/registry.js` and imports in `js/app.js` |
 | Change colours, typography, or theme tokens | `css/tokens.css` |
 | Change shared controls and component styles | `css/components.css` |
@@ -173,6 +175,7 @@ Before publishing a change, test the following in a browser:
 2. Visit every sidebar module and use browser Back/Forward navigation.
 3. In the core lab, try ordinary text, an emoji, packet-size changes, different simulated loss levels, and stopping a transmission mid-run.
 4. Exercise the relevant learning modules, including DNS, HTTP methods, TLS, TCP/UDP, and subnetting.
+5. In the Wi-Fi simulator, add/remove access points and clients, edit SSID/band/channel/power, drag devices, add/remove obstacles, and check signal/interference updates. Confirm wired endpoints are labeled separately and saved layouts restore.
 5. In the Wi-Fi simulator, add/remove access points and clients, edit SSID/band/channel/power, drag devices, add/remove obstacles, and check signal/interference updates. Confirm wired endpoints are labeled separately and saved layouts restore.
 6. Switch the theme and reload; confirm it persists.
 7. Collapse and restore the desktop sidebar; check the mobile navigation at a narrow viewport.
