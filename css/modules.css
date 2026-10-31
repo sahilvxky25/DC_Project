@@ -664,3 +664,5 @@ td.info {
 .osi-feedback.is-wrong{color:var(--bad)}
 @media(max-width:760px){.osi-stage-grid{grid-template-columns:1fr}.osi-heading{align-items:flex-start}.osi-compare-panel{grid-template-columns:1fr}.osi-compare-note{grid-column:auto}.osi-visualizer{padding:.75rem}.osi-field-list{grid-template-columns:1fr;gap:.25rem}.osi-field-list dd{margin-bottom:.5rem}}
 @media(prefers-reduced-motion:reduce){.osi-layer{transition:none}.osi-layer:hover{transform:none}}
+
+.osi-compare-panel[hidden]{display:none}
