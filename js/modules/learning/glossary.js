@@ -625,9 +625,9 @@ regMod({
                   
                 </div>
                 <div class="port-browse-controls">
-                  <button class="btn ghost sm" id="prevPortRange" type="button" disabled>← Previous 100 ports</button>
-                  <button class="btn sm" id="nextPortRange" type="button">Next 100 ports →</button>
-                  <span class="hint">Browse assigned ports 0–49151 in blocks of 100.</span>
+                  <button class="btn ghost sm" id="prevPortRange" type="button" disabled>← Previous 10 ports</button>
+                  <button class="btn sm" id="nextPortRange" type="button">Next 10 ports →</button>
+                  <span class="hint">Browse assigned ports 0–49151 in small blocks to include every registration.</span>
                 </div>
                 <p class="hint" id="portCount" aria-live="polite"></p>
                 <div class="port-table-wrap" id="portTable"></div>
@@ -658,13 +658,13 @@ regMod({
                 if (q) params.set('search', q.slice(0, 64));
                 else {
                   params.set('portFrom', String(portWindowStart));
-                  params.set('portTo', String(Math.min(49151, portWindowStart + 99)));
+                  params.set('portTo', String(Math.min(49151, portWindowStart + 9)));
                 }
                 if (activeTransport !== 'ALL') params.set('protocol', activeTransport.toLowerCase());
                 if (activeCategory === 'well-known') params.set('range', 'system');
                 if (activeCategory === 'registered') params.set('range', 'registered');
                 url = 'https://randomapi.dev/api/ports?' + params.toString();
-                description = q ? 'search results for “' + q + '”' : 'registry ports ' + portWindowStart + '–' + Math.min(49151, portWindowStart + 99);
+                description = q ? 'search results for “' + q + '”' : 'registry ports ' + portWindowStart + '–' + Math.min(49151, portWindowStart + 9);
               }
               $('#portCount', p).textContent = 'Loading IANA port registry…';
               $('#portTable', p).innerHTML = '<p class="hint">Fetching registered services…</p>';
@@ -726,13 +726,13 @@ regMod({
             $('#prevPortRange', p).addEventListener('click', () => {
               portWindowStart = Math.max(0, portWindowStart - 100);
               $('#prevPortRange', p).disabled = portWindowStart === 0;
-              $('#nextPortRange', p).disabled = portWindowStart >= 49100;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49142;
               loadRange();
             });
             $('#nextPortRange', p).addEventListener('click', () => {
-              portWindowStart = Math.min(49100, portWindowStart + 100);
+              portWindowStart = Math.min(49142, portWindowStart + 10);
               $('#prevPortRange', p).disabled = portWindowStart === 0;
-              $('#nextPortRange', p).disabled = portWindowStart >= 49100;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49142;
               loadRange();
             });
             const loadRange = () => {
