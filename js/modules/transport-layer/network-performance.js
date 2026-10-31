@@ -73,7 +73,7 @@ regMod({
         if (field) field.value = String(value);
       });
       errorBox.hidden = true;
-      root.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value)));
+      root.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value))));
     };
     const esc = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
     const fmt = (value, digits = 2) => Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: 0 }) : '—';
