@@ -117,9 +117,126 @@ regMod({
         </div>`;
     }
 
+    let animationRun = 0;
+    const wait = ms => new Promise(resolve => window.setTimeout(resolve, ms));
+
+    async function animateRun(result) {
+      const runId = ++animationRun;
+      const runButton = form.querySelector('button[type="submit"]');
+      if (result.errors.length) {
+        render(result);
+        return;
+      }
+
+      const r = result.results;
+      errorBox.hidden = true;
+      runButton.disabled = true;
+      runButton.textContent = 'Simulating…';
+      output.innerHTML = `
+        <div class="panel npa-animation-panel">
+          <h3>Network transmission in progress</h3>
+          <p class="hint" id="npa-animation-status" aria-live="polite">Preparing simulated packets…</p>
+          <div class="npa-progress-track" role="progressbar" aria-label="Simulation progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="npa-progress-fill"></span></div>
+          <div class="npa-live-stats">
+            <div><b id="npa-live-packet">0 / ${result.config.packetCount}</b><span>Packets processed</span></div>
+            <div><b id="npa-live-delivered">0</b><span>Delivered</span></div>
+            <div><b id="npa-live-retries">0</b><span>Retransmissions</span></div>
+            <div><b id="npa-live-loss">0</b><span>Lost attempts</span></div>
+          </div>
+          <div class="npa-flow npa-flow-animated" aria-label="Animated simulated packet path">
+            <div class="npa-node" id="npa-sender"><strong>Sender</strong><span>Ready to send</span></div>
+            <div class="npa-link"><span id="npa-link-status">Waiting to transmit</span><div class="npa-track"><i id="npa-packet-dot" class="npa-packet-dot"></i></div><small>Simulated link · loss chance ${fmt(result.config.lossPercent, 1)}%</small></div>
+            <div class="npa-node" id="npa-receiver"><strong>Receiver</strong><span>Waiting for packet</span></div>
+          </div>
+          <p class="hint">This is an accelerated visual playback of the calculated model. No real network traffic is sent.</p>
+        </div>`;
+
+      const status = $('#npa-animation-status');
+      const fill = $('#npa-progress-fill');
+      const progress = $('.npa-progress-track');
+      const packetCount = $('#npa-live-packet');
+      const deliveredCount = $('#npa-live-delivered');
+      const retryCount = $('#npa-live-retries');
+      const lostCount = $('#npa-live-loss');
+      const linkStatus = $('#npa-link-status');
+      const dot = $('#npa-packet-dot');
+      const sender = $('#npa-sender');
+      const receiver = $('#npa-receiver');
+      let shownDelivered = 0, shownRetries = 0, shownLost = 0;
+      const rows = r.packetResults;
+      // Animate at most 40 packets to keep long scenarios responsive, then summarize the rest.
+      const visibleRows = rows.slice(0, 40);
+      for (let index = 0; index < visibleRows.length; index += 1) {
+        if (runId !== animationRun) return;
+        const row = visibleRows[index];
+        const percent = Math.round((index / Math.max(1, rows.length)) * 100);
+        progress.setAttribute('aria-valuenow', String(percent));
+        fill.style.width = percent + '%';
+        packetCount.textContent = row.packet + ' / ' + result.config.packetCount;
+        sender.classList.add('npa-active');
+        receiver.classList.remove('npa-active', 'npa-received', 'npa-dropped');
+        dot.className = 'npa-packet-dot';
+        dot.style.animation = 'none';
+        void dot.offsetWidth;
+        dot.style.animation = '';
+        linkStatus.textContent = 'Sending packet #' + row.packet;
+        status.textContent = 'Transmitting original packet ' + row.packet + ' of ' + result.config.packetCount + '…';
+        await wait(180);
+        if (runId !== animationRun) return;
+
+        if (row.attempts > 1) {
+          shownRetries += row.attempts - 1;
+          shownLost += row.attempts - 1;
+          retryCount.textContent = String(shownRetries);
+          lostCount.textContent = String(shownLost);
+          linkStatus.textContent = 'Packet lost — retransmitting (' + row.attempts + ' attempts)';
+          status.textContent = 'Packet #' + row.packet + ' was lost on an earlier attempt; retrying…';
+          dot.classList.add('npa-packet-lost');
+          await wait(220);
+          if (runId !== animationRun) return;
+          dot.className = 'npa-packet-dot';
+          void dot.offsetWidth;
+        }
+        if (row.status === 'Undelivered' || row.status === 'Stopped by safety limit') {
+          shownLost += 1;
+          lostCount.textContent = String(shownLost);
+          linkStatus.textContent = 'Packet dropped';
+          status.textContent = 'Packet #' + row.packet + ' could not be delivered.';
+          dot.classList.add('npa-packet-lost');
+          receiver.classList.add('npa-dropped');
+        } else {
+          shownDelivered += 1;
+          deliveredCount.textContent = String(shownDelivered);
+          linkStatus.textContent = 'Packet delivered · ACK round trip';
+          status.textContent = 'Packet #' + row.packet + ' reached the receiver.';
+          receiver.classList.add('npa-active', 'npa-received');
+        }
+        packetCount.textContent = row.packet + ' / ' + result.config.packetCount;
+        fill.style.width = Math.round(((index + 1) / Math.max(1, rows.length)) * 100) + '%';
+        progress.setAttribute('aria-valuenow', String(Math.round(((index + 1) / Math.max(1, rows.length)) * 100)));
+        await wait(140);
+        if (runId !== animationRun) return;
+      }
+
+      if (rows.length > visibleRows.length) {
+        status.textContent = 'Finishing calculations for the remaining ' + (rows.length - visibleRows.length) + ' packets…';
+        packetCount.textContent = rows.length + ' / ' + result.config.packetCount;
+        deliveredCount.textContent = String(r.deliveredPackets);
+        retryCount.textContent = String(r.retransmissions);
+        lostCount.textContent = String(r.lostAttempts);
+        fill.style.width = '100%';
+        progress.setAttribute('aria-valuenow', '100');
+        await wait(350);
+      }
+      if (runId !== animationRun) return;
+      render(result);
+      runButton.disabled = false;
+      runButton.textContent = 'Run simulation';
+    }
+
     form.addEventListener('submit', event => {
       event.preventDefault();
-      render(simulatePerformance(readForm()));
+      animateRun(simulatePerformance(readForm()));
     });
     form.addEventListener('input', () => {
       root.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value))));
@@ -137,6 +254,10 @@ regMod({
       render(simulatePerformance(readForm()));
     }));
     $('#npa-reset').addEventListener('click', () => {
+      animationRun += 1;
+      const runButton = form.querySelector('button[type="submit"]');
+      runButton.disabled = false;
+      runButton.textContent = 'Run simulation';
       setValues(defaults);
       $('#npa-retry-field').hidden = false;
       render(simulatePerformance(readForm()));
