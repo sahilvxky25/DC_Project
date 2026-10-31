@@ -136,6 +136,54 @@ regMod({
     // Shuffle question order for a more useful repeatable practice session.
     for (let i=quiz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quiz[i],quiz[j]]=[quiz[j],quiz[i]];}
     const stopPlayback=()=>{if(timer!==null){clearInterval(timer);timer=null;} $('#osi-play',root).textContent='▶ Play';};
+    // A small animated packet journey, layered over the conceptual stack.
+    const motionMarkup = `
+      <div class="osi-packet-journey" aria-label="Animated packet encapsulation journey">
+        <div class="osi-journey-track" aria-hidden="true"><span class="osi-journey-packet">DATA</span></div>
+        <div class="osi-journey-captions"><span>Sender</span><span id="osi-motion-status">Application data is ready</span><span>Receiver</span></div>
+        <div class="osi-journey-actions"><button type="button" class="btn sm" id="osi-motion-run">▶ Animate packet journey</button><span class="hint">Watch headers wrap the payload, then get removed at the receiver.</span></div>
+      </div>`;
+    const stackHeading = enhanced.querySelector('.osi-stage-grid');
+    if(stackHeading) stackHeading.insertAdjacentHTML('beforebegin',motionMarkup);
+    const journeyTrack=$('#osi-visualizer-placeholder',root);
+    const journey=enhanced.querySelector('.osi-journey-track');
+    const journeyPacket=enhanced.querySelector('.osi-journey-packet');
+    const journeyStatus=$('#osi-motion-status',root);
+    let journeyTimers=[];
+    const stopJourney=()=>{
+      journeyTimers.forEach(id=>{clearTimeout(id);clearInterval(id);});
+      journeyTimers=[];
+      if(journey){journey.classList.remove('is-running','is-returning');}
+      if(journeyPacket){journeyPacket.className='osi-journey-packet';journeyPacket.textContent='DATA';}
+      const run=$('#osi-motion-run',root);if(run)run.textContent='▶ Animate packet journey';
+    };
+    const animateJourney=()=>{
+      stopJourney();
+      if(!journey||!journeyPacket||!journeyStatus)return;
+      const run=$('#osi-motion-run',root);run.textContent='↻ Replay journey';
+      journey.classList.add('is-running');
+      const stages=[
+        {at:0,label:'1. Application data starts the journey',packet:'DATA',className:'is-data'},
+        {at:650,label:'2. Transport adds the TCP header',packet:'TCP + DATA',className:'is-tcp'},
+        {at:1300,label:'3. Internet / Network adds the IP header',packet:'IP + TCP + DATA',className:'is-ip'},
+        {at:1950,label:'4. Link layer wraps it in an Ethernet frame',packet:'ETH + IP + TCP + DATA + FCS',className:'is-ethernet'},
+        {at:2600,label:'5. Bits travel across the link',packet:'101101…',className:'is-bits'},
+        {at:3400,label:'6. Receiver checks the frame and removes Ethernet framing',packet:'IP + TCP + DATA',className:'is-ip'},
+        {at:4150,label:'7. IP is processed; TCP segment is passed upward',packet:'TCP + DATA',className:'is-tcp'},
+        {at:4900,label:'8. TCP is processed; application data is delivered',packet:'DATA ✓',className:'is-data'}
+      ];
+      stages.forEach(stage=>{
+        journeyTimers.push(setTimeout(()=>{
+          journeyPacket.className='osi-journey-packet '+stage.className;
+          journeyPacket.textContent=stage.packet;
+          journeyStatus.textContent=stage.label;
+          journey.classList.toggle('is-returning',stage.at>=3400);
+          if(stage.at===4900){journey.classList.remove('is-running');run.textContent='↻ Replay journey';}
+        },stage.at));
+      });
+    };
+    $('#osi-motion-run',root).addEventListener('click',animateJourney);
+
     const renderLayerDetail=()=>{
       const layers=modelLayers[activeModel], layer=layers[Math.min(activeLayer,layers.length-1)];
       $('#osi-layer-detail',root).innerHTML=`<p class="osi-eyebrow">SELECTED LAYER</p><h3>${layer.name}</h3><p>${layer.info}</p><dl class="osi-field-list"><dt>Data unit</dt><dd>${layer.unit}</dd><dt>Header / framing</dt><dd>${layer.header}</dd><dt>Source</dt><dd>${layer.source}</dd><dt>Destination</dt><dd>${layer.destination}</dd><dt>What is preserved?</dt><dd>${layer.preserved}</dd></dl><div class="osi-receiver-note"><strong>At the receiver</strong><p>Each receiving layer processes its own information, then passes the remaining payload upward. The application ultimately receives the original message if the data is accepted by the protocol stack.</p></div>`;
@@ -418,6 +466,6 @@ regMod({
     $('#en', root).oninput = render;
     $('#ew', root).onchange = render;
     render();
-    return () => stopPlayback();
+    return () => { stopPlayback(); stopJourney(); };
   },
 });
