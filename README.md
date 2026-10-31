@@ -6,7 +6,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 
 - **Core end-to-end lab:** follow text through UTF-8 bytes, packetization, transmission over a simulated lossy link, retries, reassembly, and decoding.
 - **Link layer:** framing and stuffing, error detection, Stop-and-Wait, and sliding-window ARQ.
-- **Network layer:** IPv4/subnet practice, IP headers, and routing.
+- **Network layer:** IPv4/subnet practice, IP headers, routing, a visual Network Topology Builder, and a Wi-Fi and Wireless Networking Simulator with SSID/band/channel settings, coverage, simplified interference, obstacles, and Ethernet comparison.
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, and sockets.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
@@ -140,6 +140,10 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 | --- | --- |
 | Change a module's UI or interactions | `js/modules/<area>/<module>.js` |
 | Change protocol/simulation logic | `js/simulations/<topic>.js` |
+| Change Wi-Fi simulator UI | `js/modules/network-layer/wifi-simulator.js` and `css/wifi-simulator.css` |
+| Change Wi-Fi signal/interference model | `js/simulations/wifi-simulation.js` |
+| Change Wi-Fi simulator UI | `js/modules/network-layer/wifi-simulator.js` and `css/wifi-simulator.css` |
+| Change Wi-Fi signal/interference model | `js/simulations/wifi-simulation.js` |
 | Change module groups or ordering | `js/modules/registry.js` and imports in `js/app.js` |
 | Change colours, typography, or theme tokens | `css/tokens.css` |
 | Change shared controls and component styles | `css/components.css` |
@@ -171,12 +175,16 @@ Before publishing a change, test the following in a browser:
 2. Visit every sidebar module and use browser Back/Forward navigation.
 3. In the core lab, try ordinary text, an emoji, packet-size changes, different simulated loss levels, and stopping a transmission mid-run.
 4. Exercise the relevant learning modules, including DNS, HTTP methods, TLS, TCP/UDP, and subnetting.
-5. Switch the theme and reload; confirm it persists.
-6. Collapse and restore the desktop sidebar; check the mobile navigation at a narrow viewport.
-7. Sign in and confirm Firestore progress is loaded before the dashboard opens.
-8. Visit modules and finish a quiz; verify progress syncs to Firestore and restores on another device.
-9. Sign out, sign in as a different user, and confirm the first user's progress is not shown or uploaded to the second account.
-10. Test offline mode; local changes should remain cached and a failed cloud read must not trigger a blind overwrite.
+5. In the Wi-Fi simulator, add/remove access points and clients, edit SSID/band/channel/power, drag devices, add/remove obstacles, and check signal/interference updates. Confirm wired endpoints are labeled separately and saved layouts restore.
+5. In the Wi-Fi simulator, add/remove access points and clients, edit SSID/band/channel/power, drag devices, add/remove obstacles, and check signal/interference updates. Confirm wired endpoints are labeled separately and saved layouts restore.
+6. Switch the theme and reload; confirm it persists.
+7. Collapse and restore the desktop sidebar; check the mobile navigation at a narrow viewport.
+8. Sign in and confirm Firestore progress is loaded before the dashboard opens.
+9. Visit modules and finish a quiz; verify progress syncs to Firestore and restores on another device.
+10. Sign out, sign in as a different user, and confirm the first user's progress is not shown or uploaded to the second account.
+11. Test offline mode; local changes should remain cached and a failed cloud read must not trigger a blind overwrite.
+
+**Wi-Fi model limitation:** the wireless simulator runs entirely in the browser. Signal strength and interference are simplified normalized scores, not dBm measurements, live scans, or predictions of actual throughput. Obstacle penalties and channel overlap are educational approximations; security options are labels only and do not perform Wi-Fi encryption.
 
 ## Contributing
 
