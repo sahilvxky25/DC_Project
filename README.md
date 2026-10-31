@@ -6,7 +6,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 
 - **Core end-to-end lab:** follow text through UTF-8 bytes, packetization, transmission over a simulated lossy link, retries, reassembly, and decoding.
 - **Link layer:** framing and stuffing, error detection, Stop-and-Wait, and sliding-window ARQ.
-- **Network layer:** IPv4/subnet practice, IP headers, and routing.
+- **Network layer:** IPv4/subnet practice, IP headers, routing, and a Firewall & Access Control Lab with ordered rules, simulated packet testing, first-match evaluation, optional IPv4/CIDR filters, and decision traces.
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, and sockets.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
