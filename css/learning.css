@@ -131,3 +131,7 @@
   .port-detail-top { flex-direction: column; }
   .port-table th, .port-table td { padding: .6rem .45rem; }
 }
+
+.port-browse-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin: .75rem 0; }
+.port-browse-controls .hint { margin: 0; }
+.port-browse-controls button:disabled { opacity: .45; cursor: not-allowed; }
