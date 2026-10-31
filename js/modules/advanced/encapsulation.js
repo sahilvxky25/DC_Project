@@ -61,7 +61,7 @@ regMod({
       )}</div></div>`,
         'A flip on the wire is caught by the Ethernet FCS. A flip inside a router happens after the FCS was checked, so only the IP or TCP checksum can notice it.'
       ) +
-      `<div class="panel"><div class="controls"><div class="btnrow"><button class="btn ghost sm" id="eprev">← Back</button><button class="btn" id="enext">Next step →</button><button class="btn ghost sm" id="ereset">Reset</button></div><span class="hint" id="ecnt"></span></div><div id="estack"></div></div><div id="edump"></div>`;
+      `<div class="panel"><div class="controls"><div class="btnrow"><button class="btn ghost sm" id="eprev">← Back</button><button class="btn" id="enext">Next step →</button><button class="btn ghost sm" id="ereset">Reset</button></div><span class="hint" id="ecnt"></span></div><div id="estack"></div></div><div id="edump"></div><div id="encap-enhanced"></div>`;
     const STEPS = [
       'Application data',
       'Add the TCP header',
@@ -73,6 +73,137 @@ regMod({
       'Receiver checks the TCP segment',
       'Data delivered to the application',
     ];
+
+    // Enhanced OSI / TCP-IP learning view. This intentionally reuses the existing
+    // byte-accurate buildStack simulation and leaves the original integrity lab intact.
+    const enhanced = $('#encap-enhanced', root);
+    enhanced.innerHTML = `
+      <section class="panel osi-visualizer" aria-labelledby="osi-title">
+        <div class="osi-heading">
+          <div><p class="osi-eyebrow">INTERACTIVE LEARNING</p><h2 id="osi-title">OSI &amp; TCP/IP Encapsulation Visualizer</h2>
+          <p class="muted">Follow the same message as each networking layer adds information.</p></div>
+          <div class="osi-model-switch" role="group" aria-label="Networking model">
+            <button type="button" class="btn sm" data-model="osi" aria-pressed="true">OSI Model</button>
+            <button type="button" class="btn ghost sm" data-model="tcpip" aria-pressed="false">TCP/IP Model</button>
+            <button type="button" class="btn ghost sm" id="osi-compare" aria-expanded="false">Compare Models</button>
+          </div>
+        </div>
+        <div id="osi-compare-panel" class="osi-compare-panel" hidden>
+          <div><h3>OSI model (7 layers)</h3><ol><li>Application</li><li>Presentation</li><li>Session</li><li>Transport</li><li>Network</li><li>Data Link</li><li>Physical</li></ol></div>
+          <div><h3>TCP/IP model (4 layers)</h3><ol><li>Application</li><li>Transport</li><li>Internet</li><li>Network Access</li></ol></div>
+          <p class="osi-compare-note">OSI Presentation and Session responsibilities are generally handled by application protocols and libraries in TCP/IP. Network Access combines link-layer and physical-layer responsibilities in this four-layer convention.</p>
+        </div>
+        <div class="osi-message"><label for="osi-message">Message being sent</label><code id="osi-message-preview">Hello</code><span id="osi-progress" class="hint">Layer 1 of 7</span></div>
+        <div class="osi-controls">
+          <div class="btnrow"><button type="button" class="btn ghost sm" id="osi-prev">← Previous</button><button type="button" class="btn sm" id="osi-next">Next layer →</button><button type="button" class="btn ghost sm" id="osi-play">▶ Play</button><button type="button" class="btn ghost sm" id="osi-reset">Reset</button></div>
+          <label class="osi-speed">Speed <select id="osi-speed"><option value="1500">Slow</option><option value="900" selected>Normal</option><option value="400">Fast</option></select></label>
+        </div>
+        <div class="osi-stage-grid">
+          <div><h3>Layer stack <span class="hint">Select any layer</span></h3><div id="osi-layer-stack" class="osi-layer-stack"></div></div>
+          <div class="osi-detail" id="osi-layer-detail" aria-live="polite"></div>
+        </div>
+        <div class="osi-practice">
+          <div><p class="osi-eyebrow">QUICK CHECK</p><h3 id="osi-question">Which layer adds the TCP header?</h3></div>
+          <div id="osi-answers" class="osi-answers"></div><p id="osi-feedback" class="osi-feedback" aria-live="polite">Choose an answer to check your understanding.</p>
+          <div class="btnrow"><button type="button" class="btn ghost sm" id="osi-next-question">Next question</button><span id="osi-score" class="hint">Score: 0 / 0</span></div>
+        </div>
+      </section>`;
+    const modelLayers = {
+      osi: [
+        {name:'Application', unit:'Application data', header:'Application protocol information', color:'c0', info:'Applications create the message. HTTP and DNS are examples of application-layer protocols; this layer does not add a universal OSI header.',source:'Application process',destination:'Remote application',preserved:'The original message is the payload passed to lower layers.'},
+        {name:'Presentation', unit:'Application data', header:'No separate universal header', color:'c0', info:'Presentation responsibilities include data representation, encoding, compression and encryption. In TCP/IP these are commonly handled by application protocols or libraries such as TLS.',source:'Data representation',destination:'Compatible representation',preserved:'The message content remains the information to be delivered, though its representation may be transformed.'},
+        {name:'Session', unit:'Application data', header:'No separate universal header', color:'c0', info:'Session responsibilities include establishing, managing and ending conversations. They do not require a separate header in every TCP/IP packet.',source:'Session / dialog context',destination:'Peer session',preserved:'The application data and its conversation context are carried forward.'},
+        {name:'Transport', unit:'TCP segment', header:'TCP header (20 bytes in this example)', color:'c2', info:'TCP identifies application endpoints with ports and carries sequence, acknowledgment, control, window and checksum fields.',source:'TCP source port 49732',destination:'TCP destination port 80',preserved:'The application bytes remain the TCP payload. TCP adds its header around them.'},
+        {name:'Network', unit:'IPv4 packet', header:'IPv4 header (20 bytes in this example)', color:'c1', info:'IP provides logical addressing and routing across networks. Routers inspect IP information to forward packets.',source:'10.0.0.2',destination:'93.184.216.34',preserved:'The complete TCP segment becomes the IP payload.'},
+        {name:'Data Link', unit:'Ethernet frame', header:'Ethernet header (14 bytes) + FCS trailer (4 bytes)', color:'c3', info:'Ethernet frames carry MAC addresses for the local link, an EtherType and an FCS for error detection.',source:'MAC 3c:22:fb:1a:2b:3c',destination:'MAC 00:1b:44:11:3a:b7 (gateway)',preserved:'The IP packet becomes the Ethernet payload; padding may be added for the minimum frame size.'},
+        {name:'Physical', unit:'Bits / signals', header:'No additional network-layer header', color:'c4', info:'The physical layer sends the frame as bits represented by electrical, optical or radio signals. It does not add another packet header.',source:'Local physical interface',destination:'Next-hop physical interface',preserved:'The encoded frame is transmitted over the medium as a sequence of signals.'}
+      ],
+      tcpip: [
+        {name:'Application', unit:'Application data', header:'Application-protocol information (if applicable)', color:'c0', info:'The TCP/IP application layer groups the application, presentation and session responsibilities commonly described by OSI.',source:'Application process',destination:'Remote application',preserved:'The message is passed to the transport layer.'},
+        {name:'Transport', unit:'TCP segment', header:'TCP header (20 bytes in this example)', color:'c2', info:'TCP provides process-to-process delivery using ports, sequence and acknowledgment numbers, flags, a window and a checksum.',source:'TCP source port 49732',destination:'TCP destination port 80',preserved:'Application bytes remain the TCP payload.'},
+        {name:'Internet', unit:'IPv4 packet', header:'IPv4 header (20 bytes in this example)', color:'c1', info:'The Internet layer adds logical source and destination IP addresses and supports routing between networks.',source:'10.0.0.2',destination:'93.184.216.34',preserved:'The complete TCP segment becomes the IP payload.'},
+        {name:'Network Access', unit:'Ethernet frame → bits', header:'Ethernet header (14 bytes) + FCS trailer (4 bytes)', color:'c3', info:'In the four-layer TCP/IP convention, Network Access groups link framing and physical transmission. Ethernet provides framing; the physical medium carries the encoded bits.',source:'Client MAC address',destination:'Next-hop gateway MAC address',preserved:'The IP packet is framed for the local link, then transmitted as bits.'}
+      ]
+    };
+    const quiz = [
+      {q:'Which layer adds the TCP header?',a:['Application','Transport','Network','Physical'],correct:1,why:'TCP operates at the transport layer and adds ports, sequence information, flags and other TCP fields.'},
+      {q:'Which layer handles logical addressing with IPv4 or IPv6?',a:['Application','Transport','Network / Internet','Data Link'],correct:2,why:'The OSI Network layer and TCP/IP Internet layer handle IP addressing and routing.'},
+      {q:'Which OSI layer is responsible for Ethernet framing?',a:['Application','Transport','Network','Data Link'],correct:3,why:'Ethernet framing belongs to the Data Link layer; the frame carries MAC addresses and an FCS trailer.'},
+      {q:'What is the TCP segment carried inside?',a:['An IP packet','A DNS record','A physical signal directly','An Ethernet FCS'],correct:0,why:'The IP packet encapsulates the TCP segment. The Ethernet frame then encapsulates the IP packet.'},
+      {q:'What happens first during receiver decapsulation?',a:['TCP header is removed','Application receives data','Ethernet frame is checked and processed','IP address is removed'],correct:2,why:'The receiving link layer processes the Ethernet frame first, including FCS verification where supported.'}
+    ];
+    let activeModel='osi', activeLayer=0, quizIndex=0, score=0, answered=0, timer=null;
+    // Shuffle question order for a more useful repeatable practice session.
+    for (let i=quiz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quiz[i],quiz[j]]=[quiz[j],quiz[i]];}
+    const stopPlayback=()=>{if(timer!==null){clearInterval(timer);timer=null;} $('#osi-play',root).textContent='▶ Play';};
+    const renderLayerDetail=()=>{
+      const layers=modelLayers[activeModel], layer=layers[Math.min(activeLayer,layers.length-1)];
+      $('#osi-layer-detail',root).innerHTML=`<p class="osi-eyebrow">SELECTED LAYER</p><h3>${layer.name}</h3><p>${layer.info}</p><dl class="osi-field-list"><dt>Data unit</dt><dd>${layer.unit}</dd><dt>Header / framing</dt><dd>${layer.header}</dd><dt>Source</dt><dd>${layer.source}</dd><dt>Destination</dt><dd>${layer.destination}</dd><dt>What is preserved?</dt><dd>${layer.preserved}</dd></dl><div class="osi-receiver-note"><strong>At the receiver</strong><p>Each receiving layer processes its own information, then passes the remaining payload upward. The application ultimately receives the original message if the data is accepted by the protocol stack.</p></div>`;
+    };
+    const renderLayers=()=>{
+      const stack=$('#osi-layer-stack',root);
+      const focusedButton=stack.contains(document.activeElement) ? document.activeElement.getAttribute('data-layer-index') : null;
+      const layers=modelLayers[activeModel];
+      activeLayer=Math.max(0,Math.min(activeLayer,layers.length-1));
+      stack.innerHTML=layers.map((layer,i)=>`<button type="button" class="osi-layer ${layer.color} ${i===activeLayer?'is-selected':''} ${i<=activeLayer?'is-reached':''}" data-layer-index="${i}" aria-pressed="${i===activeLayer}"><span class="osi-layer-number">${activeModel==='osi'?7-i:i+1}</span><span><strong>${layer.name}</strong><small>${layer.unit}</small></span><span class="osi-layer-state">${i<activeLayer?'✓':i===activeLayer?'●':'○'}</span></button>`).join('');
+      $('#osi-progress',root).textContent=`Step ${activeLayer+1} of ${layers.length}: ${layers[activeLayer].name}`;
+      $('#osi-prev',root).disabled=activeLayer===0;
+      $('#osi-next',root).disabled=activeLayer===layers.length-1;
+      renderLayerDetail();
+      if(focusedButton!==null){const focusTarget=stack.querySelector(`[data-layer-index="${focusedButton}"]`);if(focusTarget)focusTarget.focus({preventScroll:true});}
+    };
+    const renderQuestion=()=>{
+      const q=quiz[quizIndex];
+      $('#osi-question',root).textContent=q.q;
+      $('#osi-answers',root).innerHTML=q.a.map((answer,i)=>`<button type="button" class="btn ghost sm" data-answer-index="${i}">${answer}</button>`).join('');
+      $('#osi-feedback',root).textContent='Choose an answer to check your understanding.';
+      $('#osi-feedback',root).className='osi-feedback';
+      $('#osi-score',root).textContent=`Score: ${score} / ${answered}`;
+    };
+    $('#osi-message-preview',root).textContent=$('#en',root).value||' ';
+    const updatePreview=()=>{$('#osi-message-preview',root).textContent=$('#en',root).value||'(empty message)';};
+    root.querySelectorAll('[data-model]').forEach(button=>button.addEventListener('click',()=>{
+      stopPlayback(); activeModel=button.dataset.model; activeLayer=Math.min(activeLayer,modelLayers[activeModel].length-1);
+      root.querySelectorAll('[data-model]').forEach(b=>{const on=b.dataset.model===activeModel;b.classList.toggle('ghost',!on);b.setAttribute('aria-pressed',String(on));});
+      renderLayers();
+    }));
+    $('#osi-compare',root).addEventListener('click',()=>{
+      const panel=$('#osi-compare-panel',root), opening=panel.hidden; panel.hidden=!opening;
+      $('#osi-compare',root).setAttribute('aria-expanded',String(opening));
+    });
+    $('#osi-layer-stack',root).addEventListener('click',e=>{
+      const button=e.target.closest('[data-layer-index]'); if(!button)return;
+      stopPlayback(); activeLayer=Number(button.dataset.layerIndex); renderLayers();
+    });
+    $('#osi-prev',root).addEventListener('click',()=>{stopPlayback();activeLayer=Math.max(0,activeLayer-1);renderLayers();});
+    $('#osi-next',root).addEventListener('click',()=>{activeLayer=Math.min(modelLayers[activeModel].length-1,activeLayer+1);renderLayers();});
+    $('#osi-reset',root).addEventListener('click',()=>{stopPlayback();activeLayer=0;renderLayers();});
+    $('#osi-play',root).addEventListener('click',()=>{
+      if(timer!==null){stopPlayback();return;}
+      if(activeLayer>=modelLayers[activeModel].length-1)activeLayer=0;
+      $('#osi-play',root).textContent='Ⅱ Pause';
+      timer=setInterval(()=>{
+        if(activeLayer>=modelLayers[activeModel].length-1){stopPlayback();return;}
+        activeLayer++;renderLayers();
+      },Number($('#osi-speed',root).value));
+      renderLayers();
+    });
+    $('#osi-speed',root).addEventListener('change',()=>{
+      if(timer!==null){stopPlayback();$('#osi-play',root).click();}
+    });
+    $('#en',root).addEventListener('input',updatePreview);
+    $('#osi-answers',root).addEventListener('click',e=>{
+      const button=e.target.closest('[data-answer-index]');if(!button||button.disabled)return;
+      const q=quiz[quizIndex],correct=Number(button.dataset.answerIndex)===q.correct;
+      answered++;if(correct)score++;
+      $('#osi-answers',root).querySelectorAll('button').forEach((b,i)=>{b.disabled=true;if(i===q.correct)b.classList.add('osi-answer-correct');else if(i===Number(button.dataset.answerIndex))b.classList.add('osi-answer-wrong');});
+      $('#osi-feedback',root).textContent=(correct?'Correct! ':'Not quite. ')+q.why;
+      $('#osi-feedback',root).className='osi-feedback '+(correct?'is-correct':'is-wrong');
+      $('#osi-score',root).textContent=`Score: ${score} / ${answered}`;
+    });
+    $('#osi-next-question',root).addEventListener('click',()=>{quizIndex=(quizIndex+1)%quiz.length;renderQuestion();});
+    renderLayers();renderQuestion();
+
     const render = () => {
       const text = $('#en', root).value || ' ',
         st = buildStack(text),
@@ -287,5 +418,6 @@ regMod({
     $('#en', root).oninput = render;
     $('#ew', root).onchange = render;
     render();
+    return () => stopPlayback();
   },
 });
