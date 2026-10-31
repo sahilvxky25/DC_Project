@@ -622,12 +622,12 @@ regMod({
                   <button class="chipbtn on" type="button" data-category="ALL">All ranges</button>
                   <button class="chipbtn" type="button" data-category="well-known">Well-known (0–1023)</button>
                   <button class="chipbtn" type="button" data-category="registered">Registered (1024–49151)</button>
-                  <button class="chipbtn" type="button" data-category="dynamic">Dynamic/private (49152–65535)</button>
+                  
                 </div>
                 <p class="hint" id="portCount" aria-live="polite"></p>
                 <div class="port-table-wrap" id="portTable"></div>
                 <div id="portDetail" aria-live="polite"></div>
-                <p class="hint">Port associations are conventional, not proof that a service is running or secure. Services can be configured to use other ports.</p>
+                <p class="hint">Port associations are conventional, not proof that a service is running or secure. Services can be configured to use other ports. Dynamic/private ports are 49152–65535 and are commonly used for temporary connections; this starter list focuses on common service ports.</p>
               </div>
               <div class="panel">
                 <h3>Test your knowledge</h3>
@@ -642,8 +642,7 @@ regMod({
               const q = $('#portSearch', p).value.trim().toLowerCase();
               const list = PORTS.filter(item => {
                 const haystack = [item.port, item.service, item.description, item.example, item.transports.join(' ')].join(' ').toLowerCase();
-                const categoryMatch = activeCategory === 'ALL' ||
-                  (activeCategory === 'dynamic' ? item.port >= 49152 : item.category === activeCategory);
+                const categoryMatch = activeCategory === 'ALL' || item.category === activeCategory;
                 return (!q || haystack.includes(q)) &&
                   (activeTransport === 'ALL' || item.transports.includes(activeTransport)) &&
                   categoryMatch;
