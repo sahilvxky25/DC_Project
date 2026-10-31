@@ -132,7 +132,7 @@ regMod({
       {q:'What is the TCP segment carried inside?',a:['An IP packet','A DNS record','A physical signal directly','An Ethernet FCS'],correct:0,why:'The IP packet encapsulates the TCP segment. The Ethernet frame then encapsulates the IP packet.'},
       {q:'What happens first during receiver decapsulation?',a:['TCP header is removed','Application receives data','Ethernet frame is checked and processed','IP address is removed'],correct:2,why:'The receiving link layer processes the Ethernet frame first, including FCS verification where supported.'}
     ];
-    let activeModel='osi', activeLayer=0, quizIndex=0, score=0, answered=0, timer=null;
+    let activeModel='osi', activeLayer=0, quizIndex=0, score=0, answered=0, timer=null;\n    // Shuffle question order for a more useful repeatable practice session.\n    for (let i=quiz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quiz[i],quiz[j]]=[quiz[j],quiz[i]];}
     const stopPlayback=()=>{if(timer!==null){clearInterval(timer);timer=null;} $('#osi-play',root).textContent='▶ Play';};
     const renderLayerDetail=()=>{
       const layers=modelLayers[activeModel], layer=layers[Math.min(activeLayer,layers.length-1)];
@@ -142,7 +142,7 @@ regMod({
       const layers=modelLayers[activeModel];
       activeLayer=Math.max(0,Math.min(activeLayer,layers.length-1));
       $('#osi-layer-stack',root).innerHTML=layers.map((layer,i)=>`<button type="button" class="osi-layer ${layer.color} ${i===activeLayer?'is-selected':''} ${i<=activeLayer?'is-reached':''}" data-layer-index="${i}" aria-pressed="${i===activeLayer}"><span class="osi-layer-number">${activeModel==='osi'?7-i:i+1}</span><span><strong>${layer.name}</strong><small>${layer.unit}</small></span><span class="osi-layer-state">${i<activeLayer?'✓':i===activeLayer?'●':'○'}</span></button>`).join('');
-      $('#osi-progress',root).textContent=`Layer ${activeLayer+1} of ${layers.length}: ${layers[activeLayer].name}`;
+      $('#osi-progress',root).textContent=`Step ${activeLayer+1} of ${layers.length}: ${layers[activeLayer].name}`;
       $('#osi-prev',root).disabled=activeLayer===0;
       $('#osi-next',root).disabled=activeLayer===layers.length-1;
       renderLayerDetail();
