@@ -1,0 +1,201 @@
+.npa-wrap {
+  display: grid;
+  gap: 1rem;
+}
+.npa-disclaimer {
+  margin: 0;
+}
+.npa-controls {
+  align-items: start;
+}
+.npa-controls .field {
+  flex: 1 1 190px;
+  min-width: min(100%, 170px);
+}
+.npa-controls small,
+.npa-stats .stat small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.4;
+  margin-top: 0.35rem;
+}
+.npa-errors {
+  border: 1px solid var(--bad);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  margin: 0.8rem 0;
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+}
+.npa-errors ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.3rem;
+}
+.npa-stats .stat b {
+  font-size: clamp(1rem, 2vw, 1.35rem);
+  overflow-wrap: anywhere;
+}
+.npa-stats .stat span {
+  display: block;
+  font-weight: 700;
+  margin-top: 0.25rem;
+}
+.npa-stats .stat small {
+  min-height: 2.2em;
+}
+.npa-flow {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) minmax(130px, 1.4fr) minmax(100px, 1fr);
+  align-items: center;
+  gap: 0.7rem;
+  margin: 1.1rem 0;
+}
+.npa-node {
+  display: grid;
+  gap: 0.25rem;
+  text-align: center;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.8rem 0.5rem;
+  background: var(--accent-soft);
+}
+.npa-node span,
+.npa-link small {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.npa-link {
+  display: grid;
+  gap: 0.25rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.npa-link i {
+  color: var(--accent);
+  font-size: 1.7rem;
+  font-style: normal;
+  border-top: 2px dashed var(--line2);
+  line-height: 1;
+  padding-top: 0.25rem;
+}
+.npa-good {
+  color: var(--ok);
+  font-weight: 700;
+}
+.npa-bad {
+  color: var(--bad);
+  font-weight: 700;
+}
+@media (max-width: 560px) {
+  .npa-flow {
+    grid-template-columns: 1fr;
+  }
+  .npa-link i {
+    transform: rotate(90deg);
+    border-top: 0;
+  }
+  .npa-stats .stat small {
+    min-height: 0;
+  }
+}
+
+.npa-animation-panel {
+  overflow: hidden;
+}
+.npa-progress-track {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--line2);
+  margin: 0.8rem 0 1.1rem;
+}
+#npa-progress-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 180ms ease;
+}
+.npa-live-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0;
+}
+.npa-live-stats > div {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line2);
+  border-radius: 10px;
+  min-width: 0;
+}
+.npa-live-stats b {
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+.npa-live-stats span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+.npa-flow-animated .npa-link {
+  min-width: 0;
+}
+.npa-track {
+  height: 3px;
+  width: 100%;
+  position: relative;
+  background: var(--line2);
+  margin: 0.8rem 0;
+}
+.npa-packet-dot {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+  transform: translate(-50%, -50%);
+  animation: npa-packet-travel 650ms ease-in-out forwards;
+}
+.npa-packet-lost {
+  background: var(--bad);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--bad) 18%, transparent);
+  animation: npa-packet-drop 500ms ease-in forwards !important;
+}
+.npa-active {
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.npa-received {
+  border-color: var(--ok);
+}
+.npa-dropped {
+  border-color: var(--bad);
+}
+@keyframes npa-packet-travel {
+  from { left: 0; }
+  to { left: 100%; }
+}
+@keyframes npa-packet-drop {
+  0% { left: 50%; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { left: 100%; opacity: 0.15; transform: translate(-50%, -50%) scale(0.55); }
+}
+@media (max-width: 560px) {
+  .npa-live-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .npa-packet-dot,
+  .npa-packet-lost {
+    animation-duration: 1ms !important;
+  }
+  #npa-progress-fill {
+    transition: none;
+  }
+}
