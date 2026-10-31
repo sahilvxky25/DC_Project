@@ -651,7 +651,7 @@ regMod({
               const params = new URLSearchParams({ count: '100' });
               let url;
               let description;
-              if (/^\\d{1,5}$/.test(q) && Number(q) <= 65535) {
+              if (/^\d{1,5}$/.test(q) && Number(q) <= 65535) {
                 url = 'https://randomapi.dev/api/ports/lookup?' + new URLSearchParams({ port: String(Number(q)) });
                 description = 'exact port ' + Number(q);
               } else {
