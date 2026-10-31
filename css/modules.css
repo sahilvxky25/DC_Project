@@ -666,3 +666,25 @@ td.info {
 @media(prefers-reduced-motion:reduce){.osi-layer{transition:none}.osi-layer:hover{transform:none}}
 
 .osi-compare-panel[hidden]{display:none}
+
+/* Animated encapsulation journey */
+.osi-packet-journey{border:1px solid var(--line);border-radius:.85rem;padding:1rem;overflow:hidden;background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(20,184,166,.06))}
+.osi-journey-track{height:7rem;position:relative;display:flex;align-items:center;border-radius:.7rem;background:linear-gradient(90deg,rgba(99,102,241,.12),rgba(20,184,166,.12));border:1px dashed var(--line);overflow:hidden}
+.osi-journey-track:before,.osi-journey-track:after{content:"";position:absolute;top:0;bottom:0;width:1px;border-left:1px dashed var(--line)}
+.osi-journey-track:before{left:1rem}.osi-journey-track:after{right:1rem}
+.osi-journey-packet{position:absolute;left:1.1rem;max-width:calc(100% - 2.2rem);padding:.7rem .9rem;border-radius:.7rem;border:1px solid var(--c2);background:var(--panel, #111827);color:var(--text, #f9fafb);font-weight:800;font-size:.8rem;overflow-wrap:anywhere;box-shadow:0 5px 18px rgba(0,0,0,.16);z-index:1}
+.osi-journey-track.is-running .osi-journey-packet{animation:osi-packet-travel 1.2s ease-in-out infinite alternate}
+.osi-journey-track.is-returning .osi-journey-packet{animation-name:osi-packet-return}
+.osi-journey-packet.is-data{border-color:var(--c0)}
+.osi-journey-packet.is-tcp{border-color:var(--c2);box-shadow:0 0 0 4px rgba(99,102,241,.12),0 5px 18px rgba(0,0,0,.16)}
+.osi-journey-packet.is-ip{border-color:var(--c1);box-shadow:0 0 0 7px rgba(20,184,166,.12),0 5px 18px rgba(0,0,0,.16)}
+.osi-journey-packet.is-ethernet{border-color:var(--c3);box-shadow:0 0 0 4px rgba(245,158,11,.16),0 0 0 9px rgba(245,158,11,.07)}
+.osi-journey-packet.is-bits{border-radius:2rem;letter-spacing:.1em;border-color:var(--c4)}
+.osi-journey-captions{display:flex;justify-content:space-between;gap:.5rem;margin:.55rem 0;color:var(--muted,#9ca3af);font-size:.76rem}
+.osi-journey-captions span:nth-child(2){text-align:center;color:var(--text,#f9fafb);font-weight:650;flex:1}
+.osi-journey-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.7rem;margin-top:.65rem}
+.osi-journey-actions .hint{line-height:1.45}
+@keyframes osi-packet-travel{from{left:1.1rem;transform:scale(.97)}to{left:calc(100% - 10.5rem);transform:scale(1.03)}}
+@keyframes osi-packet-return{from{left:calc(100% - 10.5rem);transform:scale(1.03)}to{left:1.1rem;transform:scale(.97)}}
+@media(max-width:480px){.osi-journey-track{height:6.2rem}.osi-journey-packet{font-size:.7rem;padding:.55rem .65rem}.osi-journey-captions{font-size:.68rem}}
+@media(prefers-reduced-motion:reduce){.osi-journey-track.is-running .osi-journey-packet,.osi-journey-track.is-returning .osi-journey-packet{animation:none}}
