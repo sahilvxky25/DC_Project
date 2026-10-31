@@ -109,3 +109,29 @@
   font-weight: 700;
   color: var(--accent);
 }
+
+
+/* Port number reference */
+.port-reference h3 { margin-bottom: .35rem; }
+.port-ref-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: start; }
+.port-table-wrap { overflow-x: auto; margin: .75rem 0; }
+.port-table { width: 100%; border-collapse: collapse; min-width: 520px; }
+.port-table th, .port-table td { text-align: left; padding: .7rem .65rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.port-table th { color: var(--muted); font-size: .8rem; font-weight: 700; }
+.port-table tr:hover td { background: var(--bg2); }
+.port-number { border: 0; background: transparent; color: var(--accent); font: 700 1rem var(--mono); cursor: pointer; padding: .2rem .3rem; border-radius: 6px; }
+.port-number:hover, .port-number:focus-visible { background: var(--accent-soft); outline: 2px solid var(--accent); }
+.port-detail-card { margin: 1rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 12px; background: var(--bg2); }
+.port-detail-top { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
+.port-detail-top h3 { margin-top: .45rem; }
+.port-detail-card p { line-height: 1.55; }
+.port-quiz h4 { margin: .5rem 0; }
+.port-copy-fallback { position: fixed; opacity: 0; pointer-events: none; }
+@media (max-width: 600px) {
+  .port-detail-top { flex-direction: column; }
+  .port-table th, .port-table td { padding: .6rem .45rem; }
+}
+
+.port-browse-controls { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem; margin: .75rem 0; }
+.port-browse-controls .hint { margin: 0; }
+.port-browse-controls button:disabled { opacity: .45; cursor: not-allowed; }

@@ -13,6 +13,7 @@ const SEARCH_TERMS = {
   http: ['http put', 'put method', 'http methods', 'request body', 'headers', 'update resource', 'https', 'tls'],
   capture: ['packet capture', 'packets', 'capture analyzer', 'protocol inspection', 'wireshark'],
   tcpudp: ['tcp', 'udp', 'ports', 'transport protocol'],
+  glossary: ['port number reference', 'port lookup', 'well-known ports', 'registered ports', 'service port', 'tcp port', 'udp port', 'common ports'],
   protocolcompare: ['protocol comparison', 'tcp vs udp', 'ipv4 vs ipv6', 'http vs https', 'dns over tcp', 'static routing', 'dynamic routing', 'hub switch router', 'stop-and-wait', 'sliding window arq'],
 };
 

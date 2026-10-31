@@ -400,19 +400,37 @@ const GLOSS = [
  * Well-known ports: [port, transport, service].
  */
 const PORTS = [
-  [20, 'TCP', 'FTP data'],
-  [21, 'TCP', 'FTP control'],
-  [22, 'TCP', 'SSH'],
-  [25, 'TCP', 'SMTP (mail submission)'],
-  [53, 'UDP/TCP', 'DNS'],
-  [67, 'UDP', 'DHCP server'],
-  [80, 'TCP', 'HTTP'],
-  [110, 'TCP', 'POP3'],
-  [123, 'UDP', 'NTP (time)'],
-  [143, 'TCP', 'IMAP'],
-  [443, 'TCP/UDP', 'HTTPS and HTTP/3'],
-  [993, 'TCP', 'IMAP over TLS'],
-  [3389, 'TCP', 'Remote Desktop'],
+  { port: 20, service: 'FTP Data', transports: ['TCP'], category: 'well-known', description: 'Traditional FTP data transfer channel in active-mode FTP.', example: 'An FTP client transfers file data using active mode.' },
+  { port: 21, service: 'FTP Control', transports: ['TCP'], category: 'well-known', description: 'FTP commands and session control.', example: 'An FTP client sends commands to a server.' },
+  { port: 22, service: 'SSH / SFTP', transports: ['TCP'], category: 'well-known', description: 'Secure remote login and administration. SFTP is a file-transfer protocol carried over SSH.', example: 'An administrator connects to a remote Linux host.' },
+  { port: 23, service: 'Telnet', transports: ['TCP'], category: 'well-known', description: 'Legacy remote terminal access; it does not protect credentials with encryption.', example: 'A legacy device accepts a Telnet session.' },
+  { port: 25, service: 'SMTP', transports: ['TCP'], category: 'well-known', description: 'Commonly used for mail transfer between mail servers.', example: 'A mail server forwards a message to another mail server.' },
+  { port: 53, service: 'DNS', transports: ['UDP', 'TCP'], category: 'well-known', description: 'Domain Name System queries and responses; both transports are used depending on the exchange.', example: 'A resolver looks up the address for a domain name.' },
+  { port: 67, service: 'DHCP Server', transports: ['UDP'], category: 'well-known', description: 'Server-side port used by DHCP for IPv4 configuration.', example: 'A DHCP server offers an address to a client.' },
+  { port: 68, service: 'DHCP Client', transports: ['UDP'], category: 'well-known', description: 'Client-side port used by DHCP for IPv4 configuration.', example: 'A device requests network configuration when joining a LAN.' },
+  { port: 69, service: 'TFTP', transports: ['UDP'], category: 'well-known', description: 'Trivial File Transfer Protocol, often used in simple or managed-device transfers.', example: 'A device retrieves a configuration or boot file.' },
+  { port: 80, service: 'HTTP', transports: ['TCP'], category: 'well-known', description: 'Traditional HTTP web traffic over TCP.', example: 'A browser requests a page over an HTTP connection.' },
+  { port: 110, service: 'POP3', transports: ['TCP'], category: 'well-known', description: 'Email retrieval protocol.', example: 'A mail client retrieves messages from a POP3 server.' },
+  { port: 123, service: 'NTP', transports: ['UDP'], category: 'well-known', description: 'Network time synchronization.', example: 'A device synchronizes its clock with a time server.' },
+  { port: 143, service: 'IMAP', transports: ['TCP'], category: 'well-known', description: 'Email access and mailbox synchronization.', example: 'A mail client lists messages stored on a server.' },
+  { port: 161, service: 'SNMP', transports: ['UDP'], category: 'well-known', description: 'Commonly used for network monitoring and management queries.', example: 'A monitoring system reads interface counters from a managed device.' },
+  { port: 389, service: 'LDAP', transports: ['TCP', 'UDP'], category: 'well-known', description: 'Directory access protocol; transport use depends on the operation and implementation.', example: 'An application queries a directory service.' },
+  { port: 443, service: 'HTTPS / HTTP/3', transports: ['TCP', 'UDP'], category: 'well-known', description: 'HTTPS commonly uses TCP with TLS; HTTP/3 uses QUIC over UDP, commonly on port 443.', example: 'A browser opens a secure website.' },
+  { port: 445, service: 'SMB', transports: ['TCP'], category: 'well-known', description: 'Server Message Block file and printer sharing, commonly in Windows networks.', example: 'A workstation accesses a shared folder.' },
+  { port: 465, service: 'SMTPS', transports: ['TCP'], category: 'well-known', description: 'Email submission using implicit TLS in common deployments.', example: 'A mail client submits email over an encrypted connection.' },
+  { port: 587, service: 'SMTP Submission', transports: ['TCP'], category: 'well-known', description: 'Mail submission from clients to mail servers, commonly with STARTTLS where supported.', example: 'A mail client submits an outgoing message.' },
+  { port: 993, service: 'IMAPS', transports: ['TCP'], category: 'well-known', description: 'IMAP over TLS.', example: 'A mail client synchronizes a mailbox over an encrypted connection.' },
+  { port: 995, service: 'POP3S', transports: ['TCP'], category: 'well-known', description: 'POP3 over TLS.', example: 'A mail client retrieves email over an encrypted connection.' },
+  { port: 1433, service: 'Microsoft SQL Server', transports: ['TCP'], category: 'registered', description: 'Common default port for Microsoft SQL Server database connections.', example: 'An application connects to a SQL Server database.' },
+  { port: 1521, service: 'Oracle Database', transports: ['TCP'], category: 'registered', description: 'Commonly associated with Oracle Database listener connections.', example: 'A client connects to an Oracle database listener.' },
+  { port: 2049, service: 'NFS', transports: ['TCP', 'UDP'], category: 'registered', description: 'Network File System; transport support depends on version and configuration.', example: 'A host accesses a remote network file system.' },
+  { port: 3306, service: 'MySQL', transports: ['TCP'], category: 'registered', description: 'Common default port for MySQL database connections.', example: 'A web application queries a MySQL database.' },
+  { port: 3389, service: 'RDP', transports: ['TCP', 'UDP'], category: 'registered', description: 'Remote Desktop Protocol, which can use TCP and UDP transports.', example: 'A user connects to a Windows desktop remotely.' },
+  { port: 5432, service: 'PostgreSQL', transports: ['TCP'], category: 'registered', description: 'Common default port for PostgreSQL database connections.', example: 'An application connects to a PostgreSQL database.' },
+  { port: 5900, service: 'VNC', transports: ['TCP'], category: 'registered', description: 'Commonly used by Virtual Network Computing remote desktop services.', example: 'A support technician views a remote desktop.' },
+  { port: 6379, service: 'Redis', transports: ['TCP'], category: 'registered', description: 'Common default port for Redis data-store connections.', example: 'An application reads cached data from Redis.' },
+  { port: 8080, service: 'Alternative HTTP', transports: ['TCP'], category: 'registered', description: 'Frequently used as an alternative web or development-server port; not a guarantee of HTTP service.', example: 'A developer runs a local web server on port 8080.' },
+  { port: 8443, service: 'Alternative HTTPS', transports: ['TCP'], category: 'registered', description: 'Frequently used as an alternative HTTPS port; actual service configuration varies.', example: 'An application exposes an HTTPS admin interface on a non-default port.' }
 ];
 
 /**
@@ -576,22 +594,239 @@ regMod({
         {
           label: 'Ports and status codes',
           render(p) {
-            p.innerHTML = `<div class="cols2"><div class="panel"><h3>Well-known ports</h3>${tbl(['Port', 'Protocol', 'Service'], PORTS)}</div><div class="panel"><h3>HTTP status codes</h3><div class="search-row">${icon('search')}<input id="sq" type="search" placeholder="Filter: 404, redirect, error…" aria-label="Filter status codes"></div><div id="sc"></div></div></div>`;
-            const f = () => {
+            const questions = [
+              { q: 'Which port is commonly associated with SSH?', options: ['21', '22', '53', '80'], answer: '22', why: 'SSH commonly uses TCP port 22 for secure remote access.' },
+              { q: 'Which transport is used by NTP on port 123?', options: ['TCP', 'UDP', 'TCP only', 'ICMP'], answer: 'UDP', why: 'NTP commonly uses UDP port 123.' },
+              { q: 'Which port is commonly associated with DNS?', options: ['25', '53', '110', '443'], answer: '53', why: 'DNS commonly uses port 53 over UDP and TCP.' },
+              { q: 'Which port is commonly associated with HTTPS?', options: ['80', '123', '443', '3389'], answer: '443', why: 'HTTPS commonly uses TCP port 443; HTTP/3 uses QUIC over UDP port 443.' },
+              { q: 'Which service is commonly associated with TCP port 3306?', options: ['MySQL', 'SSH', 'NTP', 'RDP'], answer: 'MySQL', why: 'MySQL commonly accepts TCP connections on port 3306.' }
+            ];
+            let activeTransport = 'ALL';
+            let activeCategory = 'ALL';
+            let selectedPort = null;
+            let quizIndex = 0;
+            let quizAnswered = false;
+            p.innerHTML = `
+              <div class="panel port-reference">
+                <div class="port-ref-heading">
+                  <div><span class="pill">NETWORKING QUICK REFERENCE</span><h3>Port Number Reference</h3>
+                  <p class="hint">Search common ports, compare transports, and learn what services typically use them.</p></div>
+                </div>
+                <div class="search-row">${icon('search')}<input id="portSearch" type="search" placeholder="Search port, service, protocol, or purpose…" aria-label="Search port reference"></div>
+                <div class="filters" id="portTransportFilters" aria-label="Filter by transport">
+                  <button class="chipbtn on" type="button" data-transport="ALL">All transports</button>
+                  <button class="chipbtn" type="button" data-transport="TCP">TCP</button>
+                  <button class="chipbtn" type="button" data-transport="UDP">UDP</button>
+                </div>
+                <div class="filters" id="portCategoryFilters" aria-label="Filter by port range">
+                  <button class="chipbtn on" type="button" data-category="ALL">All ranges</button>
+                  <button class="chipbtn" type="button" data-category="well-known">Well-known (0–1023)</button>
+                  <button class="chipbtn" type="button" data-category="registered">Registered (1024–49151)</button>
+                  
+                </div>
+                <div class="port-browse-controls">
+                  <button class="btn ghost sm" id="prevPortRange" type="button" disabled>← Previous 10 ports</button>
+                  <button class="btn sm" id="nextPortRange" type="button">Next 10 ports →</button>
+                  <span class="hint">Browse assigned ports 0–49151 in small blocks to include every registration.</span>
+                </div>
+                <p class="hint" id="portCount" aria-live="polite"></p>
+                <div class="port-table-wrap" id="portTable"></div>
+                <div id="portDetail" aria-live="polite"></div>
+                <p class="hint">Port associations are conventional, not proof that a service is running or secure. Services can be configured to use other ports. Dynamic/private ports are 49152–65535 and are commonly used for temporary connections; this starter list focuses on common service ports.</p>
+              </div>
+              <div class="panel">
+                <h3>Test your knowledge</h3>
+                <div id="portQuiz" class="port-quiz"></div>
+              </div>
+              <div class="panel">
+                <h3>HTTP status codes</h3>
+                <div class="search-row">${icon('search')}<input id="sq" type="search" placeholder="Filter: 404, redirect, error…" aria-label="Filter status codes"></div>
+                <div id="sc"></div>
+              </div>`;
+            let portRequestId = 0;
+            let portWindowStart = 0;
+            const renderPorts = async () => {
+              const requestId = ++portRequestId;
+              const q = $('#portSearch', p).value.trim();
+              const params = new URLSearchParams({ count: '100' });
+              let url;
+              let description;
+              if (/^\d{1,5}$/.test(q) && Number(q) <= 65535) {
+                url = 'https://randomapi.dev/api/ports/lookup?' + new URLSearchParams({ port: String(Number(q)) });
+                description = 'exact port ' + Number(q);
+              } else {
+                if (q) params.set('search', q.slice(0, 64));
+                else {
+                  params.set('portFrom', String(portWindowStart));
+                  params.set('portTo', String(Math.min(49151, portWindowStart + 9)));
+                }
+                if (activeTransport !== 'ALL') params.set('protocol', activeTransport.toLowerCase());
+                if (activeCategory === 'well-known') params.set('range', 'system');
+                if (activeCategory === 'registered') params.set('range', 'registered');
+                url = 'https://randomapi.dev/api/ports?' + params.toString();
+                description = q ? 'search results for “' + q + '”' : 'registry ports ' + portWindowStart + '–' + Math.min(49151, portWindowStart + 9);
+              }
+              $('#portCount', p).textContent = 'Loading IANA port registry…';
+              $('#portTable', p).innerHTML = '<p class="hint">Fetching registered services…</p>';
+              try {
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Port registry request failed: ' + response.status);
+                const payload = await response.json();
+                if (requestId !== portRequestId) return;
+                let rows = Array.isArray(payload.data) ? payload.data : payload.data?.registrations;
+                if (!Array.isArray(rows)) rows = [];
+                const normalized = rows.map(row => ({
+                  port: Number(row.port),
+                  service: row.serviceName || 'Reserved / Unassigned',
+                  transports: row.protocol ? [String(row.protocol).toUpperCase()] : ['Unspecified'],
+                  category: row.range === 'system' ? 'well-known' : 'registered',
+                  description: row.description || 'No description supplied in the IANA registry.',
+                  example: 'IANA registration: ' + (row.reference || 'No reference listed.'),
+                  assignedRange: row.assignedRange || '',
+                  registrationDate: row.registrationDate || '',
+                  note: row.note || '',
+                  unauthorizedUse: row.unauthorizedUse || ''
+                }));
+                PORTS.splice(0, PORTS.length, ...normalized);
+                const filtered = normalized.filter(item =>
+                  (activeTransport === 'ALL' || item.transports.includes(activeTransport)) &&
+                  (activeCategory === 'ALL' || item.category === activeCategory)
+                );
+                $('#portCount', p).textContent = filtered.length + ' registration(s) · ' + description + ' · IANA registry API';
+                $('#portTable', p).innerHTML = filtered.length
+                  ? '<table class="port-table"><thead><tr><th scope="col">Port</th><th scope="col">Service</th><th scope="col">Transport</th><th scope="col">Details</th></tr></thead><tbody>' + filtered.map(item =>
+                      '<tr><td><button type="button" class="port-number" data-port="' + item.port + '">' + item.port + (item.assignedRange ? '*' : '') + '</button></td><td>' + esc(item.service) + '</td><td>' + item.transports.map(t => '<span class="pill">' + esc(t) + '</span>').join(' ') + '</td><td><button class="btn ghost sm" type="button" data-port="' + item.port + '">View details</button></td></tr>'
+                    ).join('') + '</tbody></table>'
+                  : '<p class="hint">No matching registry entries. Try a service name or another port number.</p>';
+                $('#portDetail', p).innerHTML = '';
+                selectedPort = null;
+              } catch (error) {
+                if (requestId !== portRequestId) return;
+                $('#portCount', p).textContent = 'Could not load port data from the registry API.';
+                $('#portTable', p).innerHTML = '<p class="hint">Check your internet connection and retry. The live registry API is required for this lookup.</p>';
+              }
+            };
+            const showPortDetail = item => {
+              selectedPort = item.port;
+              $('#portDetail', p).innerHTML = `
+                <div class="port-detail-card">
+                  <div class="port-detail-top"><div><span class="pill">PORT ${item.port}</span><h3>${esc(item.service)}</h3></div>
+                    <button type="button" class="btn sm" data-copy-port="${item.port}">Copy details</button>
+                  </div>
+                  <p>${esc(item.description)}</p>
+                  <p><strong>Transport:</strong> ${item.transports.join(', ')}</p>
+                  <p><strong>Example:</strong> ${esc(item.example)}</p>
+                  <p class="hint"><strong>Remember:</strong> A port number identifies a service endpoint convention; it does not itself encrypt traffic or prove which application is listening.</p>
+                </div>`;
+            };
+            $('#portSearch', p).addEventListener('input', () => {
+              clearTimeout(renderPorts.timer);
+              renderPorts.timer = setTimeout(renderPorts, 250);
+            });
+            $('#prevPortRange', p).addEventListener('click', () => {
+              portWindowStart = Math.max(0, portWindowStart - 100);
+              $('#prevPortRange', p).disabled = portWindowStart === 0;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49150;
+              loadRange();
+            });
+            $('#nextPortRange', p).addEventListener('click', () => {
+              portWindowStart = Math.min(49150, portWindowStart + 10);
+              $('#prevPortRange', p).disabled = portWindowStart === 0;
+              $('#nextPortRange', p).disabled = portWindowStart >= 49150;
+              loadRange();
+            });
+            const loadRange = () => {
+              $('#portSearch', p).value = '';
+              renderPorts();
+            };
+            $('#portTransportFilters', p).addEventListener('click', event => {
+              const button = event.target.closest('[data-transport]');
+              if (!button) return;
+              activeTransport = button.dataset.transport;
+              $$('#portTransportFilters .chipbtn', p).forEach(b => b.classList.toggle('on', b === button));
+              renderPorts();
+            });
+            $('#portCategoryFilters', p).addEventListener('click', event => {
+              const button = event.target.closest('[data-category]');
+              if (!button) return;
+              activeCategory = button.dataset.category;
+              $$('#portCategoryFilters .chipbtn', p).forEach(b => b.classList.toggle('on', b === button));
+              renderPorts();
+            });
+            $('#portTable', p).addEventListener('click', event => {
+              const button = event.target.closest('[data-port]');
+              if (!button) return;
+              const item = PORTS.find(entry => entry.port === Number(button.dataset.port));
+              if (item) showPortDetail(item);
+            });
+            $('#portDetail', p).addEventListener('click', async event => {
+              const button = event.target.closest('[data-copy-port]');
+              if (!button) return;
+              const item = PORTS.find(entry => entry.port === Number(button.dataset.copyPort));
+              if (!item) return;
+              const text = `Service: ${item.service}\nPort: ${item.port}\nTransport: ${item.transports.join(', ')}\nPurpose: ${item.description}\nExample: ${item.example}`;
+              try {
+                await navigator.clipboard.writeText(text);
+                button.textContent = 'Copied!';
+              } catch (error) {
+                const area = document.createElement('textarea');
+                area.value = text;
+                area.setAttribute('readonly', '');
+                area.className = 'port-copy-fallback';
+                p.append(area);
+                area.select();
+                const copied = document.execCommand('copy');
+                area.remove();
+                button.textContent = copied ? 'Copied!' : 'Copy unavailable';
+              }
+            });
+            const renderQuiz = () => {
+              const item = questions[quizIndex];
+              $('#portQuiz', p).innerHTML = `
+                <p class="hint">Question ${quizIndex + 1} of ${questions.length}</p>
+                <h4>${esc(item.q)}</h4>
+                <div class="opts">${item.options.map(option => `<button type="button" class="opt" data-answer="${esc(option)}" ${quizAnswered ? 'disabled' : ''}><span>${esc(option)}</span>${esc(option)}</button>`).join('')}</div>
+                <p id="portQuizFeedback" class="hint" aria-live="polite">${quizAnswered ? `${item.why}` : 'Choose an answer to see an explanation.'}</p>
+                <button type="button" class="btn sm" id="portQuizNext">${quizIndex === questions.length - 1 ? 'Restart quiz' : 'Next question'} →</button>`;
+              if (quizAnswered) {
+                $$('#portQuiz [data-answer]', p).forEach(button => {
+                  if (button.dataset.answer === item.answer) button.classList.add('right');
+                });
+              }
+            };
+            $('#portQuiz', p).addEventListener('click', event => {
+              const answerButton = event.target.closest('[data-answer]');
+              if (answerButton && !quizAnswered) {
+                quizAnswered = true;
+                const item = questions[quizIndex];
+                const correct = answerButton.dataset.answer === item.answer;
+                answerButton.classList.add(correct ? 'right' : 'wrong');
+                $('#portQuizFeedback', p).textContent = `${correct ? 'Correct! ' : `Not quite. The answer is ${item.answer}. `}${item.why}`;
+                $$('#portQuiz [data-answer]', p).forEach(button => {
+                  button.disabled = true;
+                  if (button.dataset.answer === item.answer) button.classList.add('right');
+                });
+              }
+              if (event.target.closest('#portQuizNext')) {
+                quizIndex = (quizIndex + 1) % questions.length;
+                quizAnswered = false;
+                renderQuiz();
+              }
+            });
+            const renderStatusCodes = () => {
               const q = $('#sq', p).value.toLowerCase();
               $('#sc', p).innerHTML = tbl(
                 ['Code', 'Meaning'],
-                CODES.filter(
-                  c =>
-                    !q ||
-                    (c[0] + ' ' + c[1]).toLowerCase().includes(q) ||
-                    (q === 'error' && c[0] >= 400) ||
-                    (q === 'redirect' && c[0] >= 300 && c[0] < 400)
-                )
+                CODES.filter(c => !q ||
+                  (c[0] + ' ' + c[1]).toLowerCase().includes(q) ||
+                  (q === 'error' && c[0] >= 400) ||
+                  (q === 'redirect' && c[0] >= 300 && c[0] < 400))
               );
             };
-            $('#sq', p).oninput = f;
-            f();
+            $('#sq', p).addEventListener('input', renderStatusCodes);
+            renderPorts();
+            renderQuiz();
+            renderStatusCodes();
           },
         },
         {
