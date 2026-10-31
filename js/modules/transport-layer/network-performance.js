@@ -73,7 +73,7 @@ regMod({
         if (field) field.value = String(value);
       });
       errorBox.hidden = true;
-      document.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value)));
+      root.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value)));
     };
     const esc = value => String(value).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
     const fmt = (value, digits = 2) => Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: 0 }) : '—';
@@ -122,7 +122,7 @@ regMod({
       render(simulatePerformance(readForm()));
     });
     form.addEventListener('input', () => {
-      document.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value))));
+      root.querySelectorAll('[data-preset]').forEach(button => button.classList.toggle('on', button.dataset.preset !== 'custom' && presets[button.dataset.preset] && Object.entries(presets[button.dataset.preset]).every(([key, value]) => String(form.elements.namedItem(key)?.value) === String(value))));
     });
     form.elements.retryMode.addEventListener('change', () => {
       $('#npa-retry-field').hidden = form.elements.retryMode.value !== 'limited';
@@ -131,7 +131,7 @@ regMod({
       const preset = presets[button.dataset.preset];
       if (preset) setValues(preset);
       else {
-        document.querySelectorAll('[data-preset]').forEach(item => item.classList.toggle('on', item === button));
+        root.querySelectorAll('[data-preset]').forEach(item => item.classList.toggle('on', item === button));
       }
       $('#npa-retry-field').hidden = form.elements.retryMode.value !== 'limited';
       render(simulatePerformance(readForm()));
