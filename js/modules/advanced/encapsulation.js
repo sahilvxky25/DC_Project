@@ -132,20 +132,25 @@ regMod({
       {q:'What is the TCP segment carried inside?',a:['An IP packet','A DNS record','A physical signal directly','An Ethernet FCS'],correct:0,why:'The IP packet encapsulates the TCP segment. The Ethernet frame then encapsulates the IP packet.'},
       {q:'What happens first during receiver decapsulation?',a:['TCP header is removed','Application receives data','Ethernet frame is checked and processed','IP address is removed'],correct:2,why:'The receiving link layer processes the Ethernet frame first, including FCS verification where supported.'}
     ];
-    let activeModel='osi', activeLayer=0, quizIndex=0, score=0, answered=0, timer=null;\n    // Shuffle question order for a more useful repeatable practice session.\n    for (let i=quiz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quiz[i],quiz[j]]=[quiz[j],quiz[i]];}
+    let activeModel='osi', activeLayer=0, quizIndex=0, score=0, answered=0, timer=null;
+    // Shuffle question order for a more useful repeatable practice session.
+    for (let i=quiz.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[quiz[i],quiz[j]]=[quiz[j],quiz[i]];}
     const stopPlayback=()=>{if(timer!==null){clearInterval(timer);timer=null;} $('#osi-play',root).textContent='▶ Play';};
     const renderLayerDetail=()=>{
       const layers=modelLayers[activeModel], layer=layers[Math.min(activeLayer,layers.length-1)];
       $('#osi-layer-detail',root).innerHTML=`<p class="osi-eyebrow">SELECTED LAYER</p><h3>${layer.name}</h3><p>${layer.info}</p><dl class="osi-field-list"><dt>Data unit</dt><dd>${layer.unit}</dd><dt>Header / framing</dt><dd>${layer.header}</dd><dt>Source</dt><dd>${layer.source}</dd><dt>Destination</dt><dd>${layer.destination}</dd><dt>What is preserved?</dt><dd>${layer.preserved}</dd></dl><div class="osi-receiver-note"><strong>At the receiver</strong><p>Each receiving layer processes its own information, then passes the remaining payload upward. The application ultimately receives the original message if the data is accepted by the protocol stack.</p></div>`;
     };
     const renderLayers=()=>{
+      const stack=$('#osi-layer-stack',root);
+      const focusedButton=stack.contains(document.activeElement) ? document.activeElement.getAttribute('data-layer-index') : null;
       const layers=modelLayers[activeModel];
       activeLayer=Math.max(0,Math.min(activeLayer,layers.length-1));
-      $('#osi-layer-stack',root).innerHTML=layers.map((layer,i)=>`<button type="button" class="osi-layer ${layer.color} ${i===activeLayer?'is-selected':''} ${i<=activeLayer?'is-reached':''}" data-layer-index="${i}" aria-pressed="${i===activeLayer}"><span class="osi-layer-number">${activeModel==='osi'?7-i:i+1}</span><span><strong>${layer.name}</strong><small>${layer.unit}</small></span><span class="osi-layer-state">${i<activeLayer?'✓':i===activeLayer?'●':'○'}</span></button>`).join('');
+      stack.innerHTML=layers.map((layer,i)=>`<button type="button" class="osi-layer ${layer.color} ${i===activeLayer?'is-selected':''} ${i<=activeLayer?'is-reached':''}" data-layer-index="${i}" aria-pressed="${i===activeLayer}"><span class="osi-layer-number">${activeModel==='osi'?7-i:i+1}</span><span><strong>${layer.name}</strong><small>${layer.unit}</small></span><span class="osi-layer-state">${i<activeLayer?'✓':i===activeLayer?'●':'○'}</span></button>`).join('');
       $('#osi-progress',root).textContent=`Step ${activeLayer+1} of ${layers.length}: ${layers[activeLayer].name}`;
       $('#osi-prev',root).disabled=activeLayer===0;
       $('#osi-next',root).disabled=activeLayer===layers.length-1;
       renderLayerDetail();
+      if(focusedButton!==null){const focusTarget=stack.querySelector(`[data-layer-index="${focusedButton}"]`);if(focusTarget)focusTarget.focus({preventScroll:true});}
     };
     const renderQuestion=()=>{
       const q=quiz[quizIndex];
@@ -156,7 +161,7 @@ regMod({
       $('#osi-score',root).textContent=`Score: ${score} / ${answered}`;
     };
     $('#osi-message-preview',root).textContent=$('#en',root).value||' ';
-    const updatePreview=()=>{$('#osi-message-preview',root).textContent=$('#en',root).value||' ';};
+    const updatePreview=()=>{$('#osi-message-preview',root).textContent=$('#en',root).value||'(empty message)';};
     root.querySelectorAll('[data-model]').forEach(button=>button.addEventListener('click',()=>{
       stopPlayback(); activeModel=button.dataset.model; activeLayer=Math.min(activeLayer,modelLayers[activeModel].length-1);
       root.querySelectorAll('[data-model]').forEach(b=>{const on=b.dataset.model===activeModel;b.classList.toggle('ghost',!on);b.setAttribute('aria-pressed',String(on));});
