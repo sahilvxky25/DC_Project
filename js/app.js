@@ -53,6 +53,7 @@ import './modules/learning/journey.js';
 import './modules/learning/tutorials.js';
 import './modules/learning/challenges.js';
 import './modules/learning/glossary.js';
+import './modules/learning/protocol-comparison.js';
 import { DC } from './core/state.js';
 import { GROUPS } from './modules/registry.js';
 
