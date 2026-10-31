@@ -638,24 +638,67 @@ regMod({
                 <div class="search-row">${icon('search')}<input id="sq" type="search" placeholder="Filter: 404, redirect, error…" aria-label="Filter status codes"></div>
                 <div id="sc"></div>
               </div>`;
-            const renderPorts = () => {
-              const q = $('#portSearch', p).value.trim().toLowerCase();
-              const list = PORTS.filter(item => {
-                const haystack = [item.port, item.service, item.description, item.example, item.transports.join(' ')].join(' ').toLowerCase();
-                const categoryMatch = activeCategory === 'ALL' || item.category === activeCategory;
-                return (!q || haystack.includes(q)) &&
+            let portRequestId = 0;
+            let portWindowStart = 0;
+            const renderPorts = async () => {
+              const requestId = ++portRequestId;
+              const q = $('#portSearch', p).value.trim();
+              const params = new URLSearchParams({ count: '100' });
+              let url;
+              let description;
+              if (/^\\d{1,5}$/.test(q) && Number(q) <= 65535) {
+                url = 'https://randomapi.dev/api/ports/lookup?' + new URLSearchParams({ port: String(Number(q)) });
+                description = 'exact port ' + Number(q);
+              } else {
+                if (q) params.set('search', q.slice(0, 64));
+                else {
+                  params.set('portFrom', String(portWindowStart));
+                  params.set('portTo', String(Math.min(49151, portWindowStart + 99)));
+                }
+                if (activeTransport !== 'ALL') params.set('protocol', activeTransport.toLowerCase());
+                if (activeCategory === 'well-known') params.set('range', 'system');
+                if (activeCategory === 'registered') params.set('range', 'registered');
+                url = 'https://randomapi.dev/api/ports?' + params.toString();
+                description = q ? 'search results for “' + q + '”' : 'registry ports ' + portWindowStart + '–' + Math.min(49151, portWindowStart + 99);
+              }
+              $('#portCount', p).textContent = 'Loading IANA port registry…';
+              $('#portTable', p).innerHTML = '<p class="hint">Fetching registered services…</p>';
+              try {
+                const response = await fetch(url, { headers: { Accept: 'application/json' } });
+                if (!response.ok) throw new Error('Port registry request failed: ' + response.status);
+                const payload = await response.json();
+                if (requestId !== portRequestId) return;
+                let rows = Array.isArray(payload.data) ? payload.data : payload.data?.registrations;
+                if (!Array.isArray(rows)) rows = [];
+                const normalized = rows.map(row => ({
+                  port: Number(row.port),
+                  service: row.serviceName || 'Reserved / Unassigned',
+                  transports: row.protocol ? [String(row.protocol).toUpperCase()] : ['Unspecified'],
+                  category: row.range === 'system' ? 'well-known' : 'registered',
+                  description: row.description || 'No description supplied in the IANA registry.',
+                  example: 'IANA registration: ' + (row.reference || 'No reference listed.'),
+                  assignedRange: row.assignedRange || '',
+                  registrationDate: row.registrationDate || '',
+                  note: row.note || '',
+                  unauthorizedUse: row.unauthorizedUse || ''
+                }));
+                PORTS.splice(0, PORTS.length, ...normalized);
+                const filtered = normalized.filter(item =>
                   (activeTransport === 'ALL' || item.transports.includes(activeTransport)) &&
-                  categoryMatch;
-              });
-              $('#portCount', p).textContent = `${list.length} of ${PORTS.length} ports`;
-              $('#portTable', p).innerHTML = list.length
-                ? `<table class="port-table"><thead><tr><th scope="col">Port</th><th scope="col">Service</th><th scope="col">Transport</th><th scope="col">Details</th></tr></thead><tbody>${list.map(item =>
-                    `<tr><td><button type="button" class="port-number" data-port="${item.port}" aria-label="View details for port ${item.port}">${item.port}</button></td><td>${esc(item.service)}</td><td>${item.transports.map(t => `<span class="pill">${t}</span>`).join(' ')}</td><td><button class="btn ghost sm" type="button" data-port="${item.port}">View details</button></td></tr>`
-                  ).join('')}</tbody></table>`
-                : '<p class="hint">No ports match. Try a port number such as 443, a service such as DNS, or clear the filters.</p>';
-              if (selectedPort !== null && !list.some(item => item.port === selectedPort)) {
-                selectedPort = null;
+                  (activeCategory === 'ALL' || item.category === activeCategory)
+                );
+                $('#portCount', p).textContent = filtered.length + ' registration(s) · ' + description + ' · IANA registry API';
+                $('#portTable', p).innerHTML = filtered.length
+                  ? '<table class="port-table"><thead><tr><th scope="col">Port</th><th scope="col">Service</th><th scope="col">Transport</th><th scope="col">Details</th></tr></thead><tbody>' + filtered.map(item =>
+                      '<tr><td><button type="button" class="port-number" data-port="' + item.port + '">' + item.port + (item.assignedRange ? '*' : '') + '</button></td><td>' + esc(item.service) + '</td><td>' + item.transports.map(t => '<span class="pill">' + esc(t) + '</span>').join(' ') + '</td><td><button class="btn ghost sm" type="button" data-port="' + item.port + '">View details</button></td></tr>'
+                    ).join('') + '</tbody></table>'
+                  : '<p class="hint">No matching registry entries. Try a service name or another port number.</p>';
                 $('#portDetail', p).innerHTML = '';
+                selectedPort = null;
+              } catch (error) {
+                if (requestId !== portRequestId) return;
+                $('#portCount', p).textContent = 'Could not load port data from the registry API.';
+                $('#portTable', p).innerHTML = '<p class="hint">Check your internet connection and retry. The live registry API is required for this lookup.</p>';
               }
             };
             const showPortDetail = item => {
