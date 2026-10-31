@@ -10,7 +10,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, and sockets.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
-- **Learning tools:** tutorials, challenges/quizzes, glossary, progress indicators, achievements, and theme selection.
+- **Learning tools:** tutorials, challenges/quizzes, glossary, searchable Network Protocol Comparison Lab, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
 - **Cloud progress:** Firestore synchronization of existing saved progress, achievements, run history, quiz statistics, notes, theme, and last visited screen for the signed-in account.
 - **Responsive interface:** desktop sidebar controls and a mobile navigation drawer.
