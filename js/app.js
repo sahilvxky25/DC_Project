@@ -45,6 +45,7 @@ import './modules/transport-layer/tcp-udp.js';
 import './modules/transport-layer/handshake.js';
 import './modules/transport-layer/congestion.js';
 import './modules/transport-layer/sockets.js';
+import './modules/transport-layer/network-performance.js';
 import './modules/application-layer/dns.js';
 import './modules/application-layer/http-tls.js';
 import './modules/advanced/encapsulation.js';
