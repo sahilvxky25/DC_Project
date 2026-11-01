@@ -73,7 +73,7 @@
             <label for="login-password">Password</label>
             <div class="login-password-wrap">
               <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="At least 8 characters" required />
-              <button class="login-show-password" id="show-password" type="button" aria-pressed="false">Show</button>
+              <button class="login-show-password password-toggle-btn" id="show-password" type="button" aria-label="Show password" aria-pressed="false" title="Show password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
             </div>
           </div>
           <div class="login-options">
@@ -412,19 +412,19 @@
           <label for="currentPassword">Current Password
             <span class="password-input-wrap">
               <input id="currentPassword" type="password" autocomplete="current-password" required />
-              <button class="password-visibility-btn" type="button" data-password-target="currentPassword" aria-label="Show current password" aria-pressed="false">Show</button>
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="currentPassword" aria-label="Show current password" aria-pressed="false" title="Show current password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
             </span>
           </label>
           <label for="newPassword">New Password
             <span class="password-input-wrap">
               <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required />
-              <button class="password-visibility-btn" type="button" data-password-target="newPassword" aria-label="Show new password" aria-pressed="false">Show</button>
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="newPassword" aria-label="Show new password" aria-pressed="false" title="Show new password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
             </span>
           </label>
           <label for="confirmNewPassword">Confirm New Password
             <span class="password-input-wrap">
               <input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
-              <button class="password-visibility-btn" type="button" data-password-target="confirmNewPassword" aria-label="Show password confirmation" aria-pressed="false">Show</button>
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="confirmNewPassword" aria-label="Show password confirmation" aria-pressed="false" title="Show password confirmation"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
             </span>
           </label>
           <p class="password-message" id="passwordChangeMessage" role="status" aria-live="polite"></p>

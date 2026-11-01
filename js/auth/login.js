@@ -230,12 +230,35 @@ forgotPasswordLink.addEventListener('click', async event => {
   }
 });
 
+function setPasswordVisibility(button, input, fieldLabel) {
+  const reveal = input.type === 'password';
+  input.type = reveal ? 'text' : 'password';
+  button.setAttribute('aria-pressed', String(reveal));
+  button.setAttribute('aria-label', `${reveal ? 'Hide' : 'Show'} ${fieldLabel}`);
+  button.setAttribute('title', `${reveal ? 'Hide' : 'Show'} ${fieldLabel}`);
+}
+
 showPasswordBtn.addEventListener('click', () => {
-  const reveal = passwordInput.type === 'password';
-  passwordInput.type = reveal ? 'text' : 'password';
-  showPasswordBtn.textContent = reveal ? 'Hide' : 'Show';
-  showPasswordBtn.setAttribute('aria-pressed', String(reveal));
+  setPasswordVisibility(showPasswordBtn, passwordInput, 'password');
 });
+
+function resetPasswordVisibility() {
+  document.querySelectorAll('.password-toggle-btn').forEach(button => {
+    button.setAttribute('aria-pressed', 'false');
+    const targetId = button.dataset.passwordTarget || (button.id === 'show-password' ? 'login-password' : '');
+    const input = targetId ? document.getElementById(targetId) : null;
+    if (input) input.type = 'password';
+    const fieldLabel = button.id === 'show-password'
+      ? 'password'
+      : targetId === 'currentPassword'
+        ? 'current password'
+        : targetId === 'newPassword'
+          ? 'new password'
+          : 'password confirmation';
+    button.setAttribute('aria-label', `Show ${fieldLabel}`);
+    button.setAttribute('title', `Show ${fieldLabel}`);
+  });
+}
 
 profileBtn.addEventListener('click', () => {
   const shouldOpen = profileDropdown.hidden;
@@ -257,22 +280,19 @@ document.querySelectorAll('.password-visibility-btn[data-password-target]').forE
     const input = document.getElementById(button.dataset.passwordTarget);
     if (!input) return;
 
-    const reveal = input.type === 'password';
-    input.type = reveal ? 'text' : 'password';
-    button.textContent = reveal ? 'Hide' : 'Show';
-    button.setAttribute('aria-pressed', String(reveal));
     const fieldLabel = input.id === 'currentPassword'
       ? 'current password'
       : input.id === 'newPassword'
         ? 'new password'
         : 'password confirmation';
-    button.setAttribute('aria-label', `${reveal ? 'Hide' : 'Show'} ${fieldLabel}`);
+    setPasswordVisibility(button, input, fieldLabel);
   });
 });
 
 changePasswordBtn.addEventListener('click', () => {
   closeProfileMenu();
   changePasswordForm.reset();
+  resetPasswordVisibility();
   passwordChangeMessage.textContent = '';
   passwordChangeMessage.classList.remove('is-success');
   changePasswordDialog.showModal();
@@ -282,6 +302,7 @@ changePasswordBtn.addEventListener('click', () => {
 cancelPasswordChange.addEventListener('click', () => {
   changePasswordDialog.close();
   changePasswordForm.reset();
+  resetPasswordVisibility();
   passwordChangeMessage.textContent = '';
   passwordChangeMessage.classList.remove('is-success');
 });
