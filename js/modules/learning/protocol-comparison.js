@@ -146,7 +146,7 @@ regMod({
         browser.hidden = true; detail.hidden = false; detail.innerHTML = detailMarkup(item);
         renderLayerStep(); detail.querySelector('[data-action="back"]').focus(); return;
       }
-      const button = event.target.closest('[data-action]');
+      const button = event.target.closest('button');
       if (!button) return;
       if (button.hasAttribute('data-layer-index')) { stopLayerPlayback(); layerIndex = Number(button.dataset.layerIndex); renderLayerStep(); return; }
       if (button.hasAttribute('data-layer-prev')) { stopLayerPlayback(); layerIndex = Math.max(0, layerIndex - 1); renderLayerStep(); return; }
