@@ -100,6 +100,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Vary", "Origin")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            if self.headers.get("Access-Control-Request-Private-Network", "").lower() == "true":
+                self.send_header("Access-Control-Allow-Private-Network", "true")
         self.end_headers()
         self.wfile.write(body)
 
@@ -108,7 +110,15 @@ class Handler(BaseHTTPRequestHandler):
         if origin not in ALLOWED_ORIGINS:
             self.send_json(403, {"error": "This website origin is not allowed. Set BITSECURE_ALLOWED_ORIGIN to the exact site origin."})
             return
-        self.send_json(204, {})
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", origin)
+        self.send_header("Vary", "Origin")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        if self.headers.get("Access-Control-Request-Private-Network", "").lower() == "true":
+            self.send_header("Access-Control-Allow-Private-Network", "true")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def do_GET(self):
         origin = self.headers.get("Origin", "")
