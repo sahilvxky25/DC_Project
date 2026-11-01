@@ -4,6 +4,7 @@ Only fixed diagnostic operations are exposed. Never add arbitrary shell executio
 """
 from __future__ import annotations
 
+import http.client
 import ipaddress
 import json
 import os
@@ -11,12 +12,12 @@ import platform
 import re
 import shutil
 import socket
+import ssl
 import subprocess
 import time
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import firebase_admin
 from firebase_admin import auth as firebase_auth, credentials
@@ -177,33 +178,49 @@ def dns(body: TargetRequest, user: dict = Depends(require_user)) -> dict[str, st
     return {"output": "\n".join(lines)[:MAX_OUTPUT], "executed_on": "backend server"}
 
 
-class NoRedirect(HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        return None
-
-
-@app.post("/api/diagnostics/http")
 def http_head(body: UrlRequest, user: dict = Depends(require_user)) -> dict[str, str]:
     parsed = urlsplit(body.url.strip())
     if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
         raise HTTPException(status_code=400, detail="Enter a valid public http:// or https:// URL without credentials.")
-    if parsed.port not in (None, 80, 443):
-        raise HTTPException(status_code=400, detail="Only standard HTTP/HTTPS ports (80 and 443) are allowed.")
-    _, addresses = validate_host(parsed.hostname)
-    url = parsed.geturl()
-    request = Request(url, method="HEAD", headers={"User-Agent": "BitSecure-Network-Diagnostics/1.0"})
-    opener = build_opener(NoRedirect())
+    try:
+        port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Invalid URL port.") from exc
+    if port not in (80, 443) or (parsed.scheme == "http" and port != 80) or (parsed.scheme == "https" and port != 443):
+        raise HTTPException(status_code=400, detail="Only standard HTTP port 80 and HTTPS port 443 are allowed.")
+    host, addresses = validate_host(parsed.hostname)
+    # Connect directly to an IP already checked above to avoid a second DNS lookup/SSRF rebinding.
+    path = parsed.path or "/"
+    if parsed.query:
+        path += "?" + parsed.query
+    conn = None
     started = time.monotonic()
     try:
-        with opener.open(request, timeout=TIMEOUT_SECONDS) as response:
-            status, headers = response.status, response.headers
-    except HTTPError as exc:
-        status, headers = exc.code, exc.headers
-    except (URLError, TimeoutError, OSError) as exc:
+        address = addresses[0]
+        if parsed.scheme == "https":
+            raw_sock = socket.create_connection((address, port), timeout=TIMEOUT_SECONDS)
+            try:
+                tls_sock = ssl.create_default_context().wrap_socket(raw_sock, server_hostname=host)
+            except Exception:
+                raw_sock.close()
+                raise
+            conn = http.client.HTTPSConnection(host, port=port, timeout=TIMEOUT_SECONDS, context=ssl.create_default_context())
+            conn.sock = tls_sock
+        else:
+            conn = http.client.HTTPConnection(host, port=port, timeout=TIMEOUT_SECONDS)
+            conn.connect = lambda: setattr(conn, "sock", socket.create_connection((address, port), timeout=TIMEOUT_SECONDS))
+        conn.request("HEAD", path, headers={"Host": host, "User-Agent": "BitSecure-Network-Diagnostics/1.0", "Connection": "close"})
+        response = conn.getresponse()
+        status = response.status
+        headers = response.headers
+    except (OSError, ssl.SSLError, http.client.HTTPException, TimeoutError) as exc:
         raise HTTPException(status_code=502, detail=f"HTTP request failed: {exc}") from exc
+    finally:
+        if conn is not None:
+            conn.close()
     elapsed_ms = round((time.monotonic() - started) * 1000)
     lines = [
-        f"HEAD {url}",
+        f"HEAD {body.url}",
         f"Resolved addresses: {', '.join(addresses)}",
         f"HTTP status: {status}",
         f"Elapsed: {elapsed_ms} ms",
@@ -211,4 +228,4 @@ def http_head(body: UrlRequest, user: dict = Depends(require_user)) -> dict[str,
     for key in ("server", "content-type", "content-length", "last-modified", "cache-control", "date"):
         if headers.get(key):
             lines.append(f"{key}: {headers.get(key)}")
-    return {"output": "\n".join(lines)[:MAX_OUTPUT], "executed_on": "backend server"}
+    return {"output": "\\n".join(lines)[:MAX_OUTPUT], "executed_on": "backend server"}
