@@ -35,12 +35,23 @@
   background: var(--bg2); color: var(--text); font: inherit;
 }
 .login-field input:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
-.login-password-wrap { display: flex; gap: 8px; }
-.login-password-wrap input { flex: 1; min-width: 0; }
-.login-show-password {
-  padding: 0 11px; border: 1px solid var(--line); border-radius: var(--radius-sm);
-  background: var(--surface2); color: var(--text); font: inherit; cursor: pointer;
+.login-password-wrap { position: relative; display: flex; min-width: 0; }
+.login-password-wrap input { flex: 1; min-width: 0; padding-right: 48px; }
+.password-toggle-btn {
+  display: inline-grid; place-items: center; width: 42px; height: 42px;
+  padding: 0; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: color .16s ease, background-color .16s ease;
 }
+.login-password-wrap .password-toggle-btn {
+  position: absolute; top: 50%; right: 2px; transform: translateY(-50%);
+}
+.password-toggle-btn:hover { color: var(--accent); background: var(--accent-soft); }
+.password-toggle-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.password-eye-icon { display: block; width: 20px; height: 20px; }
+.password-eye-icon.icon-eye-off { display: none; }
+.password-toggle-btn[aria-pressed="true"] .password-eye-icon.icon-eye { display: none; }
+.password-toggle-btn[aria-pressed="true"] .password-eye-icon.icon-eye-off { display: block; }
 .login-options { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .85rem; }
 .login-remember { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
 .login-remember input { accent-color: var(--accent); }
@@ -50,8 +61,8 @@
 #logoutBtn { white-space: nowrap; }
 @media (max-width: 560px) {
   .login-options { align-items: flex-start; flex-direction: column; }
-  .login-password-wrap { flex-wrap: wrap; }
-  .login-show-password { min-height: 42px; }
+  .login-password-wrap { flex-wrap: nowrap; }
+  .login-password-wrap .password-toggle-btn { width: 42px; min-height: 42px; }
 }
 
 /* The existing layout stylesheet defines .app display; honor the HTML hidden attribute. */
