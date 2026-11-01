@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <meta
+      name="description"
+      content="An interactive data communications lab: follow one message from text to bytes, packets, frames and back, with working simulators for every layer."
+    />
+    <title>BitSecure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap"
+    />
+    <!-- Stylesheets: loaded in this order on purpose. Later files can override earlier ones (the "cascade"). -->
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/layout.css" />
+    <link rel="stylesheet" href="css/components.css" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link rel="stylesheet" href="css/lab.css" />
+    <link rel="stylesheet" href="css/modules.css" />
+    <link rel="stylesheet" href="css/learning.css" />
+    <link rel="stylesheet" href="css/responsive.css" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link rel="stylesheet" href="css/profile.css" />
+    <link rel="stylesheet" href="css/search.css" />
+    <link rel="stylesheet" href="css/http-status-codes.css" />
+    <link rel="stylesheet" href="css/topology-builder.css" />
+    <link rel="stylesheet" href="css/wifi-simulator.css" />
+    <link rel="stylesheet" href="css/protocol-comparison.css" />
+    <link rel="stylesheet" href="css/network-performance.css" />
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <script>
+      try {
+        var t = JSON.parse(localStorage.getItem("dcl.v2") || "{}").theme;
+        if (t) document.documentElement.dataset.theme = t;
+        else if (matchMedia("(prefers-color-scheme: light)").matches)
+          document.documentElement.dataset.theme = "light";
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <section class="login-screen" id="login-screen" aria-labelledby="login-title">
+      <div class="login-card">
+        <div class="login-brand">
+          <img src="./favicon.png" alt="" aria-hidden="true" />
+          <div><strong>BitSecure</strong><span>Data Communications Lab</span></div>
+        </div>
+        <p class="login-eyebrow">Interactive networking lab</p>
+        <h1 id="login-title">Welcome back.</h1>
+        <p class="login-intro" id="login-intro">Sign in to explore protocols, simulate networks, and follow a message end to end.</p>
+        <div class="auth-tabs" role="tablist" aria-label="Account access">
+          <button class="auth-tab is-active" id="signin-tab" type="button" role="tab" aria-selected="true" aria-controls="login-form">Sign In</button>
+          <button class="auth-tab" id="signup-tab" type="button" role="tab" aria-selected="false" aria-controls="login-form">Sign Up</button>
+        </div>
+        <form class="login-form" id="login-form" novalidate>
+          <div class="login-field" id="name-field" hidden>
+            <label for="login-name">Full name</label>
+            <input id="login-name" name="name" type="text" autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="login-field">
+            <label for="login-email">Email address</label>
+            <input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@example.com" required />
+          </div>
+          <div class="login-field">
+            <label for="login-password">Password</label>
+            <div class="login-password-wrap">
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="At least 8 characters" required />
+              <button class="login-show-password password-toggle-btn" id="show-password" type="button" aria-label="Show password" aria-pressed="false" title="Show password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
+            </div>
+          </div>
+          <div class="login-options">
+            <label class="login-remember"><input id="remember-me" type="checkbox" checked /> Remember me on this device</label>
+            <a class="login-forgot" id="forgot-password" href="#">Forgot password?</a>
+          </div>
+          <p class="login-error" id="login-error" role="alert" aria-live="polite"></p>
+          <button class="btn login-submit" id="login-submit" type="submit">Sign In <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="login-security-note">Your account is managed securely by Firebase Authentication. Never share your password.</p>
+      </div>
+    </section>
+    <a class="skip" href="#view">Skip to content</a>
+    <div class="app" hidden>
+      <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <div class="brand">
+  <img
+    class="logo"
+    src="./favicon.png"
+    alt=""
+    aria-hidden="true"
+  />
+  <div class="brand-t">
+    BitSecure<small>Follow one message end to end</small>
+  </div>
+</div>
+        <nav id="nav" aria-label="Lab sections"></nav>
+        <div class="link" id="link">
+          <div class="row">
+            <span class="led" aria-hidden="true"></span
+            ><span id="ls">Link is up</span>
+          </div>
+          <button class="btn ghost sm" id="lb" aria-pressed="false">
+            Take link down
+          </button>
+        </div>
+      </aside>
+      <div class="scrim" id="scrim"></div>
+
+      <div class="main">
+        <header class="topbar">
+          <button
+            class="icon-btn menu"
+            id="menuBtn"
+            aria-label="Open navigation"
+          >
+            <svg
+              class="ic"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <button
+            class="icon-btn sidebar-toggle"
+            id="sidebarToggleBtn"
+            type="button"
+            aria-label="Hide sidebar"
+            aria-controls="sidebar"
+            aria-expanded="true"
+            title="Hide sidebar"
+          >
+            <svg
+              class="ic"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="3" y="4" width="18" height="16" rx="2" />
+              <path d="M9 4v16" />
+            </svg>
+          </button>
+          <div class="crumbs" id="crumbs" aria-label="Breadcrumb"></div>
+          <div class="module-search">
+            <label class="module-search-field" for="moduleSearch">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 4.5 4.5"></path></svg>
+              <input id="moduleSearch" type="search" placeholder="Search learning modules…" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="moduleSearchResults" aria-expanded="false" aria-label="Search learning modules" />
+              <span class="module-search-shortcut" aria-hidden="true">Ctrl K</span>
+            </label>
+            <div class="module-search-results" id="moduleSearchResults" role="listbox" aria-label="Search results" hidden></div>
+          </div>
+          <div class="top-stats" aria-label="Current run totals">
+            <span class="tstat"><b id="n1">0</b> bytes</span
+            ><span class="tstat"><b id="n2">0</b> packets</span
+            ><span class="tstat"><b id="n3">0</b> retries</span>
+          </div>
+          <div class="profile-menu" id="profileMenu">
+            <button class="btn ghost sm profile-trigger" id="profileBtn" type="button"
+              aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
+              <span class="profile-avatar" id="profileAvatar" aria-hidden="true">U</span>
+              <span>User Profile</span>
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="profile-dropdown" id="profileDropdown" hidden>
+              <div class="profile-summary">
+                <strong id="profileName">User</strong>
+                <span id="profileEmail"></span>
+              </div>
+              <button class="profile-menu-item" id="changePasswordBtn" type="button">Change Password</button>
+              <button class="profile-menu-item danger" id="logoutBtn" type="button">Log out</button>
+            </div>
+          </div>
+          <button
+            class="icon-btn"
+            id="themeBtn"
+            aria-label="Switch theme"
+          ></button>
+        </header>
+
+        <main id="view" tabindex="-1">
+          <!-- ============ Core lab ============ -->
+          <section class="stage" id="s0">
+            <div class="head">
+              <div class="eyebrow">Core lab · Step 1 of 4</div>
+              <h2>Turn words into bytes</h2>
+              <p>
+                Every character becomes one or more UTF-8 bytes. In the byte
+                cards, each lit square is a 1 bit and each dark square is a 0
+                bit.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="field">
+                <label for="msg">Your message</label
+                ><textarea
+                  id="msg"
+                  rows="2"
+                  maxlength="120"
+                  spellcheck="false"
+                ></textarea>
+              </div>
+              <div
+                class="presets"
+                id="presets"
+                aria-label="Sample messages"
+              ></div>
+              <div class="stats" id="mstats"></div>
+            </div>
+            <div class="panel">
+              <h3>Byte lab</h3>
+              <p class="hint" id="bsum"></p>
+              <div class="bytes" id="bytes"></div>
+            </div>
+            <div class="foot">
+              <span></span
+              ><a class="btn" href="#/lab/1">Split into packets →</a>
+            </div>
+          </section>
+
+          <section class="stage" id="s1">
+            <div class="head">
+              <div class="eyebrow">Core lab · Step 2 of 4</div>
+              <h2>Cut the stream into packets</h2>
+              <p>
+                Drag the slider to change how many bytes fit in one packet.
+                Hover or focus a packet to see which bytes it carries.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="field">
+                <label for="ps"
+                  >Maximum payload: <b id="psv"></b> bytes per packet</label
+                ><input id="ps" type="range" min="1" max="8" value="3" />
+              </div>
+              <div class="stats" id="pstats"></div>
+            </div>
+            <div class="panel">
+              <h3>Byte stream</h3>
+              <p class="hint">The same colour means the same packet.</p>
+              <div class="chips" id="pstream"></div>
+            </div>
+            <div class="panel">
+              <h3>Packets</h3>
+              <p class="hint">
+                Each packet has a header the receiver can read, a payload slice,
+                and a CRC-8 trailer so damage can be detected.
+              </p>
+              <div class="packets" id="pk"></div>
+            </div>
+            <div class="foot">
+              <a class="btn ghost" href="#/lab/0">← Back</a
+              ><a class="btn" href="#/lab/2">Go to the link →</a>
+            </div>
+          </section>
+
+          <section class="stage" id="s2">
+            <div class="head">
+              <div class="eyebrow">Core lab · Step 3 of 4</div>
+              <h2>Send it across a shaky link</h2>
+              <p>
+                The sender waits for an ACK after every packet. A lost or
+                corrupted packet is sent again until the retry limit is reached.
+                You can take the link down while a run is in progress.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="controls">
+                <div class="field">
+                  <label for="ord">Delivery order</label
+                  ><select id="ord">
+                    <option value="n">In sequence</option>
+                    <option value="r">Reverse order</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="loss">Packet loss</label
+                  ><select id="loss">
+                    <option value="0">0% (perfect)</option>
+                    <option value="10">10%</option>
+                    <option value="30" selected>30%</option>
+                    <option value="50">50%</option>
+                    <option value="70">70%</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="corr">Bit corruption</label
+                  ><select id="corr">
+                    <option value="0" selected>0%</option>
+                    <option value="10">10%</option>
+                    <option value="25">25%</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="retries">Retry limit</label
+                  ><select id="retries">
+                    <option>0</option>
+                    <option>1</option>
+                    <option>2</option>
+                    <option selected>3</option>
+                    <option>5</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="spd">Speed</label
+                  ><select id="spd">
+                    <option value="0.6">Slow</option>
+                    <option value="1" selected>Normal</option>
+                    <option value="2.5">Fast</option>
+                  </select>
+                </div>
+                <div class="btnrow">
+                  <button class="btn" id="go">Transmit packets</button
+                  ><button class="btn ghost" id="stop" disabled>Stop</button>
+                </div>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="path">
+                <div class="node">
+                  <h3>Sender</h3>
+                  <p id="sp">Ready</p>
+                  <div class="mini" id="sq"></div>
+                </div>
+                <div class="wire" aria-hidden="true">
+                  <div class="fly" id="pkt">P1</div>
+                  <div class="fly" id="ack">ACK 1</div>
+                </div>
+                <div class="node">
+                  <h3>Receiver</h3>
+                  <p id="rp">Waiting</p>
+                  <div class="mini" id="rq"></div>
+                </div>
+              </div>
+              <div class="status" id="st" aria-live="polite">
+                Press Transmit to start.
+              </div>
+            </div>
+            <div class="panel">
+              <h3>Event log</h3>
+              <ul class="log" id="log"></ul>
+            </div>
+            <div class="foot">
+              <a class="btn ghost" href="#/lab/1">← Back</a
+              ><a class="btn" href="#/lab/3">See what arrived →</a>
+            </div>
+          </section>
+
+          <section class="stage" id="s3">
+            <div class="head">
+              <div class="eyebrow">Core lab · Step 4 of 4</div>
+              <h2>Rebuild the message</h2>
+              <p>
+                The receiver verifies each packet, puts them in order by
+                sequence number, joins the bytes and decodes them as UTF-8.
+              </p>
+            </div>
+            <div class="panel empty" id="rEmpty">
+              <p>No transmission yet. Send the packets first.</p>
+              <a class="btn" href="#/lab/2">Go to the link</a>
+            </div>
+            <div id="rBody">
+              <div class="cols2">
+                <div class="panel">
+                  <h3>Arrival order</h3>
+                  <p class="hint">The order packets reached the receiver.</p>
+                  <ul class="log" id="arr"></ul>
+                </div>
+                <div class="panel">
+                  <h3>Slots by sequence number</h3>
+                  <p class="hint" id="rc"></p>
+                  <div class="slots" id="slots"></div>
+                </div>
+              </div>
+              <div class="panel">
+                <h3>Reassembled message</h3>
+                <p class="hint" id="rhint">&nbsp;</p>
+                <div class="result" id="res" aria-live="polite"></div>
+              </div>
+            </div>
+            <div class="foot">
+              <a class="btn ghost" href="#/lab/2">← Back</a
+              ><a class="btn ghost" href="#/lab/0">Start over</a>
+            </div>
+          </section>
+
+          <!-- ============ Dynamic views ============ -->
+          <section class="stage" id="dash"></section>
+          <section class="stage" id="mview"></section>
+        </main>
+        <footer class="site-foot">
+          Data Comms Lab · every simulator runs locally in your browser
+        </footer>
+      </div>
+      <dialog class="password-dialog" id="changePasswordDialog" aria-labelledby="passwordDialogTitle">
+        <form id="changePasswordForm">
+          <h2 id="passwordDialogTitle">Change Password</h2>
+          <label for="currentPassword">Current Password
+            <span class="password-input-wrap">
+              <input id="currentPassword" type="password" autocomplete="current-password" required />
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="currentPassword" aria-label="Show current password" aria-pressed="false" title="Show current password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
+            </span>
+          </label>
+          <label for="newPassword">New Password
+            <span class="password-input-wrap">
+              <input id="newPassword" type="password" autocomplete="new-password" minlength="8" required />
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="newPassword" aria-label="Show new password" aria-pressed="false" title="Show new password"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
+            </span>
+          </label>
+          <label for="confirmNewPassword">Confirm New Password
+            <span class="password-input-wrap">
+              <input id="confirmNewPassword" type="password" autocomplete="new-password" minlength="8" required />
+              <button class="password-visibility-btn password-toggle-btn" type="button" data-password-target="confirmNewPassword" aria-label="Show password confirmation" aria-pressed="false" title="Show password confirmation"><svg class="password-eye-icon icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg><svg class="password-eye-icon icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 3 18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8"/><path d="M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7a10.7 10.7 0 0 0 4-.8"/></svg></button>
+            </span>
+          </label>
+          <p class="password-message" id="passwordChangeMessage" role="status" aria-live="polite"></p>
+          <div class="password-actions">
+            <button class="btn ghost" id="cancelPasswordChange" type="button">Cancel</button>
+            <button class="btn" id="passwordChangeSubmit" type="submit">Update Password</button>
+          </div>
+        </form>
+      </dialog>
+    </div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- One entry point. type="module" turns on import/export; it must be served over http:// (see README). -->
+    <script type="module" src="./js/app.js"></script>
+    <script type="module" src="./js/auth/login.js"></script>
+  </body>
+</html>
