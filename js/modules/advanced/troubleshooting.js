@@ -76,6 +76,24 @@ regMod({
       );
       term.scrollTop = term.scrollHeight;
     };
+    const renderShortcuts = () => {
+      const q = mode === 'real'
+        ? ['ping example.com', 'traceroute example.com', 'nslookup example.com', 'ip addr', 'ip route']
+        : [
+            'ip route',
+            'cat /etc/resolv.conf',
+            'ping 93.184.216.34',
+            'ping example.com',
+            'traceroute example.com',
+            'nslookup example.com',
+            'curl https://example.com',
+            'curl http://example.com',
+            cur === 4 ? 'nslookup intranet.local' : 'ping 10.0.1.5',
+            cur === 4 ? 'curl http://intranet.local' : 'ip addr',
+          ];
+      if (mode !== 'real' && cur === 4) q.push('curl http://10.0.1.5');
+      $('#tq', root).innerHTML = q.map(x => `<button class="chipbtn">${x}</button>`).join('');
+    };
     const load = i => {
       cur = i;
       ran = 0;
@@ -90,20 +108,7 @@ regMod({
         );
       term.innerHTML = '';
       print(['Type a command, or press one of the shortcuts below. Type help for the list.']);
-      const q = [
-        'ip route',
-        'cat /etc/resolv.conf',
-        'ping 93.184.216.34',
-        'ping example.com',
-        'traceroute example.com',
-        'nslookup example.com',
-        'curl https://example.com',
-        'curl http://example.com',
-        i === 4 ? 'nslookup intranet.local' : 'ping 10.0.1.5',
-        i === 4 ? 'curl http://intranet.local' : 'ip addr',
-      ];
-      if (i === 4) q.push('curl http://10.0.1.5');
-      $('#tq', root).innerHTML = q.map(x => `<button class="chipbtn">${x}</button>`).join('');
+      renderShortcuts();
       $('#tfb', root).innerHTML = '';
       $('#tdx', root).value = '';
     };
@@ -117,6 +122,7 @@ regMod({
       $('#tmode-note', root).textContent = isReal
         ? 'Real mode sends supported commands to the local agent on this computer. Outputs are real; they may differ from the selected practice case. No simulated fallback is used.'
         : 'Simulation uses the built-in fault scenario. It does not send packets or run commands on your computer.';
+      renderShortcuts();
       const status = $('#tagent-status', root);
       if (!isReal) {
         status.textContent = 'Simulation mode · no real network commands run.';
