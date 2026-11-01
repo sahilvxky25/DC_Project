@@ -9,7 +9,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Network layer:** IPv4/subnet practice, IP headers, routing, a visual Network Topology Builder, and a Wi-Fi and Wireless Networking Simulator with SSID/band/channel settings, coverage, simplified interference, obstacles, and Ethernet comparison.
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, sockets, and a Network Performance Analyzer for estimated transfer time, throughput, delivery ratio, and retransmissions.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
-- **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
+- **Advanced topics:** encapsulation, packet capture and display filters, and a Troubleshooting Lab with simulated cases plus an optional local command agent for real ping/traceroute/DNS and interface/routing diagnostics.
 - **Learning tools:** tutorials, challenges/quizzes, glossary, searchable Network Protocol Comparison Lab, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
 - **Cloud progress:** Firestore synchronization of existing saved progress, achievements, run history, quiz statistics, notes, theme, and last visited screen for the signed-in account.
@@ -17,12 +17,13 @@ BitSecure is an interactive, browser-based data communications and networking le
 
 The Network Performance Analyzer uses a seeded, stop-and-wait model with configurable bandwidth, round-trip time, packet loss, packet size, packet count, and retry limits. Its outputs are estimates only; it does not measure the live internet connection or send real packets.
 
-Most networking demonstrations are simulations intended for learning; the HTTP server and network scenarios shown in the modules are not real remote services.
+Most networking demonstrations are simulations intended for learning; the HTTP server and network scenarios shown in the modules are not real remote services. The Troubleshooting Lab is simulation-only by default. Its optional Real diagnostics mode runs a strict allowlist of local OS commands only when you separately start the local agent described in `agent/README.md`.
 
 ## Requirements
 
 - A modern browser with JavaScript modules and the Web Crypto API (for the cryptography demonstration).
 - Python 3 or another local static HTTP server.
+- Python 3.9+ only if you want to use the optional local networking command agent (`agent/local_agent.py`).
 - A Firebase project with Authentication and Cloud Firestore configured.
 
 ## Run locally
@@ -89,6 +90,9 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 ```text
 .
 ├── index.html                  Main page, authentication UI, and app shell
+├── agent/
+│   ├── local_agent.py          Optional loopback-only real networking diagnostics
+│   └── README.md               Local agent setup and security notes
 ├── favicon.png                 BitSecure favicon
 ├── css/
 │   ├── tokens.css              Design tokens and themes
@@ -153,6 +157,7 @@ Protect the Firebase project by reviewing API-key restrictions where applicable,
 | Change Firebase initialization | `js/auth/firebase-client.js` |
 | Change account/login presentation | `index.html`, `css/login.css`, and `css/profile.css` |
 | Change quiz questions, tutorials, or glossary | `js/modules/learning/challenges.js`, `tutorials.js`, or `glossary.js` |
+| Change real local networking diagnostics | `agent/local_agent.py` and `js/modules/advanced/troubleshooting.js` |
 
 ## Troubleshooting
 
@@ -200,3 +205,13 @@ Keep protocol logic separate from DOM rendering where practical, use the existin
 - **Hash routing:** using the URL fragment (the part after `#`) to select a screen without a full page reload.
 - **TLS:** Transport Layer Security, the protocol used to protect data in transit.
 - **ARQ:** Automatic Repeat reQuest, a family of error-control techniques that use acknowledgements and retransmissions.
+
+
+## Optional real networking commands
+
+The Troubleshooting Lab now has two explicit modes:
+
+- **Simulation:** the existing guided fault cases and simulated outputs remain unchanged.
+- **Real diagnostics:** sends supported commands to the optional local agent on your own computer. See [agent/README.md](agent/README.md) for setup, allowed commands, and origin configuration.
+
+The local agent binds only to `127.0.0.1`, validates a fixed command allowlist, invokes subprocesses without a shell, and applies runtime/output limits. It does not provide a general-purpose shell. Real commands can reveal your machine's network configuration and send packets to the destinations you specify, so only run diagnostics against systems you are authorized to test. Browser private-network restrictions or firewall settings may prevent a hosted HTTPS page from contacting localhost; the UI reports agent errors and never silently substitutes simulated output.
