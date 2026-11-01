@@ -47,7 +47,7 @@ regMod({
               <div class="field"><label for="npa-seed">Repeatable random seed</label><input id="npa-seed" name="seed" type="number" min="1" max="2147483647" step="1" value="42" required><small>Same settings and seed produce the same result.</small></div>
             </div>
             <div id="npa-errors" class="npa-errors" role="alert" aria-live="polite" hidden></div>
-            <div class="btnrow"><button class="btn" type="submit">Run simulation</button><button class="btn ghost" type="button" id="npa-reset">Reset defaults</button></div>
+            <div class="btnrow"><button class="btn" type="submit">Run simulation</button><button class="btn ghost" type="button" id="npa-compare">Compare all models</button><button class="btn ghost" type="button" id="npa-reset">Reset defaults</button></div>
           </form>
         </div>
         <div id="npa-output" aria-live="polite">
@@ -261,6 +261,34 @@ regMod({
       updateModelControls();
       render(simulatePerformance(readForm()));
     }));
+    $('#npa-compare').addEventListener('click', () => {
+      animationRun += 1;
+      const runButton = form.querySelector('button[type="submit"]');
+      runButton.disabled = false;
+      runButton.textContent = 'Run simulation';
+      const base = readForm();
+      const models = [
+        ['Stop-and-Wait', 'stop-and-wait'],
+        ['Sliding Window', 'sliding-window'],
+        ['UDP best effort', 'udp'],
+      ];
+      const comparisons = models.map(([label, model]) => {
+        const result = simulatePerformance({ ...base, model });
+        return { label, result };
+      });
+      if (comparisons.some(item => item.result.errors.length)) {
+        render(comparisons.find(item => item.result.errors.length).result);
+        return;
+      }
+      const fmtCompare = value => Number(value).toLocaleString(undefined, { maximumFractionDigits: 3 });
+      const rows = comparisons.map(({ label, result }) => {
+        const r = result.results;
+        return `<tr><th>${label}</th><td>${fmtCompare(r.totalTimeMs)} ms</td><td>${fmtCompare(r.throughputMbps)} Mbps</td><td>${fmtCompare(r.deliveryRatio)}%</td><td>${r.retransmissions}</td><td>${r.undeliveredPackets}</td></tr>`;
+      }).join('');
+      output.innerHTML = `<div class="panel"><h3>Simulation Model Comparison</h3><p class="hint">Same inputs and random seed; only the delivery model changes. These are model estimates, not real network measurements.</p><div class="tscroll"><table class="tb"><thead><tr><th>Model</th><th>Estimated time</th><th>Throughput</th><th>Delivery ratio</th><th>Retries</th><th>Undelivered</th></tr></thead><tbody>${rows}</tbody></table></div><p class="hint">Sliding Window is a simplified pipelining approximation, not a full TCP congestion-control implementation. UDP does not retransmit lost packets.</p></div>`;
+      output.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
     $('#npa-reset').addEventListener('click', () => {
       animationRun += 1;
       const runButton = form.querySelector('button[type="submit"]');
