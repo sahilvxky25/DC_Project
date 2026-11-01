@@ -9,7 +9,7 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Network layer:** IPv4/subnet practice, IP headers, routing, a visual Network Topology Builder, and a Wi-Fi and Wireless Networking Simulator with SSID/band/channel settings, coverage, simplified interference, obstacles, and Ethernet comparison.
 - **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, sockets, and a Network Performance Analyzer for estimated transfer time, throughput, delivery ratio, and retransmissions.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
-- **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
+- **Advanced topics:** encapsulation, packet capture and display filters, simulated troubleshooting exercises, and authenticated real-network diagnostics (ping, traceroute, DNS, and HTTP HEAD) executed by a separately hosted backend.
 - **Learning tools:** tutorials, challenges/quizzes, glossary, searchable Network Protocol Comparison Lab, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
 - **Cloud progress:** Firestore synchronization of existing saved progress, achievements, run history, quiz statistics, notes, theme, and last visited screen for the signed-in account.
@@ -17,7 +17,20 @@ BitSecure is an interactive, browser-based data communications and networking le
 
 The Network Performance Analyzer uses a seeded, stop-and-wait model with configurable bandwidth, round-trip time, packet loss, packet size, packet count, and retry limits. Its outputs are estimates only; it does not measure the live internet connection or send real packets.
 
-Most networking demonstrations are simulations intended for learning; the HTTP server and network scenarios shown in the modules are not real remote services.
+Most networking demonstrations are simulations intended for learning. The Real Network Diagnostics module runs a small allowlist of real operations on its backend server, not on the learner’s device. The backend must be deployed and configured separately; without it, diagnostics are unavailable.
+
+## Real Network Diagnostics backend (optional)
+
+The module calls a separately hosted FastAPI service. It supports ping, traceroute, DNS lookup, and HTTP HEAD, and does not accept arbitrary shell commands. Operations run from the backend host's network location, not from the visitor's computer.
+
+1. Deploy the `backend/` directory to a Python host/container that permits the required network utilities. ICMP and traceroute may be restricted by some providers.
+2. Install dependencies with `pip install -r requirements.txt`.
+3. Configure `FIREBASE_SERVICE_ACCOUNT_JSON` with a Firebase Admin service-account JSON value, or configure Application Default Credentials. Never commit service-account credentials to Git.
+4. Set `ALLOWED_ORIGINS` to the exact HTTPS origin(s) serving BitSecure (comma-separated).
+5. Configure `window.BITSECURE_DIAGNOSTICS_API_URL = "https://YOUR-BACKEND-HOST";` in a deployment-specific script loaded before `js/app.js`. Do not include a trailing `/api`.
+6. Start with `uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}` from `backend/`; use `/health` for health checks.
+
+Each request requires a valid Firebase ID token. The backend validates targets, rejects non-public IP destinations, uses fixed argument lists without a shell, applies timeouts, and truncates output. Apply rate limiting at the hosting layer and test whether your host permits ping/traceroute before relying on them.
 
 ## Requirements
 
