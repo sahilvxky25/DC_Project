@@ -7,13 +7,15 @@ BitSecure is an interactive, browser-based data communications and networking le
 - **Core end-to-end lab:** follow text through UTF-8 bytes, packetization, transmission over a simulated lossy link, retries, reassembly, and decoding.
 - **Link layer:** framing and stuffing, error detection, Stop-and-Wait, and sliding-window ARQ.
 - **Network layer:** IPv4/subnet practice, IP headers, routing, a visual Network Topology Builder, and a Wi-Fi and Wireless Networking Simulator with SSID/band/channel settings, coverage, simplified interference, obstacles, and Ethernet comparison.
-- **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, and sockets.
+- **Transport layer:** TCP/UDP comparisons and header building, handshake steps, congestion control, sockets, and a Network Performance Analyzer for estimated transfer time, throughput, delivery ratio, and retransmissions.
 - **Application layer:** DNS resolution and caching, an HTTP Status Code Explorer based on the IANA registry, HTTP request/response simulations, and TLS handshake/encryption demonstrations.
 - **Advanced topics:** encapsulation, packet capture and display filters, and troubleshooting exercises.
 - **Learning tools:** tutorials, challenges/quizzes, glossary, searchable Network Protocol Comparison Lab, progress indicators, achievements, and theme selection.
 - **Accounts:** Firebase Authentication email/password sign-up and sign-in, password-reset email, email verification, profile menu, password change, and sign-out.
 - **Cloud progress:** Firestore synchronization of existing saved progress, achievements, run history, quiz statistics, notes, theme, and last visited screen for the signed-in account.
 - **Responsive interface:** desktop sidebar controls and a mobile navigation drawer.
+
+The Network Performance Analyzer uses a seeded, stop-and-wait model with configurable bandwidth, round-trip time, packet loss, packet size, packet count, and retry limits. Its outputs are estimates only; it does not measure the live internet connection or send real packets.
 
 Most networking demonstrations are simulations intended for learning; the HTTP server and network scenarios shown in the modules are not real remote services.
 
