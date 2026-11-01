@@ -1,7 +1,7 @@
 /**
  * learning module: Troubleshooting lab
  *
- * A simulated terminal (ping, traceroute, nslookup, curl, ip) for diagnosing five faults.
+ * A terminal with simulated practice plus optional authenticated cloud diagnostics.
  *
  * This file registers one learning module with regMod(). Its mount(root) function builds the screen inside
  * `root` and attaches event handlers; the function mount() returns (if any) is its cleanup, called by the router
@@ -25,13 +25,17 @@ import { $, $$, esc } from '../../core/utils.js';
 import { FAULTS, netsim, TROUBLE } from '../../simulations/troubleshooting.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
+import { auth } from '../../auth/firebase-client.js';
+
+// Set window.BITSECURE_DIAGNOSTICS_URL to the deployed backend origin (no trailing slash).
+const CLOUD_API_BASE = String(window.BITSECURE_DIAGNOSTICS_URL || '').replace(/\\/$/, '');
 
 /* Register "Troubleshooting lab". The router calls mount(root) when the learner opens #/m/trouble and calls the returned function (if any) when they leave. */
 regMod({
   id: 'trouble',
   group: 'adv',
   title: 'Troubleshooting lab',
-  desc: 'A user reports a problem. Use ping, traceroute, nslookup and curl in a simulated terminal to find the fault.',
+  desc: 'Investigate network faults with simulations or authenticated real diagnostics executed by a cloud server.',
   obj: [
     'Form a hypothesis from the symptoms.',
     'Test it with the right tool instead of guessing.',
@@ -52,15 +56,15 @@ regMod({
         `<div class="presets" id="tcases">${TROUBLE.map((t, i) => `<button class="chipbtn${i === 0 ? ' on' : ''}" data-i="${i}">Case ${i + 1}</button>`).join('')}</div><div id="tbrief"></div>`
       ) +
       panel(
-        'Terminal on the user’s laptop',
+        'Troubleshooting terminal',
         `<div class="controls" style="margin-bottom:12px">
           <div class="btnrow" role="group" aria-label="Terminal mode">
             <button class="btn sm" id="tmode-sim" type="button" aria-pressed="true">Simulation</button>
-            <button class="btn ghost sm" id="tmode-real" type="button" aria-pressed="false">Real diagnostics</button>
+            <button class="btn ghost sm" id="tmode-real" type="button" aria-pressed="false">Cloud diagnostics</button>
           </div>
           <span id="tagent-status" class="hint" role="status">Simulation mode · no real network commands run.</span>
         </div>
-        <p class="hint" id="tmode-note">Simulation uses the built-in fault scenario. Choose Real diagnostics to run allowlisted commands on your own computer with the optional local agent.</p>
+        <p class="hint" id="tmode-note">Simulation uses the built-in fault scenario. Choose Cloud diagnostics to run supported commands from the remote diagnostics server.</p>
         <div class="term" id="tterm" aria-label="Terminal output" aria-live="polite"></div>
         <div class="termin"><span>$</span><input id="tin" type="text" spellcheck="false" autocomplete="off" aria-label="Command"><button class="btn sm" id="trun">Run</button></div><div class="presets" id="tq"></div>`
       ) +
@@ -78,7 +82,7 @@ regMod({
     };
     const renderShortcuts = () => {
       const q = mode === 'real'
-        ? ['ping example.com', 'traceroute example.com', 'nslookup example.com', 'ip addr', 'ip route']
+        ? ['ping example.com', 'traceroute example.com', 'nslookup example.com']
         : [
             'ip route',
             'cat /etc/resolv.conf',
@@ -120,7 +124,7 @@ regMod({
       $('#tmode-sim', root).setAttribute('aria-pressed', String(!isReal));
       $('#tmode-real', root).setAttribute('aria-pressed', String(isReal));
       $('#tmode-note', root).textContent = isReal
-        ? 'Real mode sends supported commands to the local agent on this computer. Outputs are real; they may differ from the selected practice case. No simulated fallback is used.'
+        ? 'Cloud mode sends supported diagnostics to the remote server. Results describe the server's network, not your device. No simulated fallback is used.'
         : 'Simulation uses the built-in fault scenario. It does not send packets or run commands on your computer.';
       renderShortcuts();
       const status = $('#tagent-status', root);
@@ -128,15 +132,19 @@ regMod({
         status.textContent = 'Simulation mode · no real network commands run.';
         return;
       }
-      status.textContent = 'Checking local agent…';
+      if (!CLOUD_API_BASE) {
+        status.textContent = 'Cloud API URL not configured. Deploy the backend and set window.BITSECURE_DIAGNOSTICS_URL.';
+        return;
+      }
+      status.textContent = 'Checking cloud diagnostics service…';
       try {
-        const response = await fetch('http://127.0.0.1:8765/health', { method: 'GET', cache: 'no-store' });
-        if (!response.ok) throw new Error('Agent returned HTTP ' + response.status);
+        const response = await fetch(CLOUD_API_BASE + '/health', { method: 'GET', cache: 'no-store' });
+        if (!response.ok) throw new Error('Cloud API returned HTTP ' + response.status);
         const data = await response.json();
-        if (!data.ok) throw new Error('Agent did not report ready.');
-        status.textContent = 'Local agent connected · ' + data.platform + ' · real commands enabled.';
+        if (!data.ok) throw new Error('Cloud service did not report ready.');
+        status.textContent = 'Cloud service connected · commands run remotely.';
       } catch (error) {
-        status.textContent = 'Local agent not connected. Start agent/local_agent.py and check its allowed origin.';
+        status.textContent = 'Cloud diagnostics service unavailable. Check the configured API URL and deployment.';
       }
     };
     const run = async line => {
@@ -154,25 +162,44 @@ regMod({
         return;
       }
       const status = $('#tagent-status', root);
-      status.textContent = 'Running real diagnostic…';
+      if (!CLOUD_API_BASE) {
+        print(['Cloud diagnostics API is not configured.', 'The site owner must deploy the backend and set window.BITSECURE_DIAGNOSTICS_URL.', 'No simulated output was substituted.'], 'err');
+        status.textContent = 'Cloud API URL not configured.';
+        return;
+      }
+      const match = line.trim().match(/^(ping|traceroute|tracert|nslookup)\\s+([A-Za-z0-9.-]{1,253})$/i);
+      if (!match) {
+        print(['Cloud mode supports only: ping <public-hostname>, traceroute <public-hostname>, nslookup <hostname>.', 'Use Simulation mode for ip addr, ip route, curl, and educational fault scenarios.'], 'err');
+        status.textContent = 'Unsupported cloud command.';
+        return;
+      }
+      const command = match[1].toLowerCase() === 'tracert' ? 'traceroute' : match[1].toLowerCase();
+      const user = auth.currentUser;
+      if (!user) {
+        print(['Sign in to run cloud diagnostics.'], 'err');
+        status.textContent = 'Authentication required.';
+        return;
+      }
+      status.textContent = 'Running cloud diagnostic…';
       try {
-        const response = await fetch('http://127.0.0.1:8765/run', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ command: line }),
-          cache: 'no-store'
+        const token = await user.getIdToken();
+        const response = await fetch(CLOUD_API_BASE + '/api/diagnostics/run', {
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ command, target: match[2] }), cache: 'no-store'
         });
         const data = await response.json();
-        if (!response.ok || !data.ok) {
-          print([data.error || 'The local agent rejected this command.'], 'err');
-        } else {
-          print(Array.isArray(data.output) ? data.output : [String(data.output || '')]);
-          if (Number.isFinite(data.durationMs)) print(['Completed in ' + data.durationMs + ' ms' + (data.exitCode !== undefined ? ' · exit code ' + data.exitCode : '')], 'hint');
+        if (!response.ok) {
+          print([data.detail || 'The cloud service rejected this command.'], 'err');
+          status.textContent = 'Cloud diagnostic failed · see error output.';
+          return;
         }
-        status.textContent = 'Local agent connected · real diagnostics mode.';
+        print(Array.isArray(data.output) ? data.output : [String(data.output || '')]);
+        print([data.note || 'Executed from the cloud server.'], 'hint');
+        if (Number.isFinite(data.durationMs)) print(['Completed in ' + data.durationMs + ' ms' + (data.exitCode !== undefined ? ' · exit code ' + data.exitCode : '')], 'hint');
+        status.textContent = data.ok ? 'Cloud diagnostic completed.' : 'Command completed with a non-zero exit code.';
       } catch (error) {
-        print(['Could not reach the local command agent at 127.0.0.1:8765.', 'Start python agent/local_agent.py and allow this exact website origin in the agent configuration.', 'No simulated output was substituted.'], 'err');
-        status.textContent = 'Local agent unavailable · real command was not run.';
+        print(['Could not reach the cloud diagnostics API.', 'Check the backend deployment, configured API URL, and CORS allowed origins.', 'No simulated output was substituted.'], 'err');
+        status.textContent = 'Cloud diagnostics unavailable · real command was not run.';
       }
     };
     $('#tmode-sim', root).onclick = () => setMode('simulation');
