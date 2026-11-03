@@ -279,7 +279,8 @@ This terminal executes on a cloud server, not on your device.</div>
     };
     cloudForm.addEventListener('submit', event => {
       event.preventDefault();
-      if (!cloudCommand.value) return;\n      executeCloud(cloudCommand.value);
+      if (!cloudCommand.value) return;
+      executeCloud(cloudCommand.value);
     });
   },
 });
