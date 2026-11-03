@@ -29,6 +29,7 @@ import { $, esc } from '../../core/utils.js';
 import { ERR_METHODS, errChecks, fmtCheck } from '../../simulations/error-detection.js';
 import { encodeSecded, decodeSecded } from '../../simulations/hamming-code.js';
 import { encode2DParity } from '../../simulations/two-dimensional-parity.js';
+import { ERROR_PATTERNS, corruptBytes } from '../../simulations/error-injection.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
 
@@ -90,7 +91,7 @@ regMod({
           ],
           1
         )}<button class="btn sm" id="einj">Inject</button>
-        <button class="btn ghost sm" id="eadj">Flip two adjacent bits</button><button class="btn ghost sm" id="eswap">Swap first two bytes</button><button class="btn ghost sm" id="ereset">Reset</button></div>`
+        <select id="epattern" aria-label="Error pattern">${ERROR_PATTERNS.map(p => `<option value="${p.id}">${p.label}</option>`).join('')}</select><button class="btn ghost sm" id="epatterngo">Inject pattern</button><button class="btn ghost sm" id="eadj">Flip two adjacent bits</button><button class="btn ghost sm" id="eswap">Swap first two bytes</button><button class="btn ghost sm" id="ereset">Reset</button></div>`
       ) +
       panel('Receiver verdict', '<div id="etab"></div><div id="enote"></div>') +
       panel('Hamming code — detect and correct',
@@ -280,6 +281,12 @@ regMod({
             ? 'An even number of flipped bits leaves a parity bit unchanged, so parity detects 0% of these errors.'
             : 'Parity catches every odd number of flips, but misses all even numbers.'
         );
+    };
+    $('#epatterngo', root).onclick = () => {
+      const result = corruptBytes(sent(), $('#epattern', root).value);
+      flips.clear(); swap = false;
+      result.indexes.forEach(i => flips.add(i));
+      refresh();
     };
     $('#ehencode', root).onclick = () => {
       const data = $('#ehdata', root).value;
