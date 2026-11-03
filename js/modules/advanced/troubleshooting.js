@@ -70,17 +70,30 @@ regMod({
 Type help to view supported commands.
 This terminal executes on a cloud server, not on your device.</div>
         <form class="cloud-terminal-form" id="cloud-terminal-form">
-          <input id="cloud-terminal-input" type="text" maxlength="300" spellcheck="false" autocomplete="off" placeholder="ping 1.1.1.1" aria-label="Cloud network command" required />
-          <button class="btn" id="cloud-terminal-run" type="submit">Run command</button>
+          <label class="cloud-terminal-select-label" for="cloud-terminal-command">Select a networking command</label>
+          <select id="cloud-terminal-command" aria-label="Select a cloud network command" required>
+            <option value="">Choose a command…</option>
+            <optgroup label="Connectivity">
+              <option value="ping 1.1.1.1">Ping — Cloudflare DNS (1.1.1.1)</option>
+              <option value="ping example.com">Ping — example.com</option>
+              <option value="traceroute example.com">Traceroute — example.com</option>
+            </optgroup>
+            <optgroup label="DNS">
+              <option value="nslookup example.com">NSLookup — example.com</option>
+              <option value="dig example.com">Dig — example.com</option>
+            </optgroup>
+            <optgroup label="Web">
+              <option value="curl https://example.com">HTTP check — example.com</option>
+            </optgroup>
+            <optgroup label="Cloud network information">
+              <option value="ip addr">IP addresses and interfaces</option>
+              <option value="ip route">Routing table</option>
+              <option value="ip neigh">Neighbour table</option>
+              <option value="ss -tuna">Network sockets</option>
+            </optgroup>
+          </select>
+          <button class="btn" id="cloud-terminal-run" type="submit">Run selected command</button>
         </form>
-        <div class="cloud-terminal-shortcuts" id="cloud-terminal-shortcuts">
-          <button class="chipbtn" type="button" data-command="ping 1.1.1.1">ping 1.1.1.1</button>
-          <button class="chipbtn" type="button" data-command="traceroute example.com">traceroute example.com</button>
-          <button class="chipbtn" type="button" data-command="nslookup example.com">nslookup example.com</button>
-          <button class="chipbtn" type="button" data-command="dig example.com">dig example.com</button>
-          <button class="chipbtn" type="button" data-command="curl https://example.com">curl https://example.com</button>
-          <button class="chipbtn" type="button" data-command="ip route">ip route</button>
-        </div>
         <div class="cloud-terminal-meta"><span id="cloud-terminal-duration"></span><span>Limit: 15 commands/minute</span><span>Public destinations only</span></div>`
       ) +
       panel(
@@ -214,7 +227,7 @@ This terminal executes on a cloud server, not on your device.</div>
 
     // Live commands run on the authenticated cloud service; the simulated case terminal above is unchanged.
     const cloudForm = $('#cloud-terminal-form', root);
-    const cloudInput = $('#cloud-terminal-input', root);
+    const cloudCommand = $('#cloud-terminal-command', root);
     const cloudOutput = $('#cloud-terminal-output', root);
     const cloudStatus = $('#cloud-terminal-status', root);
     const cloudRunButton = $('#cloud-terminal-run', root);
@@ -230,7 +243,7 @@ This terminal executes on a cloud server, not on your device.</div>
       const clean = command.trim();
       if (!clean) return;
       appendCloudText(`$ ${clean}`, 'cloud-command-line');
-      cloudInput.value = '';
+      cloudCommand.value = '';
       cloudRunButton.disabled = true;
       cloudStatus.dataset.state = 'busy';
       cloudStatus.textContent = 'Running on cloud Linux…';
@@ -261,19 +274,12 @@ This terminal executes on a cloud server, not on your device.</div>
         cloudStatus.textContent = 'Command failed';
       } finally {
         cloudRunButton.disabled = false;
-        cloudInput.focus();
+        cloudCommand.focus();
       }
     };
     cloudForm.addEventListener('submit', event => {
       event.preventDefault();
-      executeCloud(cloudInput.value);
-    });
-    $('#cloud-terminal-shortcuts', root).addEventListener('click', event => {
-      const button = event.target.closest('[data-command]');
-      if (button) {
-        cloudInput.value = button.dataset.command;
-        executeCloud(button.dataset.command);
-      }
+      if (!cloudCommand.value) return;\n      executeCloud(cloudCommand.value);
     });
   },
 });
