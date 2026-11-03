@@ -45,7 +45,7 @@ export function labInit() {
     $('#textMode').setAttribute('aria-pressed', String(mode === 'text'));
     $('#imageMode').setAttribute('aria-pressed', String(mode === 'image'));
     $('#resultTitle').textContent = mode === 'image' ? 'Reconstructed image' : 'Reassembled message';
-    if (mode === 'text') { S.imageMimeType = null; S.imageName = null; S.imageSize = 0; encodeMsg(); }
+    if (mode === 'text') { S.imageMimeType = null; S.imageName = null; S.imageSize = 0; encodeMsg(); labSplit(); }
     else {
       S.bytes = [];
       $('#bytes').innerHTML = '<p class="hint">Choose an image to inspect its binary data.</p>';
@@ -82,6 +82,7 @@ export function labInit() {
     if (b) {
       $('#msg').value = b.textContent;
       encodeMsg();
+      labSplit();
     }
   };
   $('#msg').oninput = () => { S.dataType = 'text'; encodeMsg(); labSplit(); };
