@@ -247,7 +247,7 @@ export async function transmit() {
         if (isBad) {
           batchCorrupt++;
           if (!imageMode) {
-            const expected = packetCrc(i, P[i]);
+            const expected = packetCrc(i, P[i], imageMode);
             const seen = expected ^ (1 << Math.floor(Math.random() * 8));
             pkt.style.background = 'var(--coral)';
             logLine('CRC', 'bad', `Packet ${i + 1} failed CRC: expected ${hex(expected)}, received ${hex(seen)}. Discarded.`);
