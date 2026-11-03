@@ -225,7 +225,7 @@ export async function transmit() {
           $('#st').textContent = attempt
             ? `Retransmitting packet ${i + 1} (retry ${attempt} of ${maxRetry})...`
             : `Sending packet ${i + 1}...`;
-          if (attempt) logLine('RETRY', 're', `Packet ${i + 1} sent again.`);
+          logLine(attempt ? 'RETRY' : 'SEND', attempt ? 're' : '', `Packet ${i + 1} ${attempt ? 'sent again' : 'sent'}.`);
           await fly(pkt, isLost ? '50%' : '100%', 900 / speed);
           if (!alive()) return stopped();
         }
