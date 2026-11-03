@@ -265,3 +265,5 @@
 .image-byte-summary span{color:var(--muted);font-size:.88rem}
 .result.image-result{display:flex;justify-content:center}
 .reconstructed-image{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:10px}
+
+.image-input[hidden],.presets[hidden],#textInput[hidden]{display:none!important}
