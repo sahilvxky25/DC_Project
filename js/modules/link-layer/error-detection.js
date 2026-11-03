@@ -179,14 +179,14 @@ regMod({
         note = missed.length
           ? vd(
               'warn',
-              `${missed.length === 4 ? 'Every method' : missed.join(' and ')} missed this error.`,
+              `${missed.length === rows.length ? 'Every method' : missed.join(' and ')} missed this error.`,
               missed.length < 4
                 ? 'The stronger methods still caught it, which is why Ethernet uses a CRC.'
                 : 'The corruption happens to produce the same check value. This is rare for CRCs.'
             )
           : vd(
               'ok',
-              'All four methods caught the error.',
+              `All ${rows.length} methods caught the error.`,
               'The receiver would discard this frame and wait for a retransmission.'
             );
       } else
