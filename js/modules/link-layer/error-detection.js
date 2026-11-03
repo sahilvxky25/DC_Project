@@ -24,7 +24,7 @@
 
 import { bin8, bytesOf, hex } from '../../core/encoding.js';
 import { S } from '../../core/state.js';
-import { hn, on, panel, sel, tbl, vd } from '../../core/ui-helpers.js';
+import { hn, on, panel, sel, vd } from '../../core/ui-helpers.js';
 import { $, esc } from '../../core/utils.js';
 import { ERR_METHODS, errChecks, fmtCheck } from '../../simulations/error-detection.js';
 import { encodeSecded, decodeSecded } from '../../simulations/hamming-code.js';
@@ -152,19 +152,20 @@ regMod({
           det,
         };
       });
-      $('#etab', root).innerHTML = tbl(
-        ['Method', 'Check sent', 'Receiver computes', 'Verdict'],
-        rows.map(x => [
-          x.name,
-          x.sent,
-          x.calc,
-          {
-            h: !changed
-              ? '<span class="pill">no error yet</span>'
-              : `<span class="pill ${x.det ? 'live' : 'bad'}">${x.det ? 'error detected' : 'MISSED'}</span>`,
-          },
-        ])
-      );
+      $('#etab', root).innerHTML =
+        '<div class="err-method-grid">' +
+        rows.map(x => `
+          <article class="err-method-card ${changed ? (x.det ? 'is-detected' : 'is-missed') : 'is-idle'}">
+            <div class="err-method-head">
+              <strong>${esc(x.name)}</strong>
+              <span class="err-status ${changed ? (x.det ? 'is-detected' : 'is-missed') : 'is-idle'}">${!changed ? 'Waiting' : x.det ? 'Detected' : 'Missed'}</span>
+            </div>
+            <div class="err-check-values">
+              <div><small>Sender check</small><code>${x.sent}</code></div>
+              <div><small>Receiver check</small><code>${x.calc}</code></div>
+            </div>
+          </article>`).join('') +
+        '</div>';
       let note = '';
       if (changed) {
         flag('errflip');
@@ -180,7 +181,7 @@ regMod({
           ? vd(
               'warn',
               `${missed.length === rows.length ? 'Every method' : missed.join(' and ')} missed this error.`,
-              missed.length < 4
+              missed.length < rows.length
                 ? 'The stronger methods still caught it, which is why Ethernet uses a CRC.'
                 : 'The corruption happens to produce the same check value. This is rare for CRCs.'
             )
