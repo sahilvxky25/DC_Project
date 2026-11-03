@@ -68,7 +68,7 @@ export function labSplit() {
   const visiblePackets = S.P.slice(0, packetPreviewCount);
   $('#pk').innerHTML = (S.P.length > packetPreviewCount ? '<p class="hint">Showing ' + packetPreviewCount + ' sample packets of ' + S.P.length.toLocaleString() + '. All packets are retained and transmitted.</p>' : '') + visiblePackets.map(
     (p, i) =>
-      `<div class="pk c${i % 4}" tabindex="0" data-p="${i}"><div class="t"><span>Packet ${i + 1}</span><span>${p.length} B</span></div><div class="s"><b>Header</b>seq ${i + 1}, length ${p.length}</div><div class="s"><b>Payload</b><span>${hexs(p)}</span></div><div class="s"><b>CRC-8 trailer</b><span>${hex(packetCrc(i, p))}</span></div></div>`
+      `<div class="pk c${i % 4}" tabindex="0" data-p="${i}"><div class="t"><span>Packet ${i + 1}</span><span>${p.length} B</span></div><div class="s"><b>Header</b>seq ${i + 1}, length ${p.length}</div><div class="s"><b>Payload</b><span>${hexs(p)}</span></div><div class="s"><b>CRC-8 trailer</b><span>${hex(packetCrc(i, p, S.dataType === 'image'))}</span></div></div>`
   ).join('');
   const over = S.P.length * ((S.dataType === 'image' ? 4 : HDR) + TRL),
     tot = S.bytes.length + over;
