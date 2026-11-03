@@ -293,18 +293,6 @@ export async function transmit() {
       if (batchCorrupt) logLine('CRC', 'bad', `${batchCorrupt} packet attempt(s) failed CRC in this batch and were discarded.`);
       logLine('BATCH', batchReceived === batch.length ? 'ok' : 'warn',
         `Batch ${Math.floor(offset / batchSize) + 1}: ${batchReceived}/${batch.length} packets received.`);
-    } else {
-      $('#rp').textContent = `${run.arr.length} of ${P.length} received`;
-      ack.textContent = 'ACK ' + (batch[0] + 1);
-      ack.style.opacity = 1;
-      ack.style.left = '100%';
-      await fly(ack, '0%', 700 / speed);
-      if (!alive()) return stopped();
-      reset(ack);
-      ack.style.left = '100%';
-      logLine('ACK', 'ok', `Packet ${batch[0] + 1} acknowledged.`);
-      await sleep(250 / speed);
-      if (!alive()) return stopped();
     }
     updateProgress();
     $('#rp').textContent = `${run.arr.length.toLocaleString()} of ${P.length.toLocaleString()} received`;
