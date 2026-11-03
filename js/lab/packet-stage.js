@@ -46,18 +46,27 @@ export function labSplit() {
   for (let i = 0; i < S.bytes.length; i += n) S.P.push(S.bytes.slice(i, i + n));
   // Fingerprint of what is about to be sent. If it differs from last time, any earlier
   // transmission result no longer matches the data and is discarded.
-  const sig = n + ':' + S.bytes.join(',');
+  // Hash the byte stream instead of joining millions of characters into a huge signature string.
+  let hash = 2166136261;
+  for (let i = 0; i < S.bytes.length; i++) {
+    hash ^= S.bytes[i];
+    hash = Math.imul(hash, 16777619);
+  }
+  const sig = n + ':' + S.bytes.length + ':' + (hash >>> 0);
   if (sig !== labSig) {
     S.run = null;
     labSig = sig;
   }
-  $('#pstream').innerHTML = S.P.length
-    ? S.P.map((p, i) =>
-        p.map(x => `<span class="chip c${i % 4}" data-p="${i}">${hex(x)}</span>`).join('')
-      ).join('')
-    : '<p class="hint">No data yet. Enter text or choose an image first.</p>';
-  const visiblePackets = S.P.length > 120 ? S.P.slice(0, 120) : S.P;
-  $('#pk').innerHTML = (S.P.length > 120 ? '<p class="hint">Showing the first 120 of ' + S.P.length.toLocaleString() + ' packets. All packets remain in the simulation.</p>' : '') + visiblePackets.map(
+  if (S.dataType === 'image') {
+    $('#pstream').innerHTML = '<p class="hint">Image bytes are kept as a binary buffer. Packet cards below show a sample; the full packet set is processed during transmission.</p>';
+  } else {
+    $('#pstream').innerHTML = S.P.length
+      ? S.P.map((p, i) => p.map(x => `<span class="chip c${i % 4}" data-p="${i}">${hex(x)}</span>`).join('')).join('')
+      : '<p class="hint">No data yet. Enter text or choose an image first.</p>';
+  }
+  const packetPreviewCount = S.dataType === 'image' ? 16 : 120;
+  const visiblePackets = S.P.slice(0, packetPreviewCount);
+  $('#pk').innerHTML = (S.P.length > packetPreviewCount ? '<p class="hint">Showing ' + packetPreviewCount + ' sample packets of ' + S.P.length.toLocaleString() + '. All packets are retained and transmitted.</p>' : '') + visiblePackets.map(
     (p, i) =>
       `<div class="pk c${i % 4}" tabindex="0" data-p="${i}"><div class="t"><span>Packet ${i + 1}</span><span>${p.length} B</span></div><div class="s"><b>Header</b>seq ${i + 1}, length ${p.length}</div><div class="s"><b>Payload</b><span>${hexs(p)}</span></div><div class="s"><b>CRC-8 trailer</b><span>${hex(packetCrc(i, p))}</span></div></div>`
   ).join('');
