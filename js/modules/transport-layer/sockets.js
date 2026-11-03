@@ -154,7 +154,7 @@ regMod({
             const found=maps.find(x=>x.proto===m.proto&&x.publicPort===m.publicPort&&x.remoteIp===m.remoteIp&&x.remotePort===m.remotePort);
             if(!found){$('#nlog',p).innerHTML=vd('bad','No reverse mapping found.','The incoming packet did not match an active translation entry.');return;}
             found.expires=Date.now()+(found.proto==='TCP'?120000:30000);
-            $('#nlog',p).innerHTML=vd('ok','Reply translated back.',found.proto+' '+found.remoteIp+':'+found.remotePort+' → '+PUB+':'+found.publicPort+' matches mapping #'+found.id; + ' Destination rewritten to '+found.ip+':'+found.insidePort+'.');
+            $('#nlog',p).innerHTML=vd('ok','Reply translated back.',found.proto+' '+found.remoteIp+':'+found.remotePort+' → '+PUB+':'+found.publicPort+' matches mapping #'+found.id+'. Destination rewritten to '+found.ip+':'+found.insidePort+'.');
             draw();
           };
           $('#ncold',p).onclick=()=>{prune();$('#nlog',p).innerHTML=vd('bad','Unsolicited inbound packet dropped.','Packet to '+PUB+':'+(nextPort+123)+' has no active translation entry, so there is no inside endpoint to forward it to.');};
