@@ -267,3 +267,9 @@
 .reconstructed-image{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:10px}
 
 .image-input[hidden],.presets[hidden],#textInput[hidden]{display:none!important}
+
+/* Batched image transfer progress (kept inside the existing transmission stage). */
+.image-transfer-progress{margin-top:.8rem;padding:.75rem .9rem;border:1px solid var(--line);border-radius:10px;background:var(--bg2)}
+.image-transfer-progress-track{height:9px;overflow:hidden;border-radius:999px;background:var(--surface2);border:1px solid var(--line)}
+.image-transfer-progress-track span{display:block;width:0;height:100%;background:var(--ok);transition:width .16s ease}
+.image-transfer-progress p{margin:.5rem 0 0;color:var(--muted);font-size:.82rem;font-variant-numeric:tabular-nums}
