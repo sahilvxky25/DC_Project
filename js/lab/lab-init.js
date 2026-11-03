@@ -67,7 +67,7 @@ export function labInit() {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { alert('Choose a PNG, JPG, or WebP image.'); event.target.value = ''; return; }
-    if (file.size > 2 * 1024 * 1024) { alert('For this animated lab, choose an image no larger than 2 MB. Image transfers use the maximum 8-byte payload to keep the packet count manageable.'); event.target.value = ''; return; }
+    if (file.size > 2 * 1024 * 1024) { alert('For this animated lab, choose an image no larger than 2 MB. Image transfers use larger payloads and batched animation.'); event.target.value = ''; return; }
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (readToken !== imageReadToken || S.dataType !== 'image') return;
