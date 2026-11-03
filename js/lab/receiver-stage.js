@@ -55,9 +55,11 @@ export function labRecv() {
   res.className = 'result';
   if (miss) {
     let prefix = [];
-    for (const g of r.got) {
-      if (!g) break;
-      prefix.push(...g);
+    if (S.dataType === 'text') {
+      for (const g of r.got) {
+        if (!g) break;
+        prefix.push(...g);
+      }
     }
     const part = S.dataType === 'text' ? dec.decode(new Uint8Array(prefix)) : '';
     res.classList.add('bad');
