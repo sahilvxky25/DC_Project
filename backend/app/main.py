@@ -132,7 +132,7 @@ def execute_allowlisted(command: str) -> tuple[str, str]:
 
     if name == "ping":
         count = 4
-        if args and args[0] in {"-c", "-n"}:
+        if args and args[0] == "-c":
             if len(args) < 3 or not args[1].isdigit() or not 1 <= int(args[1]) <= 4:
                 raise ValueError("Usage: ping [-c 1..4] public-host")
             count, args = int(args[1]), args[2:]
@@ -171,6 +171,8 @@ def execute_allowlisted(command: str) -> tuple[str, str]:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"} or not parsed.hostname or parsed.username or parsed.password:
             raise ValueError("Use a public http:// or https:// URL without embedded credentials.")
+        if parsed.port is not None and parsed.port not in {80, 443}:
+            raise ValueError("curl is limited to standard HTTP/HTTPS ports 80 and 443.")
         _public_host(parsed.hostname)
         output, _ = _run(
             ["curl", "--head", "--silent", "--show-error", "--max-time", "10", "--max-redirs", "0", url],
