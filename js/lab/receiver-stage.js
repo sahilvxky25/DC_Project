@@ -65,7 +65,9 @@ export function labRecv() {
   flag('rebuilt');
   if (S.dataType === 'image') {
     const blob = new Blob([new Uint8Array(r.got.flat())], { type: S.imageMimeType || 'application/octet-stream' });
+    if (S.reconstructedImageUrl) URL.revokeObjectURL(S.reconstructedImageUrl);
     const url = URL.createObjectURL(blob);
+    S.reconstructedImageUrl = url;
     const img = document.createElement('img'); img.src = url; img.alt = 'Reconstructed image'; img.className = 'reconstructed-image';
     res.replaceChildren(img); res.classList.add('image-result');
     $('#rhint').textContent = 'All ' + S.bytes.length.toLocaleString() + ' bytes were reassembled in sequence. Reconstructed ' + (S.imageName || 'image') + ' (' + (blob.size / 1024).toFixed(2) + ' KB).';
