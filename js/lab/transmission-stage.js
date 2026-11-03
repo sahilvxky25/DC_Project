@@ -196,8 +196,10 @@ export async function transmit() {
     $('#st').textContent = imageMode
       ? `Transmitting batch ${Math.floor(offset / batchSize) + 1} of ${Math.ceil(P.length / batchSize)}...`
       : `Sending packet ${batch[0] + 1}...`;
-    await fly(pkt, '100%', (imageMode ? 420 : 900) * animationScale / speed);
-    if (!alive()) return stopped();
+    if (imageMode) {
+      await fly(pkt, '100%', 420 * animationScale / speed);
+      if (!alive()) return stopped();
+    }
 
     let batchReceived = 0, batchLost = 0, batchCorrupt = 0, batchRetries = 0;
     for (const i of batch) {
@@ -205,17 +207,54 @@ export async function transmit() {
       for (let attempt = 0; attempt <= maxRetry && !ok; attempt++) {
         const isLost = !S.up || Math.random() < loss;
         const isBad = !isLost && Math.random() < corrupt;
+        const q = $('#q' + i);
         if (attempt > 0) {
           run.retries++;
           batchRetries++;
           flag('retry');
         }
+        if (!imageMode) {
+          if (q) q.classList.add('live');
+          pkt.textContent = 'P' + (i + 1);
+          pkt.className = 'fly';
+          pkt.style.opacity = 1;
+          $('#st').textContent = attempt
+            ? `Retransmitting packet ${i + 1} (retry ${attempt} of ${maxRetry})...`
+            : `Sending packet ${i + 1}...`;
+          if (attempt) logLine('RETRY', 're', `Packet ${i + 1} sent again.`);
+          await fly(pkt, isLost ? '50%' : '100%', 900 / speed);
+          if (!alive()) return stopped();
+        }
         if (isLost) {
           batchLost++;
+          if (!imageMode) {
+            pkt.className = 'fly pop';
+            logLine('LOST', 'bad', `Packet ${i + 1} vanished on the link. No ACK.`);
+            await sleep(450 / speed);
+            if (!alive()) return stopped();
+            reset(pkt);
+            if (q) { q.classList.remove('live'); q.classList.add('bad'); }
+            await sleep(550 / speed);
+            if (!alive()) return stopped();
+            if (q) q.classList.remove('bad');
+          }
           continue;
         }
         if (isBad) {
           batchCorrupt++;
+          if (!imageMode) {
+            const expected = packetCrc(i, P[i]);
+            const seen = expected ^ (1 << Math.floor(Math.random() * 8));
+            pkt.style.background = 'var(--coral)';
+            logLine('CRC', 'bad', `Packet ${i + 1} failed CRC: expected ${hex(expected)}, received ${hex(seen)}. Discarded.`);
+            await sleep(700 / speed);
+            if (!alive()) return stopped();
+            reset(pkt);
+            if (q) { q.classList.remove('live'); q.classList.add('bad'); }
+            await sleep(450 / speed);
+            if (!alive()) return stopped();
+            if (q) q.classList.remove('bad');
+          }
           continue;
         }
         ok = true;
@@ -223,9 +262,22 @@ export async function transmit() {
         run.arr.push(i);
         batchReceived++;
         flag('delivered');
-        // The sender queue is sampled for image mode; avoid querying or updating thousands of nodes.
-        const q = $('#q' + i);
         if (q) q.classList.add('ok');
+        if (!imageMode) {
+          reset(pkt);
+          ack.textContent = 'ACK ' + (i + 1);
+          ack.style.opacity = 1;
+          ack.style.left = '100%';
+          $('#st').textContent = `Packet ${i + 1} arrived intact. ACK on its way back.`;
+          await fly(ack, '0%', 700 / speed);
+          if (!alive()) return stopped();
+          reset(ack);
+          ack.style.left = '100%';
+          if (q) { q.classList.remove('live'); q.classList.add('ok'); }
+          logLine('ACK', 'ok', `Packet ${i + 1} acknowledged.`);
+          await sleep(250 / speed);
+          if (!alive()) return stopped();
+        }
       }
       if (!ok) {
         run.failed++;
