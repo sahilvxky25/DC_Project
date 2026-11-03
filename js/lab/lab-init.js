@@ -33,6 +33,7 @@ const PRESETS = ['Hello, 世界', 'Café ☕', 'Hi 👋', 'The quick brown fox',
  */
 export function labInit() {
   $('#msg').value = S.msg;
+  let textPayloadSize = $('#ps').value;
   const setMode = mode => {
     S.dataType = mode;
     $('#textInput').hidden = mode !== 'text';
@@ -45,8 +46,10 @@ export function labInit() {
     $('#textMode').setAttribute('aria-pressed', String(mode === 'text'));
     $('#imageMode').setAttribute('aria-pressed', String(mode === 'image'));
     $('#resultTitle').textContent = mode === 'image' ? 'Reconstructed image' : 'Reassembled message';
-    if (mode === 'text') { S.imageMimeType = null; S.imageName = null; S.imageSize = 0; encodeMsg(); labSplit(); }
+    if (mode === 'text') { S.imageMimeType = null; S.imageName = null; S.imageSize = 0; $('#ps').value = textPayloadSize; encodeMsg(); labSplit(); }
     else {
+      textPayloadSize = $('#ps').value;
+      $('#ps').value = '8';
       S.bytes = [];
       $('#bytes').innerHTML = '<p class="hint">Choose an image to inspect its binary data.</p>';
       $('#bsum').textContent = 'No image selected.';
@@ -60,7 +63,7 @@ export function labInit() {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) { alert('Choose a PNG, JPG, or WebP image.'); event.target.value = ''; return; }
-    if (file.size > 512) { alert('For this packet-by-packet animation, choose a small image no larger than 512 bytes.'); event.target.value = ''; return; }
+    if (file.size > 2048) { alert('For this animated lab, choose an image no larger than 2 KB. Image transfers use the maximum 8-byte payload to keep the packet count manageable.'); event.target.value = ''; return; }
     try {
       const bytes = new Uint8Array(await file.arrayBuffer());
       if (S.imageUrl) URL.revokeObjectURL(S.imageUrl);
