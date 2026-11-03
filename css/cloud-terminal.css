@@ -1,0 +1,16 @@
+.cloud-terminal-panel { margin-top: 1rem; }
+.cloud-terminal-note { color: var(--muted, #9aa4b2); font-size: .9rem; line-height: 1.5; }
+.cloud-terminal-status { display: flex; align-items: center; gap: .5rem; margin: .75rem 0; font-size: .85rem; }
+.cloud-terminal-status::before { content: ''; width: .55rem; height: .55rem; border-radius: 50%; background: #d69e36; }
+.cloud-terminal-status[data-state="ready"]::before { background: #24a36a; }
+.cloud-terminal-status[data-state="busy"]::before { background: #d69e36; }
+.cloud-terminal-status[data-state="error"]::before { background: #d9534f; }
+.cloud-terminal-output { min-height: 180px; max-height: 360px; overflow: auto; padding: 1rem; border: 1px solid var(--line, #303846); border-radius: 12px; background: #0b1118; color: #d8e5ef; font: .88rem/1.6 'JetBrains Mono', monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+.cloud-terminal-output .cloud-command-line { color: #8ed6a7; }
+.cloud-terminal-output .cloud-explanation { color: #9bb8d1; margin: .35rem 0 1rem; }
+.cloud-terminal-form { display: flex; gap: .6rem; margin-top: .75rem; }
+.cloud-terminal-form input { flex: 1; min-width: 0; font-family: 'JetBrains Mono', monospace; }
+.cloud-terminal-shortcuts { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .7rem; }
+.cloud-terminal-shortcuts .chipbtn { font-family: 'JetBrains Mono', monospace; font-size: .78rem; }
+.cloud-terminal-meta { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .55rem; color: var(--muted, #9aa4b2); font-size: .78rem; }
+@media (max-width: 560px) { .cloud-terminal-form { flex-direction: column; } .cloud-terminal-form .btn { width: 100%; } }
