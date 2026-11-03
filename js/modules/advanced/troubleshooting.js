@@ -25,6 +25,7 @@ import { $, $$, esc } from '../../core/utils.js';
 import { FAULTS, netsim, TROUBLE } from '../../simulations/troubleshooting.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
+import { runCloudCommand } from '../../services/cloud-command-client.js';
 
 /* Register "Troubleshooting lab". The router calls mount(root) when the learner opens #/m/trouble and calls the returned function (if any) when they leave. */
 regMod({
@@ -60,6 +61,27 @@ regMod({
         'Terminal on the user’s laptop',
         `<div class="term" id="tterm" aria-label="Terminal output" aria-live="polite"></div>
         <div class="termin"><span>$</span><input id="tin" type="text" spellcheck="false" autocomplete="off" aria-label="Command"><button class="btn sm" id="trun">Run</button></div><div class="presets" id="tq"></div>`
+      ) +
+      panel(
+        'Live cloud network terminal',
+        `<p class="cloud-terminal-note">Run real diagnostics from BitSecure's cloud Linux runner. These results describe the cloud runner's network—not your laptop. Sign-in is required.</p>
+        <div class="cloud-terminal-status" id="cloud-terminal-status" data-state="ready" role="status">Ready · authenticated cloud execution</div>
+        <div class="cloud-terminal-output" id="cloud-terminal-output" aria-label="Cloud command output" aria-live="polite">BitSecure Cloud Terminal
+Type help to view supported commands.
+This terminal executes on a cloud server, not on your device.</div>
+        <form class="cloud-terminal-form" id="cloud-terminal-form">
+          <input id="cloud-terminal-input" type="text" maxlength="300" spellcheck="false" autocomplete="off" placeholder="ping 1.1.1.1" aria-label="Cloud network command" required />
+          <button class="btn" id="cloud-terminal-run" type="submit">Run command</button>
+        </form>
+        <div class="cloud-terminal-shortcuts" id="cloud-terminal-shortcuts">
+          <button class="chipbtn" type="button" data-command="ping 1.1.1.1">ping 1.1.1.1</button>
+          <button class="chipbtn" type="button" data-command="traceroute example.com">traceroute example.com</button>
+          <button class="chipbtn" type="button" data-command="nslookup example.com">nslookup example.com</button>
+          <button class="chipbtn" type="button" data-command="dig example.com">dig example.com</button>
+          <button class="chipbtn" type="button" data-command="curl https://example.com">curl https://example.com</button>
+          <button class="chipbtn" type="button" data-command="ip route">ip route</button>
+        </div>
+        <div class="cloud-terminal-meta"><span id="cloud-terminal-duration"></span><span>Limit: 15 commands/minute</span><span>Public destinations only</span></div>`
       ) +
       panel(
         'Your diagnosis',
@@ -189,5 +211,69 @@ regMod({
       );
     };
     load(0);
+
+    // Live commands run on the authenticated cloud service; the simulated case terminal above is unchanged.
+    const cloudForm = $('#cloud-terminal-form', root);
+    const cloudInput = $('#cloud-terminal-input', root);
+    const cloudOutput = $('#cloud-terminal-output', root);
+    const cloudStatus = $('#cloud-terminal-status', root);
+    const cloudRunButton = $('#cloud-terminal-run', root);
+    const cloudDuration = $('#cloud-terminal-duration', root);
+    const appendCloudText = (text, className = '') => {
+      const line = document.createElement('div');
+      if (className) line.className = className;
+      line.textContent = text;
+      cloudOutput.append(line);
+      cloudOutput.scrollTop = cloudOutput.scrollHeight;
+    };
+    const executeCloud = async command => {
+      const clean = command.trim();
+      if (!clean) return;
+      appendCloudText(`$ ${clean}`, 'cloud-command-line');
+      cloudInput.value = '';
+      cloudRunButton.disabled = true;
+      cloudStatus.dataset.state = 'busy';
+      cloudStatus.textContent = 'Running on cloud Linux…';
+      cloudDuration.textContent = '';
+      try {
+        if (clean.toLowerCase() === 'clear') {
+          cloudOutput.textContent = '';
+          cloudStatus.dataset.state = 'ready';
+          cloudStatus.textContent = 'Ready';
+          return;
+        }
+        if (clean.toLowerCase() === 'help') {
+          appendCloudText('Supported: ping, traceroute, nslookup, dig, curl, ip addr, ip route, ip neigh, ss -tuna.');
+          appendCloudText('No shell commands, pipes, scripts, private destinations or command chaining.');
+          cloudStatus.dataset.state = 'ready';
+          cloudStatus.textContent = 'Ready';
+          return;
+        }
+        const result = await runCloudCommand(clean);
+        appendCloudText(result.output || '(No output)');
+        appendCloudText(result.explanation || '', 'cloud-explanation');
+        cloudDuration.textContent = `${result.durationMs} ms · ${result.executionLocation}`;
+        cloudStatus.dataset.state = 'ready';
+        cloudStatus.textContent = result.ok ? 'Command completed' : 'Command returned an error';
+      } catch (error) {
+        appendCloudText(error.message || 'The command could not be completed.');
+        cloudStatus.dataset.state = 'error';
+        cloudStatus.textContent = 'Command failed';
+      } finally {
+        cloudRunButton.disabled = false;
+        cloudInput.focus();
+      }
+    };
+    cloudForm.addEventListener('submit', event => {
+      event.preventDefault();
+      executeCloud(cloudInput.value);
+    });
+    $('#cloud-terminal-shortcuts', root).addEventListener('click', event => {
+      const button = event.target.closest('[data-command]');
+      if (button) {
+        cloudInput.value = button.dataset.command;
+        executeCloud(button.dataset.command);
+      }
+    });
   },
 });
