@@ -35,6 +35,7 @@ export function labInit() {
   $('#msg').value = S.msg;
   let textPayloadSize = $('#ps').value;
   const setMode = mode => {
+    const previousMode = S.dataType;
     S.dataType = mode;
     $('#textInput').hidden = mode !== 'text';
     $('#presets').hidden = mode !== 'text';
@@ -48,7 +49,7 @@ export function labInit() {
     $('#resultTitle').textContent = mode === 'image' ? 'Reconstructed image' : 'Reassembled message';
     if (mode === 'text') { S.imageMimeType = null; S.imageName = null; S.imageSize = 0; $('#ps').value = textPayloadSize; encodeMsg(); labSplit(); }
     else {
-      textPayloadSize = $('#ps').value;
+      if (previousMode !== 'image') textPayloadSize = $('#ps').value;
       $('#ps').value = '8';
       S.bytes = [];
       $('#bytes').innerHTML = '<p class="hint">Choose an image to inspect its binary data.</p>';
