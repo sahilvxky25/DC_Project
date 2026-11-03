@@ -1,7 +1,7 @@
 /**
  * packet layout of the core lab
  *
- * The core lab's packet is [sequence number, payload length, ...payload bytes, CRC-8]. This file
+ * The core lab's packet is [16-bit sequence, 16-bit payload length, ...payload bytes, CRC-8]. This file
  * defines that layout (header size HDR, trailer size TRL) and the two functions that build the bytes and the
  * trailer. Keeping the layout here means the sender, the receiver and the journey module all agree on it.
  *
@@ -16,15 +16,23 @@
 import { crc8 } from '../core/checksums.js';
 
 /**
- * Size of the core-lab packet header in bytes (sequence number + length).
+ * Header uses a 16-bit sequence number and 16-bit payload length. This supports
+ * image transfers with more than 255 packets and payloads larger than 255 bytes.
  */
-export const HDR = 2,
+export const HDR = 4,
   TRL = 1;
 
 /**
- * Builds the bytes of core-lab packet i: [sequence (1-based), payload length, ...payload].
+ * Builds bytes: [sequence high, sequence low, length high, length low, ...payload].
+ * Sequence numbers are 1-based and support up to 65,535 packets.
  */
-export const packetBytes = (i, p) => [i + 1, p.length, ...p];
+export const packetBytes = (i, p) => {
+  const seq = i + 1;
+  if (seq > 0xffff || p.length > 0xffff) {
+    throw new RangeError('Core Lab packet sequence and payload length must fit in 16 bits.');
+  }
+  return [seq >>> 8, seq & 0xff, p.length >>> 8, p.length & 0xff, ...p];
+};
 
 /**
  * CRC-8 trailer of a core-lab packet, computed over its header and payload.
