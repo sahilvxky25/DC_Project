@@ -69,10 +69,14 @@ export function labPrepare() {
   const r = S.run;
   if (r) {
     r.log.forEach(l => logLine(l[0], l[1], l[2], false));
-    S.P.forEach((_, i) => $('#q' + i).classList.add(r.got[i] ? 'ok' : 'bad'));
-    $('#rq').innerHTML = r.arr
-      .map(i => `<span class="chip c${i % 4} ok live">P${i + 1}</span>`)
-      .join('');
+    const queueLimit = S.dataType === 'image' ? 12 : S.P.length;
+    for (let i = 0; i < queueLimit; i++) {
+      const chip = $('#q' + i);
+      if (chip) chip.classList.add(r.got[i] ? 'ok' : 'bad');
+    }
+    const arrivedPreview = r.arr.slice(0, S.dataType === 'image' ? 24 : r.arr.length);
+    $('#rq').innerHTML = (r.arr.length > arrivedPreview.length ? '<span class="hint">' + r.arr.length.toLocaleString() + ' packets received; sample shown</span>' : '') +
+      arrivedPreview.map(i => `<span class="chip c${i % 4} ok live">P${i + 1}</span>`).join('');
     const miss = r.got.filter(x => !x).length;
     $('#sp').textContent = r.stopped ? 'Stopped' : miss ? 'Gave up' : 'All sent';
     $('#rp').textContent = miss ? `${miss} missing` : 'Everything arrived';
