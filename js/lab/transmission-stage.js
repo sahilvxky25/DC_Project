@@ -33,12 +33,20 @@ import { setTop } from './top-stats.js';
  *
  * @returns {Promise} resolves when the animation finishes.
  */
-const fly = (el, to, ms) =>
-  el.animate([{ left: el.style.left || '0%' }, { left: to }], {
+const fly = async (el, to, ms) => {
+  // Never let a previous fill-forwards animation compete with this movement.
+  el.getAnimations().forEach(animation => animation.cancel());
+  const from = el.style.left || '0%';
+  const animation = el.animate([{ left: from }, { left: to }], {
     duration: REDUCE ? 30 : ms,
     easing: 'ease-in-out',
-    fill: 'forwards',
-  }).finished;
+    fill: 'none',
+  });
+  await animation.finished;
+  // Commit the final position to the element itself before disposing the animation.
+  el.style.left = to;
+  animation.cancel();
+};
 
 /**
  * Adds a line to the event log and (optionally) stores it in the current run so it can be redrawn later.
@@ -161,6 +169,7 @@ export async function transmit() {
     el.style.opacity = 0;
     el.className = 'fly';
     el.style.background = '';
+    el.style.color = '';
   };
   const stopped = () => {
     reset(pkt); reset(ack);
@@ -195,6 +204,7 @@ export async function transmit() {
     ` at ${run.cfg.loss}% loss and ${run.cfg.corrupt}% corruption.`);
   for (let offset = 0; offset < order.length; offset += batchSize) {
     const batch = order.slice(offset, offset + batchSize);
+    reset(pkt);
     pkt.textContent = imageMode ? 'Patch ' + (Math.floor(offset / batchSize) + 1) + ' · ' + batch.length + ' packets' : 'P' + (batch[0] + 1);
     pkt.className = 'fly';
     pkt.style.opacity = 1;
@@ -215,11 +225,11 @@ export async function transmit() {
       let pending = batch.slice();
       for (let attempt = 0; attempt <= maxRetry && pending.length; attempt++) {
         if (attempt > 0) {
+          reset(pkt);
           pkt.textContent = 'Retry patch ' + (Math.floor(offset / batchSize) + 1) +
             ' · attempt ' + attempt + ' · ' + pending.length + ' packets';
-          pkt.className = 'fly';
+          pkt.className = 'fly retry';
           pkt.style.opacity = 1;
-          pkt.style.background = 'var(--amber)';
           $('#st').textContent = `Retransmitting patch ${Math.floor(offset / batchSize) + 1}: ${pending.length} packet(s), retry ${attempt} of ${maxRetry}...`;
           run.retries += pending.length;
           setTop(undefined, undefined, run.retries);
@@ -305,6 +315,7 @@ export async function transmit() {
             flag('retry');
           }
           if (q) q.classList.add('live');
+          reset(pkt);
           pkt.textContent = 'P' + (i + 1);
           pkt.className = 'fly';
           pkt.style.opacity = 1;
@@ -316,7 +327,7 @@ export async function transmit() {
           if (!alive()) return stopped();
           if (isLost) {
             batchLost++;
-            pkt.className = 'fly pop';
+            pkt.className = 'fly lost';
             logLine('LOST', 'bad', `Packet ${i + 1} vanished on the link. No ACK.`);
             await sleep(450 / speed);
             if (!alive()) return stopped();
@@ -331,7 +342,7 @@ export async function transmit() {
             batchCorrupt++;
             const expected = packetCrc(i, P[i], imageMode);
             const seen = expected ^ (1 << Math.floor(Math.random() * 8));
-            pkt.style.background = 'var(--coral)';
+            pkt.className = 'fly corrupt';
             logLine('CRC', 'bad', `Packet ${i + 1} failed CRC: expected ${hex(expected)}, received ${hex(seen)}. Discarded.`);
             await sleep(700 / speed);
             if (!alive()) return stopped();
