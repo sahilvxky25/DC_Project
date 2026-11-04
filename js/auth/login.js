@@ -51,6 +51,17 @@ const forgotPasswordLink = document.getElementById('forgot-password');
 
 const appAuthLoading = document.getElementById('app-auth-loading');
 const appAuthLoadingTitle = document.getElementById('app-auth-loading-title');
+const passwordAuthLoading = document.getElementById('password-auth-loading');
+
+function showPasswordAuthLoading() {
+  passwordAuthLoading.hidden = false;
+  changePasswordDialog.setAttribute('aria-busy', 'true');
+}
+
+function hidePasswordAuthLoading() {
+  passwordAuthLoading.hidden = true;
+  changePasswordDialog.removeAttribute('aria-busy');
+}
 
 function showAppAuthLoading(message) {
   appAuthLoadingTitle.textContent = message;
@@ -380,7 +391,7 @@ changePasswordForm.addEventListener('submit', async event => {
 
   passwordChangeSubmit.disabled = true;
   setPasswordMessage('');
-  showAppAuthLoading('Updating your password...');
+  showPasswordAuthLoading();
   try {
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
     await reauthenticateWithCredential(user, credential);
@@ -398,7 +409,7 @@ changePasswordForm.addEventListener('submit', async event => {
     setPasswordMessage(messages[error?.code] || 'Unable to change the password. Please try again.');
   } finally {
     passwordChangeSubmit.disabled = false;
-    hideAppAuthLoading();
+    hidePasswordAuthLoading();
   }
 });
 
