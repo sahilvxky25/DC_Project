@@ -142,26 +142,55 @@
 }
 .fly {
   position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   top: 50%;
   left: 0;
   transform: translate(-50%, -50%);
-  padding: 0.2rem 0.6rem;
+  min-height: 28px;
+  padding: 0.28rem 0.68rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 8px;
-  background: var(--c0);
-  color: var(--accent-ink);
+  background: #376fe8;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
   font: 700 0.8rem var(--mono);
+  line-height: 1.25;
   opacity: 0;
   white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+  isolation: isolate;
+  will-change: left, opacity;
+}
+#pkt {
+  z-index: 4;
+  background: #376fe8;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 #ack {
   top: 80%;
-  background: var(--c2);
+  background: #087c57;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+}
+.fly.retry {
+  background: #ffc24b;
+  color: #172033;
+  -webkit-text-fill-color: #172033;
+  border-color: #e4a82f;
 }
 .fly.lost {
-  background: var(--bad);
+  background: #c93449;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
 }
 .fly.corrupt {
-  background: var(--warn);
+  background: #e0a126;
+  color: #172033;
+  -webkit-text-fill-color: #172033;
 }
 .status {
   margin-top: 0.9rem;
