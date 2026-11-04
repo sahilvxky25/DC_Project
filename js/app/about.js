@@ -3,7 +3,7 @@
  * Kept outside the learning-module registry so it does not affect course progress.
  */
 const members = [
-  { name: 'Sahil Kumar Patra', initials: 'SP' },
+  { name: 'Sahil Kumar Patra', profile: 'https://github.com/Sahilvxky25' },
   { name: 'Somya Ranjan Suar', initials: 'SS' },
   { name: 'Aiyush Anand', profile: 'https://github.com/AIYUSHH' },
   { name: 'Avanish Mahapatra', initials: 'AM' }
