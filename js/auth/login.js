@@ -49,6 +49,20 @@ const submitBtn = document.getElementById('login-submit');
 const rememberMe = document.getElementById('remember-me');
 const forgotPasswordLink = document.getElementById('forgot-password');
 
+const appAuthLoading = document.getElementById('app-auth-loading');
+const appAuthLoadingTitle = document.getElementById('app-auth-loading-title');
+
+function showAppAuthLoading(message) {
+  appAuthLoadingTitle.textContent = message;
+  appAuthLoading.hidden = false;
+  appScreen.setAttribute('aria-busy', 'true');
+}
+
+function hideAppAuthLoading() {
+  appAuthLoading.hidden = true;
+  appScreen.removeAttribute('aria-busy');
+}
+
 let authMode = 'signin';
 
 const authLoading = document.getElementById('auth-loading');
@@ -98,6 +112,7 @@ function showApp(user = auth.currentUser) {
 }
 
 function showLogin({ focus = false } = {}) {
+  hideAppAuthLoading();
   window.__bitSecureAuthenticated = false;
   appScreen.hidden = true;
   loginScreen.hidden = false;
@@ -365,6 +380,7 @@ changePasswordForm.addEventListener('submit', async event => {
 
   passwordChangeSubmit.disabled = true;
   setPasswordMessage('');
+  showAppAuthLoading('Updating your password...');
   try {
     const credential = EmailAuthProvider.credential(user.email, currentPassword);
     await reauthenticateWithCredential(user, credential);
@@ -382,18 +398,26 @@ changePasswordForm.addEventListener('submit', async event => {
     setPasswordMessage(messages[error?.code] || 'Unable to change the password. Please try again.');
   } finally {
     passwordChangeSubmit.disabled = false;
+    hideAppAuthLoading();
   }
 });
 
 logoutBtn.addEventListener('click', async () => {
+  logoutBtn.disabled = true;
+  closeProfileMenu();
+  showAppAuthLoading('Signing you out...');
   try {
     // Flush this account's latest progress before the Firebase session is cleared.
     await flushProgressSync();
     await signOut(auth);
     setMessage('You have been signed out.', 'success');
+    hideAppAuthLoading();
     showLogin({ focus: true });
   } catch (error) {
+    hideAppAuthLoading();
     setMessage(friendlyError(error));
+  } finally {
+    logoutBtn.disabled = false;
   }
 });
 
