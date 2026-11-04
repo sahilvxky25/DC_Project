@@ -40,6 +40,7 @@ export function buildNav() {
     });
     h += '</div></details>';
   });
+  h += '<div class="nav-separator" aria-hidden="true"></div><a class="nav-link about-nav-link" href="#/about" data-r="about"><span class="about-nav-icon" aria-hidden="true">✦</span><span>About Us</span></a>';
   $('#nav').innerHTML = h;
 }
 
