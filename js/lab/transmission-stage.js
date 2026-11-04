@@ -183,6 +183,7 @@ export async function transmit() {
   const updateProgress = () => {
     if (!imageMode || !progress) return;
     const pct = Math.round((run.sent / P.length) * 100);
+    const deliveredPct = Math.round((run.arr.length / P.length) * 100);
     progress.querySelector('span').style.width = pct + '%';
     progress.querySelector('p').textContent =
       run.sent.toLocaleString() + ' / ' + P.length.toLocaleString() +
@@ -206,7 +207,7 @@ export async function transmit() {
       if (!alive()) return stopped();
     }
 
-    let batchReceived = 0, batchLost = 0, batchCorrupt = 0, batchRetries = 0;
+    let batchReceived = 0, batchLost = 0, batchCorrupt = 0;
     if (imageMode) {
       // Image batches are transmitted in visible rounds. The first round sends
       // every packet; each later round visibly retransmits only packets that
@@ -221,7 +222,6 @@ export async function transmit() {
           pkt.style.background = 'var(--amber)';
           $('#st').textContent = `Retransmitting patch ${Math.floor(offset / batchSize) + 1}: ${pending.length} packet(s), retry ${attempt} of ${maxRetry}...`;
           run.retries += pending.length;
-          batchRetries += pending.length;
           setTop(undefined, undefined, run.retries);
           flag('retry');
           await fly(pkt, '100%', imagePatchDuration);
@@ -382,7 +382,7 @@ export async function transmit() {
     updateProgress();
     $('#rp').textContent = `${run.arr.length.toLocaleString()} of ${P.length.toLocaleString()} received`;
     if (imageMode) {
-      $('#st').textContent = `Checked ${run.sent.toLocaleString()} of ${P.length.toLocaleString()} packets. ${batchReceived} received in the latest batch.`;
+      $('#st').textContent = `Processed ${run.sent.toLocaleString()} of ${P.length.toLocaleString()} packets; ${run.arr.length.toLocaleString()} delivered overall. ${batchReceived} arrived in the latest patch.`;
       await sleep(Math.max(80, 140 / speed));
       if (!alive()) return stopped();
     }
