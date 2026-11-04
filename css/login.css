@@ -80,3 +80,38 @@
 .login-forgot[hidden] { display: none !important; }
 .login-forgot[aria-disabled="true"] { opacity: .65; pointer-events: none; }
 .login-error.is-success { color: var(--accent); }
+
+
+/* Authentication-only loading overlay; it never covers the learning application. */
+.login-screen { position: relative; }
+.auth-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  color: var(--text);
+  text-align: center;
+}
+.auth-loading-overlay[hidden] { display: none !important; }
+.auth-loading-overlay strong { font-size: 1.05rem; }
+.auth-loading-detail { max-width: 280px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+.auth-loading-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid var(--line2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: auth-loading-spin .8s linear infinite;
+}
+@keyframes auth-loading-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .auth-loading-spinner { animation-duration: 2s; }
+}
