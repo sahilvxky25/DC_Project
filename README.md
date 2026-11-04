@@ -200,3 +200,31 @@ Keep protocol logic separate from DOM rendering where practical, use the existin
 - **Hash routing:** using the URL fragment (the part after `#`) to select a screen without a full page reload.
 - **TLS:** Transport Layer Security, the protocol used to protect data in transit.
 - **ARQ:** Automatic Repeat reQuest, a family of error-control techniques that use acknowledgements and retransmissions.
+
+
+## Live cloud network command terminal
+
+The Troubleshooting Lab includes an authenticated cloud terminal for real network diagnostics. Commands execute in a Linux container on the backend, **not on the visitor's device**. The original case-based simulated terminal remains available for deterministic learning scenarios.
+
+### Backend deployment (Render)
+
+1. Deploy this repository using the included `render.yaml` blueprint, or create a Docker web service with the repository root as the build context and `backend/Dockerfile` as the Dockerfile path.
+2. Set `FIREBASE_SERVICE_ACCOUNT_JSON` to the Firebase service-account JSON for the same Firebase project used by `js/auth/firebase-client.js`. Store it only as a Render secret/environment variable; never commit the JSON file.
+3. Set `ALLOWED_ORIGINS` to the exact deployed frontend origin(s), comma-separated (for example, `https://your-site.vercel.app`). Do not use `*`.
+4. Keep `RATE_LIMIT_PER_MINUTE` at 15 initially. The backend also verifies Firebase ID tokens and only accepts a fixed command allowlist.
+5. After deployment, copy the backend service URL and set it before the app modules load:
+   ```html
+   <script>window.BITSECURE_COMMAND_API_URL = "https://YOUR-SERVICE.onrender.com";</script>
+   ```
+   Place this snippet in `index.html` before `<script type="module" src="./js/app.js">`.
+6. Open `https://YOUR-SERVICE.onrender.com/api/health` and confirm it returns `{"status":"ok",...}`. Then sign in to the website and test `ping 1.1.1.1`, `nslookup example.com`, and `curl https://example.com`.
+
+### Supported commands and limits
+
+- `ping [-c 1..4] public-host`
+- `traceroute [-m 1..12] public-host`
+- `nslookup public-host` and `dig public-host`
+- `curl https://public-host/path` (HEAD request only; redirects and curl flags are disabled)
+- `ip addr`, `ip route`, `ip neigh`, and `ss -tuna` (cloud-container information)
+
+The service rejects shell operators, command chaining, scripts, private/local/reserved destination addresses, and non-HTTP(S) URLs. It enforces Firebase authentication, per-user rate limiting, command timeouts, and output limits. Keep the container isolated and do not add arbitrary shell execution. Cloud providers may restrict ICMP or traceroute traffic; a blocked probe is not proof that the destination is offline. Results reflect the cloud runner's network path, DNS resolver, and interfaces—not the learner's laptop or home network. Render may sleep on a free instance, so the first request can be delayed.
