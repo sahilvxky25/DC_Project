@@ -31,12 +31,9 @@
 .about-feature-card h3 { margin: 1rem 0 .35rem; font-size: 1rem; }.about-feature-card p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.65; }
 .about-team-section { padding: 2.5rem .25rem 1rem; }
 .about-team-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; }
-.about-member-card { min-width: 0; padding: 1rem; }
-.about-member-avatar { width: 100%; aspect-ratio: 1.25; display: grid; place-items: center; overflow: hidden; border-radius: 12px; background: radial-gradient(circle at 25% 20%, color-mix(in srgb, var(--accent) 32%, transparent), transparent 48%), linear-gradient(135deg, var(--surface2), var(--bg2)); }
-.about-member-avatar span { color: var(--accent); font-size: 2rem; font-weight: 700; letter-spacing: -.06em; }
-.about-member-info h3 { margin: .9rem 0 .2rem; font-size: .95rem; line-height: 1.35; }.about-member-info > span { color: var(--muted); font-size: .78rem; }
+.about-member-card { min-width: 0; min-height: 126px; display: flex; flex-direction: column; justify-content: center; padding: 1.1rem; }
+.about-member-info h3 { margin: 0 0 .35rem; font-size: .95rem; line-height: 1.35; }.about-member-info > span { color: var(--muted); font-size: .78rem; }
 .about-profile-link { display: inline-flex; gap: .45rem; margin-top: .9rem; color: var(--accent); text-decoration: none; font-size: .78rem; font-weight: 700; }.about-profile-link:hover, .about-footer a:hover { text-decoration: underline; }
-.about-photo-note { margin: .9rem 0 0; color: var(--faint); font-size: .78rem; line-height: 1.6; }
 .about-academic-panel { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: center; gap: 1.3rem; margin: 3rem 0 1rem; padding: clamp(1.2rem, 3vw, 2rem); border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(115deg, var(--surface), color-mix(in srgb, var(--accent) 8%, var(--bg2))); }
 .about-academic-mark { width: 78px; height: 78px; display: grid; place-content: center; border-radius: 18px; background: var(--accent-soft); color: var(--accent); text-align: center; font: 700 1.1rem/1.1 var(--mono); }
 .about-academic-panel h2 { font-size: clamp(1.35rem, 3vw, 2rem); }.about-academic-panel p { margin-bottom: 0; }
@@ -47,3 +44,10 @@
 @media (max-width: 760px) { .about-hero { grid-template-columns: 1fr; }.about-visual { min-height: 230px; }.about-feature-grid { grid-template-columns: 1fr; }.about-team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 420px) { .about-team-grid { grid-template-columns: 1fr 1fr; gap: .55rem; }.about-member-card { padding: .7rem; }.about-member-info h3 { font-size: .85rem; }.about-footer { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: no-preference) { .about-core { animation: about-float 5s ease-in-out infinite; } @keyframes about-float { 50% { transform: translateY(-7px) rotate(-8deg); } } }
+
+.about-contact-section { padding: 2.5rem .25rem 1rem; }
+.about-contact-card { display: flex; align-items: center; gap: 1.2rem; padding: clamp(1.1rem, 3vw, 1.7rem); border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(115deg, var(--surface), color-mix(in srgb, var(--accent) 7%, var(--bg2))); }
+.about-contact-mark { flex: 0 0 52px; width: 52px; height: 52px; display: grid; place-items: center; border-radius: 14px; color: var(--accent); background: var(--accent-soft); font-size: 1.5rem; }
+.about-contact-copy { flex: 1; min-width: 0; }.about-contact-copy h3 { margin: 0 0 .35rem; font-size: 1rem; }.about-contact-copy p { margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.6; }
+.about-contact-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+@media (max-width: 760px) { .about-contact-card { align-items: flex-start; flex-direction: column; }.about-contact-actions { width: 100%; }.about-contact-actions a { justify-content: center; } }
