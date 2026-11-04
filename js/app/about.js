@@ -5,7 +5,7 @@
 const members = [
   { name: 'Sahil Kumar Patra', initials: 'SP' },
   { name: 'Somya Ranjan Suar', initials: 'SS' },
-  { name: 'Aiyush Anand', initials: 'AA' },
+  { name: 'Aiyush Anand', profile: 'https://github.com/AIYUSHH' },
   { name: 'Avanish Mahapatra', initials: 'AM' }
 ];
 
@@ -63,15 +63,14 @@ export function renderAbout(root) {
         </div>
         <div class="about-team-grid">
           ${members.map(member => {
-            const profileSearch = 'https://github.com/search?q=' + encodeURIComponent(member.name) + '&type=users';
+            const profileUrl = member.profile || ('https://github.com/search?q=' + encodeURIComponent(member.name) + '&type=users');
+            const linkLabel = member.profile ? 'GitHub profile' : 'Find on GitHub';
             return `<article class="about-member-card">
-              <div class="about-member-avatar" aria-label="Photo placeholder for ${member.name}"><span>${member.initials}</span></div>
               <div class="about-member-info"><h3>${member.name}</h3><span>Project team</span></div>
-              <a class="about-profile-link" href="${profileSearch}" target="_blank" rel="noopener noreferrer" aria-label="Find ${member.name} on GitHub">GitHub profile search <span aria-hidden="true">↗</span></a>
+              <a class="about-profile-link" href="${profileUrl}" target="_blank" rel="noopener noreferrer" aria-label="Open ${member.name}'s GitHub profile">${linkLabel} <span aria-hidden="true">↗</span></a>
             </article>`;
           }).join('')}
         </div>
-        <p class="about-photo-note">Member photo placeholders are shown for now. Add the team photos and confirmed GitHub usernames to replace these with personal photos and direct profile links.</p>
       </section>
 
       <section class="about-academic-panel">
@@ -79,8 +78,24 @@ export function renderAbout(root) {
         <div><span class="about-kicker">03 / ACADEMIC CONTEXT</span><h2>Built as a course project at <span>NIT Rourkela.</span></h2><p>Created in the context of a Data Communication course at the National Institute of Technology Rourkela, with the goal of making core communication and networking concepts more approachable through interactive demonstrations.</p></div>
       </section>
 
+      <section class="about-contact-section">
+        <div class="about-section-heading">
+          <span class="about-kicker">04 / GET IN TOUCH</span>
+          <h2>Contact <span>Us.</span></h2>
+          <p>Have a question, suggestion or feedback about BitSecure? Reach the project team through the repository.</p>
+        </div>
+        <div class="about-contact-card">
+          <div class="about-contact-mark" aria-hidden="true">↗</div>
+          <div class="about-contact-copy"><h3>Connect with the project</h3><p>Visit the repository to explore the source code, report an issue or suggest an improvement.</p></div>
+          <div class="about-contact-actions">
+            <a class="about-primary-link" href="https://github.com/sahilvxky25/DC_Project/issues" target="_blank" rel="noopener noreferrer">Contact via GitHub Issues <span aria-hidden="true">↗</span></a>
+            <a class="about-secondary-link" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Project repository</a>
+          </div>
+        </div>
+      </section>
+
       <footer class="about-footer">
-        <div><strong>BitSecure</strong><span>Data Communications Lab</span></div>
+        <div><strong>BitSecure</strong><span>Data Communications Lab · NIT Rourkela</span></div>
         <a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Open the GitHub repository ↗</a>
       </footer>
     </div>`;
