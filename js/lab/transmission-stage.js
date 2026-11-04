@@ -138,7 +138,7 @@ export async function transmit() {
   // Image packets are grouped into small visible patches. Each patch gets a
   // deliberate travel animation so learners can follow it across the link.
   const batchSize = imageMode ? 16 : 1;
-  const imagePatchDuration = 720 / speed;
+  const imagePatchDuration = Math.max(650, 900 / speed);
   S.run = {
     arr: [],
     got: Array(P.length).fill(null),
@@ -303,7 +303,7 @@ export async function transmit() {
     $('#rp').textContent = `${run.arr.length.toLocaleString()} of ${P.length.toLocaleString()} received`;
     if (imageMode) {
       $('#st').textContent = `Checked ${run.sent.toLocaleString()} of ${P.length.toLocaleString()} packets. ${batchReceived} received in the latest batch.`;
-      await sleep(140 / speed);
+      await sleep(Math.max(80, 140 / speed));
       if (!alive()) return stopped();
     }
     reset(pkt);
