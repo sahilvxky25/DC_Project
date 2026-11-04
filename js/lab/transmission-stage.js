@@ -215,6 +215,7 @@ export async function transmit() {
         const q = $('#q' + i);
         if (attempt > 0) {
           run.retries++;
+          setTop(undefined, undefined, run.retries);
           batchRetries++;
           flag('retry');
         }
@@ -266,6 +267,17 @@ export async function transmit() {
         run.got[i] = P[i];
         run.arr.push(i);
         batchReceived++;
+        if (!imageMode || run.arr.length <= 24) {
+          const receivedChip = document.createElement('span');
+          receivedChip.className = `chip c${i % 4} ok live`;
+          receivedChip.textContent = 'P' + (i + 1);
+          $('#rq').append(receivedChip);
+        } else if (imageMode && run.arr.length === 25) {
+          const receivedHint = document.createElement('span');
+          receivedHint.className = 'hint';
+          receivedHint.textContent = 'Showing first 24 received packets; full count is in progress above.';
+          $('#rq').prepend(receivedHint);
+        }
         flag('delivered');
         if (q) q.classList.add('ok');
         if (!imageMode) {
