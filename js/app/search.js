@@ -69,7 +69,7 @@ function tokenSimilarity(query, document) {
       else if (candidate.startsWith(token) || token.startsWith(candidate)) {
         const ratio = Math.min(token.length, candidate.length) / Math.max(token.length, candidate.length);
         best = Math.max(best, ratio >= 0.55 ? 0.88 : 0);
-      } else if (Math.min(token.length, candidate.length) >= 4) {
+      } else if (Math.min(token.length, candidate.length) >= 3) {
         const distance = editDistance(token, candidate);
         const allowed = token.length >= 8 ? 2 : 1;
         if (distance <= allowed) best = Math.max(best, 1 - distance / Math.max(token.length, candidate.length));
