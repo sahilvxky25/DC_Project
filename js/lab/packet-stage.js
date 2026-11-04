@@ -66,10 +66,24 @@ export function labSplit() {
   }
   const packetPreviewCount = S.dataType === 'image' ? 16 : 120;
   const visiblePackets = S.P.slice(0, packetPreviewCount);
-  $('#pk').innerHTML = (S.P.length > packetPreviewCount ? '<p class="hint">Showing ' + packetPreviewCount + ' sample packets of ' + S.P.length.toLocaleString() + '. All packets are retained and transmitted.</p>' : '') + visiblePackets.map(
-    (p, i) =>
-      `<div class="pk c${i % 4}" tabindex="0" data-p="${i}"><div class="t"><span>Packet ${i + 1}</span><span>${p.length} B</span></div><div class="s"><b>Header</b>seq ${i + 1}, length ${p.length}</div><div class="s"><b>Payload</b><span>${hexs(p)}</span></div><div class="s"><b>CRC-8 trailer</b><span>${hex(packetCrc(i, p, S.dataType === 'image'))}</span></div></div>`
-  ).join('');
+  const packetCards = visiblePackets.map((p, i) => {
+    const crc = hex(packetCrc(i, p, S.dataType === 'image'));
+    if (S.dataType === 'image') {
+      const sampleSize = 6;
+      const sample = hexs(p.slice(0, sampleSize));
+      const remaining = Math.max(0, p.length - sampleSize);
+      return `<div class="pk c${i % 4}" tabindex="0" data-p="${i}">
+        <div class="t"><span>Packet ${i + 1}</span><span>${p.length.toLocaleString()} B</span></div>
+        <div class="s"><b>Header</b><span>seq ${i + 1} · ${p.length} B</span></div>
+        <div class="s payload-sample"><b>Payload</b><code>${sample}${remaining ? ' …' : ''}</code></div>
+        ${remaining ? `<div class="s packet-omitted">+ ${remaining.toLocaleString()} more bytes</div>` : ''}
+        <div class="s"><b>CRC-8</b><span>${crc}</span></div>
+      </div>`;
+    }
+    return `<div class="pk c${i % 4}" tabindex="0" data-p="${i}"><div class="t"><span>Packet ${i + 1}</span><span>${p.length} B</span></div><div class="s"><b>Header</b>seq ${i + 1}, length ${p.length}</div><div class="s"><b>Payload</b><span>${hexs(p)}</span></div><div class="s"><b>CRC-8 trailer</b><span>${crc}</span></div></div>`;
+  }).join('');
+  $('#pk').classList.toggle('image-packets', S.dataType === 'image');
+  $('#pk').innerHTML = (S.P.length > packetPreviewCount ? '<p class="hint">Showing ' + packetPreviewCount + ' compact sample packets of ' + S.P.length.toLocaleString() + '. Image payload cards show the first 6 bytes only; all bytes are still transmitted.</p>' : '') + packetCards;
   const over = S.P.length * ((S.dataType === 'image' ? 4 : HDR) + TRL),
     tot = S.bytes.length + over;
   $('#pstats').innerHTML = [
