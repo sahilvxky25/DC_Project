@@ -415,6 +415,11 @@
         </footer>
       </div>
       <dialog class="password-dialog" id="changePasswordDialog" aria-labelledby="passwordDialogTitle">
+        <div class="password-auth-loading" id="password-auth-loading" role="status" aria-live="polite" aria-atomic="true" hidden>
+          <span class="auth-loading-spinner" aria-hidden="true"></span>
+          <strong>Updating your password...</strong>
+          <span class="auth-loading-detail">Please wait while Firebase securely updates your account.</span>
+        </div>
         <form id="changePasswordForm">
           <h2 id="passwordDialogTitle">Change Password</h2>
           <label for="currentPassword">Current Password
