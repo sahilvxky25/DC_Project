@@ -86,6 +86,11 @@
         </form>
         <p class="login-security-note">Your account is managed securely by Firebase Authentication. Never share your password.</p>
       </div>
+      <div class="auth-loading-overlay" id="auth-loading" role="status" aria-live="polite" aria-atomic="true">
+        <span class="auth-loading-spinner" aria-hidden="true"></span>
+        <strong id="auth-loading-title">Checking your session...</strong>
+        <span class="auth-loading-detail">Please wait while we securely connect to your account.</span>
+      </div>
     </section>
     <a class="skip" href="#view">Skip to content</a>
     <div class="app" hidden>
