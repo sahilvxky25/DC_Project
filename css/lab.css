@@ -273,3 +273,40 @@
 .image-transfer-progress-track{height:9px;overflow:hidden;border-radius:999px;background:var(--surface2);border:1px solid var(--line)}
 .image-transfer-progress-track span{display:block;width:0;height:100%;background:var(--ok);transition:width .16s ease}
 .image-transfer-progress p{margin:.5rem 0 0;color:var(--muted);font-size:.82rem;font-variant-numeric:tabular-nums}
+
+/* Compact packet cards for large binary image payloads. Text cards retain their detailed layout. */
+.packets.image-packets {
+  grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+  gap: 0.55rem;
+}
+.image-packets .pk {
+  min-width: 0;
+  padding: 0.48rem 0.58rem;
+  border-radius: 9px;
+  font-size: 0.74rem;
+}
+.image-packets .pk .t {
+  margin-bottom: 0.28rem;
+  font-size: 0.76rem;
+  gap: 0.35rem;
+}
+.image-packets .pk .s {
+  align-items: baseline;
+  gap: 0.25rem;
+  font-size: 0.69rem;
+  line-height: 1.3;
+}
+.image-packets .pk .s b {
+  min-width: 3.1rem;
+  font-size: 0.61rem;
+}
+.image-packets .payload-sample code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font: 0.68rem var(--mono);
+}
+.image-packets .packet-omitted {
+  padding-left: 3.35rem;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
