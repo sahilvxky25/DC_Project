@@ -133,7 +133,8 @@ function rankDocuments(query, documents) {
       if (relevance >= 0.48) {
         candidates.set(item.mod.id, Math.max(candidates.get(item.mod.id) || 0, relevance));
       }
-    });;
+    });
+  });
 
   return documents
     .filter(item => candidates.has(item.mod.id))
