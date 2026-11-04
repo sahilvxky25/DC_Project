@@ -31,12 +31,12 @@ const CONCEPT_ALIASES = [
 
 const normalize = value => String(value || '')
   .normalize('NFKD')
-  .replace(/[\\u0300-\\u036f]/g, '')
+  .replace(/[\u0300-\u036f]/g, '')
   .toLocaleLowerCase()
   .replace(/[^a-z0-9]+/g, ' ')
   .trim();
 
-const tokenize = value => normalize(value).split(/\\s+/).filter(Boolean);
+const tokenize = value => normalize(value).split(/\s+/).filter(Boolean);
 
 function editDistance(a, b) {
   if (a === b) return 0;
