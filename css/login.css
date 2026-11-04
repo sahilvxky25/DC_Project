@@ -115,3 +115,25 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-loading-spinner { animation-duration: 2s; }
 }
+
+
+/* Full-app operation loader, used only during account changes inside the app. */
+.app { position: relative; }
+.app-auth-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 24px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+  color: var(--text);
+  text-align: center;
+}
+.app-auth-loading[hidden] { display: none !important; }
+.app-auth-loading strong { font-size: 1.05rem; }
