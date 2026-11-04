@@ -1,9 +1,8 @@
 /**
  * Intelligent learning-module search.
  *
- * Uses Fuse.js for typo-tolerant matching when its browser build is available,
- * with a small local edit-distance fallback so search remains usable if the CDN
- * is temporarily unavailable. Results still navigate through the existing hash
+ * Uses local typo-tolerant matching and edit distance. No third-party script,
+ * backend, or AI service is required. Results navigate through the existing hash
  * router and module registry; no backend or AI service is required.
  */
 import { DC } from '../core/state.js';
@@ -109,27 +108,7 @@ function buildSearchDocuments() {
   });
 }
 
-function createFuzzyEngine(documents) {
-  if (typeof window.Fuse === 'function') {
-    return new window.Fuse(documents, {
-      includeScore: true,
-      ignoreLocation: true,
-      threshold: 0.43,
-      minMatchCharLength: 2,
-      shouldSort: true,
-      keys: [
-        { name: 'title', weight: 3.5 },
-        { name: 'keywords', weight: 2.6 },
-        { name: 'description', weight: 1.4 },
-        { name: 'groupName', weight: 1 },
-        { name: 'groupDescription', weight: 0.5 },
-      ],
-    });
-  }
-  return null;
-}
-
-function rankDocuments(query, documents, fuse) {
+function rankDocuments(query, documents) {
   const candidates = new Map();
   const queries = expandedQueries(query);
 
@@ -137,38 +116,24 @@ function rankDocuments(query, documents, fuse) {
     const needle = normalize(candidateQuery);
     if (!needle) return;
 
-    if (fuse) {
-      fuse.search(candidateQuery, { limit: 30 }).forEach(({ item, score = 1 }) => {
-        const title = normalize(item.title);
-        const keywords = normalize(item.keywords);
-        const searchable = normalize(item.searchable);
-        const exactBoost = title === needle ? 1 : title.startsWith(needle) ? 0.88 :
-          title.includes(needle) ? 0.78 : keywords.includes(needle) ? 0.68 :
-          searchable.includes(needle) ? 0.55 : 0;
-        const expansionPenalty = queryIndex === 0 ? 0 : 0.08;
-        const relevance = Math.max(exactBoost, 1 - score) - expansionPenalty;
+
+    documents.forEach(item => {
+      const title = normalize(item.title);
+      const keywords = normalize(item.keywords);
+      const searchable = normalize(item.searchable);
+      const exactBoost = title === needle ? 1 : title.startsWith(needle) ? 0.88 :
+        title.includes(needle) ? 0.78 : keywords.includes(needle) ? 0.68 :
+        searchable.includes(needle) ? 0.55 : 0;
+      const fuzzy = Math.max(
+        tokenSimilarity(candidateQuery, item.title) * 0.9,
+        tokenSimilarity(candidateQuery, item.keywords) * 0.76,
+        tokenSimilarity(candidateQuery, item.searchable) * 0.62,
+      );
+      const relevance = Math.max(exactBoost, fuzzy) - (queryIndex === 0 ? 0 : 0.08);
+      if (relevance >= 0.48) {
         candidates.set(item.mod.id, Math.max(candidates.get(item.mod.id) || 0, relevance));
-      });
-    } else {
-      documents.forEach(item => {
-        const title = normalize(item.title);
-        const keywords = normalize(item.keywords);
-        const searchable = normalize(item.searchable);
-        const exactBoost = title === needle ? 1 : title.startsWith(needle) ? 0.88 :
-          title.includes(needle) ? 0.78 : keywords.includes(needle) ? 0.68 :
-          searchable.includes(needle) ? 0.55 : 0;
-        const fuzzy = Math.max(
-          tokenSimilarity(candidateQuery, item.title) * 0.9,
-          tokenSimilarity(candidateQuery, item.keywords) * 0.76,
-          tokenSimilarity(candidateQuery, item.searchable) * 0.62,
-        );
-        const relevance = Math.max(exactBoost, fuzzy) - (queryIndex === 0 ? 0 : 0.08);
-        if (relevance >= 0.48) {
-          candidates.set(item.mod.id, Math.max(candidates.get(item.mod.id) || 0, relevance));
-        }
-      });
-    }
-  });
+      }
+    });;
 
   return documents
     .filter(item => candidates.has(item.mod.id))
@@ -183,7 +148,6 @@ export function initModuleSearch() {
   if (!input || !panel) return;
 
   const documents = buildSearchDocuments();
-  const fuse = createFuzzyEngine(documents);
   let activeIndex = -1;
   let currentResults = [];
 
@@ -206,7 +170,7 @@ export function initModuleSearch() {
       return;
     }
 
-    currentResults = rankDocuments(query, documents, fuse);
+    currentResults = rankDocuments(query, documents);
 
     if (!currentResults.length) {
       const empty = document.createElement('p');
