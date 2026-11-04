@@ -135,9 +135,10 @@ export async function transmit() {
   const corrupt = +$('#corr').value / 100;
   const maxRetry = +$('#retries').value;
   const speed = +$('#spd').value;
-  const batchSize = imageMode ? 128 : 1;
-  // A single visual update per batch keeps large image transfers responsive.
-  const animationScale = imageMode ? 0.16 : 1;
+  // Image packets are grouped into small visible patches. Each patch gets a
+  // deliberate travel animation so learners can follow it across the link.
+  const batchSize = imageMode ? 16 : 1;
+  const imagePatchDuration = 720 / speed;
   S.run = {
     arr: [],
     got: Array(P.length).fill(null),
@@ -189,19 +190,19 @@ export async function transmit() {
       run.retries.toLocaleString() + ' retries · ' + pct + '%';
   };
   logLine('START', '', `Sending ${P.length.toLocaleString()} packet${P.length === 1 ? '' : 's'}` +
-    (imageMode ? ` in batches of ${batchSize}` : '') +
+    (imageMode ? ` in visible patches of ${batchSize} packets` : '') +
     ` at ${run.cfg.loss}% loss and ${run.cfg.corrupt}% corruption.`);
   for (let offset = 0; offset < order.length; offset += batchSize) {
     const batch = order.slice(offset, offset + batchSize);
-    pkt.textContent = imageMode ? 'Batch ' + (Math.floor(offset / batchSize) + 1) : 'P' + (batch[0] + 1);
+    pkt.textContent = imageMode ? 'Patch ' + (Math.floor(offset / batchSize) + 1) + ' · ' + batch.length + ' packets' : 'P' + (batch[0] + 1);
     pkt.className = 'fly';
     pkt.style.opacity = 1;
     pkt.style.background = '';
     $('#st').textContent = imageMode
-      ? `Transmitting batch ${Math.floor(offset / batchSize) + 1} of ${Math.ceil(P.length / batchSize)}...`
+      ? `Transmitting patch ${Math.floor(offset / batchSize) + 1} of ${Math.ceil(P.length / batchSize)} (${batch.length} packets)...`
       : `Sending packet ${batch[0] + 1}...`;
     if (imageMode) {
-      await fly(pkt, '100%', 420 * animationScale / speed);
+      await fly(pkt, '100%', imagePatchDuration);
       if (!alive()) return stopped();
     }
 
@@ -296,13 +297,13 @@ export async function transmit() {
       if (batchLost) logLine('LOSS', 'bad', `${batchLost} packet attempt(s) were lost in this batch.`);
       if (batchCorrupt) logLine('CRC', 'bad', `${batchCorrupt} packet attempt(s) failed CRC in this batch and were discarded.`);
       logLine('BATCH', batchReceived === batch.length ? 'ok' : 'warn',
-        `Batch ${Math.floor(offset / batchSize) + 1}: ${batchReceived}/${batch.length} packets received.`);
+        `Patch ${Math.floor(offset / batchSize) + 1}: ${batchReceived}/${batch.length} packets received.`);
     }
     updateProgress();
     $('#rp').textContent = `${run.arr.length.toLocaleString()} of ${P.length.toLocaleString()} received`;
     if (imageMode) {
       $('#st').textContent = `Checked ${run.sent.toLocaleString()} of ${P.length.toLocaleString()} packets. ${batchReceived} received in the latest batch.`;
-      await sleep(Math.max(8, 36 / speed));
+      await sleep(140 / speed);
       if (!alive()) return stopped();
     }
     reset(pkt);
