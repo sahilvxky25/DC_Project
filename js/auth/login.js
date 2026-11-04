@@ -51,6 +51,23 @@ const forgotPasswordLink = document.getElementById('forgot-password');
 
 let authMode = 'signin';
 
+const authLoading = document.getElementById('auth-loading');
+const authLoadingTitle = document.getElementById('auth-loading-title');
+
+function showAuthLoading(message = 'Signing in...') {
+  authLoadingTitle.textContent = message;
+  authLoading.hidden = false;
+  loginScreen.setAttribute('aria-busy', 'true');
+}
+
+function hideAuthLoading() {
+  authLoading.hidden = true;
+  loginScreen.removeAttribute('aria-busy');
+}
+
+// Firebase restores a persisted session asynchronously after the page loads.
+showAuthLoading('Checking your session...');
+
 function setMessage(message, kind = 'error') {
   errorBox.textContent = message;
   errorBox.classList.toggle('is-success', kind === 'success');
@@ -70,6 +87,7 @@ function renderProfile(user) {
 }
 
 function showApp(user = auth.currentUser) {
+  hideAuthLoading();
   // Keep a durable signal in case the application module finishes loading after this module.
   window.__bitSecureAuthenticated = true;
   if (user) renderProfile(user);
@@ -160,6 +178,8 @@ loginForm.addEventListener('submit', async event => {
   }
 
   submitBtn.disabled = true;
+  let keepAuthLoading = false;
+  showAuthLoading(authMode === 'signup' ? 'Creating your account...' : 'Signing in...');
   try {
     if (authMode === 'signup') {
       const credential = await createUserWithEmailAndPassword(auth, email, password);
@@ -179,11 +199,14 @@ loginForm.addEventListener('submit', async event => {
       : browserSessionPersistence;
     await setPersistence(auth, persistence);
 
+    keepAuthLoading = true;
+    showAuthLoading('Verifying your account...');
     const credential = await signInWithEmailAndPassword(auth, email, password);
     if (!credential.user.emailVerified) {
       // A retry here gives users another verification email if the original was missed.
       await sendEmailVerification(credential.user);
       await signOut(auth);
+      keepAuthLoading = false;
       setMessage('Your email is not verified yet. We sent a fresh verification email. Check your inbox and spam folder, verify your address, then sign in again.');
       return;
     }
@@ -198,6 +221,7 @@ loginForm.addEventListener('submit', async event => {
     setMessage(friendlyError(error));
   } finally {
     submitBtn.disabled = false;
+    if (!keepAuthLoading) hideAuthLoading();
   }
 });
 
@@ -379,8 +403,14 @@ localStorage.removeItem('bitsecure.demo-accounts');
 
 onAuthStateChanged(auth, async user => {
   if (user?.emailVerified) {
-    // Do not expose the application until this account's cloud/local progress has been restored.
-    await activateProgressForUser(user.uid);
+    // Keep the loader visible while the account's cloud/local progress is restored.
+    showAuthLoading('Restoring your learning progress...');
+    try {
+      await activateProgressForUser(user.uid);
+    } catch (error) {
+      // A progress-sync issue should not leave authentication stuck behind a spinner.
+      console.warn('Unable to fully restore learning progress:', error);
+    }
 
     // Auth events can overlap while a slow Firestore request is in flight. Do not display stale
     // progress if the user signed out or changed accounts before this restore finished.
@@ -391,6 +421,7 @@ onAuthStateChanged(auth, async user => {
 
   // Clear the in-memory state on sign-out so it cannot be reused by the next account.
   deactivateProgressUser();
+  hideAuthLoading();
   showLogin();
   // Unverified users remain on the login screen. Signup signs out after sending
   // the verification email; sign-in explicitly signs out any unverified account.
