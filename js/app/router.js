@@ -38,6 +38,7 @@ import { checkAch } from './progress.js';
 import { labSplit } from '../lab/packet-stage.js';
 import { labRecv } from '../lab/receiver-stage.js';
 import { labPrepare } from '../lab/transmission-stage.js';
+import { renderAbout } from './about.js';
 
 /**
  * DOM ids of the four core-lab screens, indexed by the number in #/lab/<n>.
@@ -87,6 +88,19 @@ export function route() {
     if (i === 1) labSplit();
     if (i === 2) labPrepare();
     if (i === 3) labRecv();
+  } else if (kind === 'about') {
+    currentKey = 'about';
+    let root = $('#about-view');
+    if (!root) {
+      root = document.createElement('section');
+      root.id = 'about-view';
+      root.className = 'stage';
+      $('#view').append(root);
+    }
+    setStage('about-view');
+    crumbs(['About Us']);
+    document.title = 'About Us · BitSecure';
+    renderAbout(root);
   } else if (kind === 'm' && modById(arg)) {
     const m = modById(arg);
     currentKey = m.id;
@@ -100,7 +114,7 @@ export function route() {
   }
   // Remember the first visit time (an existing value is kept).
   P.visited[currentKey] = P.visited[currentKey] || Date.now();
-  if (currentKey !== 'dash') P.last = currentKey;
+  if (currentKey !== 'dash' && currentKey !== 'about') P.last = currentKey;
   checkAch();
   save();
   refreshNav(currentKey);
