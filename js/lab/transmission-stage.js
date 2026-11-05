@@ -62,7 +62,7 @@ function logLine(t, cls, msg, store = true) {
  * Stage 3 set-up: draws the queues and, if a run already exists, redraws its log and final state.
  */
 function senderQueueMarkup() {
-  if (!((S.dataType === 'image' || S.dataType === 'video') || S.dataType === 'video') || S.P.length <= 48) {
+  if (!(S.dataType === 'image' || S.dataType === 'video') || S.P.length <= 48) {
     return S.P.map((_, i) => `<span class="chip c${i % 4}" id="q${i}">P${i + 1}</span>`).join('');
   }
   return '<span class="hint">Binary file transfer · ' + S.P.length.toLocaleString() + ' packets processed in batches (sample shown)</span>' +
@@ -126,7 +126,7 @@ export async function transmit() {
   if (S.busy || !S.up) return;
   if (!S.P.length) labSplit();
   if (!S.P.length) {
-    $('#st').textContent = 'Enter text or choose an image first.';
+    $('#st').textContent = 'Enter text or choose an image or video first.';
     return;
   }
   const binaryMode = S.dataType === 'image' || S.dataType === 'video';
@@ -143,9 +143,9 @@ export async function transmit() {
   const corrupt = +$('#corr').value / 100;
   const maxRetry = +$('#retries').value;
   const speed = +$('#spd').value;
-  // Image packets are grouped into small visible patches. Each patch gets a
-  // deliberate travel animation so learners can follow it across the link.
-  const batchSize = binaryMode ? 16 : 1;
+  // Binary file packets are grouped into visible patches. Video uses larger patches
+  // to keep larger files practical while retaining the image transfer animation.
+  const batchSize = S.dataType === 'video' ? 64 : binaryMode ? 16 : 1;
   const imagePatchDuration = Math.max(650, 900 / speed);
   S.run = {
     arr: [],
