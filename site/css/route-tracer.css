@@ -1,0 +1,35 @@
+/* Live route module */
+.lr-hint { color: var(--muted); font-size: 0.85rem; margin: 0.4rem 0; }
+.lr-bad { color: var(--bad); }
+.lr-path { list-style: none; margin: 0; padding: 0 0 0 1.1rem; border-left: 2px solid var(--line2); }
+.lr-node {
+  position: relative; display: grid; grid-template-columns: 2.5rem 1fr auto; align-items: center; gap: 0.15rem 0.75rem;
+  padding: 0.5rem 0.75rem; margin: 0.4rem 0; background: var(--surface2); border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.lr-node::before {
+  content: ""; position: absolute; left: -1.6rem; top: 50%; width: 0.8rem; height: 0.8rem; margin-top: -0.4rem;
+  border-radius: 50%; background: var(--accent); border: 2px solid var(--bg);
+}
+.lr-n { font-family: var(--mono); color: var(--muted); }
+.lr-ip { font-family: var(--mono); overflow-wrap: anywhere; }
+.lr-note { grid-column: 2; color: var(--muted); font-size: 0.8rem; }
+.lr-rtt { grid-column: 3; grid-row: 1; font-family: var(--mono); font-size: 0.85rem; }
+.lr-bar { grid-column: 2 / 4; height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--accent) var(--w, 0%), var(--line) 0); }
+.lr-private { border-style: dashed; }
+.lr-private::before { background: var(--warn); }
+.lr-timeout { border-style: dashed; color: var(--muted); }
+.lr-timeout::before { background: var(--faint); }
+.lr-target { border-color: var(--ok); }
+.lr-target::before { background: var(--ok); }
+.lr-now::before { animation: lr-pulse 1s ease-out infinite; }
+@keyframes lr-pulse { 0% { box-shadow: 0 0 0 0 var(--accent-soft); } 100% { box-shadow: 0 0 0 0.7rem transparent; } }
+#lr-summary { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; margin-top: 0.8rem; }
+.lr-badge { padding: 0.2rem 0.65rem; border-radius: 999px; font-weight: 600; font-size: 0.85rem; background: var(--accent-soft); color: var(--text); }
+.lr-delivered { background: var(--ok); color: var(--accent-ink); }
+.lr-delivery_failed, .lr-unreachable { background: var(--bad); color: var(--accent-ink); }
+.lr-dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 1rem; margin: 0; }
+.lr-dl dt { color: var(--muted); }
+.lr-dl dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 520px) { .lr-node { grid-template-columns: 2rem 1fr; } .lr-rtt, .lr-bar { grid-column: 2; grid-row: auto; } }
+@media (prefers-reduced-motion: reduce) { .lr-now::before { animation: none; } }
