@@ -36,7 +36,7 @@ export function encodeMsg() {
     const fileSize = isVideo ? S.videoSize : S.imageSize;
     const details = isVideo ? (S.videoWidth && S.videoHeight ? S.videoWidth + ' × ' + S.videoHeight : 'Video') + (S.videoDuration ? ' · ' + S.videoDuration.toFixed(1) + ' sec' : '') : 'Binary image';
     $('#bsum').textContent = (fileName || (isVideo ? 'Video' : 'Image')) + ' · ' + S.bytes.length.toLocaleString() + ' bytes · ' + (mimeType || 'binary data');
-    $('#mstats').innerHTML = [[S.bytes.length.toLocaleString(), 'bytes'], [fileSize ? (fileSize / (1024 * 1024)).toFixed(2) + ' MB' : '—', 'file size'], [details, isVideo ? 'video details' : 'data format']].map(([v, name]) => '<div class="stat"><b>' + v + '</b><span>' + name + '</span></div>').join('');
+    $('#mstats').innerHTML = [[S.bytes.length.toLocaleString(), 'bytes'], [fileSize ? (isVideo ? (fileSize / (1024 * 1024)).toFixed(2) + ' MB' : (fileSize / 1024).toFixed(2) + ' KB') : '—', 'file size'], [details, isVideo ? 'video details' : 'data format']].map(([v, name]) => '<div class="stat"><b>' + v + '</b><span>' + name + '</span></div>').join('');
     setTop(S.bytes.length);
     return;
   }
