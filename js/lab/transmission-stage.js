@@ -196,7 +196,7 @@ export async function transmit() {
     progress.querySelector('span').style.width = pct + '%';
     progress.querySelector('p').textContent =
       run.sent.toLocaleString() + ' / ' + P.length.toLocaleString() +
-      ' packets processed · ' + run.arr.length.toLocaleString() + ' delivered · '
+      ' packets processed · ' + run.arr.length.toLocaleString() + ' delivered · ' +
       run.retries.toLocaleString() + ' retries · ' + pct + '%';
   };
   logLine('START', '', `Sending ${P.length.toLocaleString()} packet${P.length === 1 ? '' : 's'}` +
