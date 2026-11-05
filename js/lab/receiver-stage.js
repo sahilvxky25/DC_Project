@@ -29,7 +29,7 @@ export function labRecv() {
   $('#rBody').hidden = !r;
   clearInterval(S.timer);
   if (!r) return;
-  const binaryMode = S.dataType === 'image' || S.dataType === 'video';
+  const binaryMode = S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document';
   const previewLimit = binaryMode ? 32 : r.arr.length;
   const shownArr = r.arr.slice(0, previewLimit);
   $('#arr').innerHTML =
@@ -64,13 +64,13 @@ export function labRecv() {
     const part = S.dataType === 'text' ? dec.decode(new Uint8Array(prefix)) : '';
     res.classList.add('bad');
     flag('viewedGap');
-    const missingType = S.dataType === 'video' ? 'video' : S.dataType === 'image' ? 'image' : 'message';
+    const missingType = S.dataType === 'video' ? 'video' : S.dataType === 'image' ? 'image' : S.dataType === 'document' ? 'document' : 'message';
     res.innerHTML = `Cannot reconstruct the complete ${missingType}: ${miss} packet${miss > 1 ? 's are' : ' is'} missing.${S.dataType === 'text' && prefix.length ? `<div class="partial">Only the in-order prefix can be read: <code>${esc(part)}</code></div>` : ''}`;
     $('#rhint').textContent = S.dataType === 'text' ? 'A missing packet leaves a hole that decoding cannot bridge. A cut-off multi-byte character would show as �.' : 'A missing packet leaves a gap in the binary file, so the complete ' + missingType + ' cannot be played or displayed.';
     return;
   }
   flag('rebuilt');
-  if (S.dataType === 'image' || S.dataType === 'video') {
+  if (S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document') {
     const imageBytes = new Uint8Array(S.bytes.length);
     let byteOffset = 0;
     for (const packet of r.got) {
@@ -78,10 +78,36 @@ export function labRecv() {
       byteOffset += packet.length;
     }
     const isVideo = S.dataType === 'video';
-    const blob = new Blob([imageBytes], { type: isVideo ? (S.videoMimeType || 'video/mp4') : (S.imageMimeType || 'application/octet-stream') });
+    const isDocument = S.dataType === 'document';
+    const mimeType = isDocument ? (S.documentMimeType || 'application/octet-stream') : isVideo ? (S.videoMimeType || 'video/mp4') : (S.imageMimeType || 'application/octet-stream');
+    const blob = new Blob([imageBytes], { type: mimeType });
     if (S.reconstructedImageUrl) URL.revokeObjectURL(S.reconstructedImageUrl);
     if (S.reconstructedVideoUrl) URL.revokeObjectURL(S.reconstructedVideoUrl);
+    if (S.reconstructedDocumentUrl) URL.revokeObjectURL(S.reconstructedDocumentUrl);
     const url = URL.createObjectURL(blob);
+    if (isDocument) {
+      S.reconstructedDocumentUrl = url;
+      const extension = (S.documentName || '').split('.').pop().toLowerCase();
+      if (extension === 'pdf') {
+        const frame = document.createElement('iframe');
+        frame.src = url; frame.title = 'Reconstructed PDF preview'; frame.className = 'document-pdf-preview';
+        res.replaceChildren(frame); res.classList.add('document-result');
+      } else if (extension === 'txt') {
+        const preview = document.createElement('pre');
+        preview.className = 'document-text-preview';
+        preview.textContent = new TextDecoder().decode(imageBytes).slice(0, 12000);
+        res.replaceChildren(preview); res.classList.add('document-result');
+      } else {
+        res.textContent = 'Document reconstructed successfully. Use the download link to open it in a compatible application.';
+      }
+      const download = document.createElement('a');
+      download.href = url; download.download = S.documentName || 'reconstructed-document';
+      download.className = 'btn'; download.textContent = 'Download reconstructed document';
+      download.style.display = 'inline-flex'; download.style.marginTop = '0.8rem';
+      res.append(download);
+      $('#rhint').textContent = 'All ' + S.bytes.length.toLocaleString() + ' bytes were reassembled in sequence. Reconstructed ' + (S.documentName || 'document') + ' (' + (blob.size / 1024).toFixed(2) + ' KB).';
+      return;
+    }
     if (isVideo) {
       S.reconstructedVideoUrl = url;
       const player = document.createElement('video'); player.src = url; player.controls = true; player.preload = 'metadata'; player.className = 'reconstructed-video';

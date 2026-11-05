@@ -36,33 +36,37 @@ export function labInit() {
   let textPayloadSize = $('#ps').value;
   let imageReadToken = 0;
   let videoReadToken = 0;
+  let documentReadToken = 0;
   const setMode = mode => {
     imageReadToken++;
     videoReadToken++;
+    documentReadToken++;
     const previousMode = S.dataType;
     S.dataType = mode;
     $('#textInput').hidden = mode !== 'text';
     $('#presets').hidden = mode !== 'text';
     $('#imageInput').hidden = mode !== 'image';
     $('#videoInput').hidden = mode !== 'video';
-    for (const [id, active] of [['textMode', 'text'], ['imageMode', 'image'], ['videoMode', 'video']]) {
+    $('#documentInput').hidden = mode !== 'document';
+    for (const [id, active] of [['textMode', 'text'], ['imageMode', 'image'], ['videoMode', 'video'], ['documentMode', 'document']]) {
       const button = $('#' + id);
       button.classList.toggle('active', mode === active);
       button.classList.toggle('ghost', mode !== active);
       button.setAttribute('aria-pressed', String(mode === active));
     }
-    $('#resultTitle').textContent = mode === 'image' ? 'Reconstructed image' : mode === 'video' ? 'Reconstructed video' : 'Reassembled message';
+    $('#resultTitle').textContent = mode === 'image' ? 'Reconstructed image' : mode === 'video' ? 'Reconstructed video' : mode === 'document' ? 'Reconstructed document' : 'Reassembled message';
     if (mode === 'text') {
       S.imageMimeType = null; S.imageName = null; S.imageSize = 0;
       S.videoMimeType = null; S.videoName = null; S.videoSize = 0; S.videoDuration = 0; S.videoWidth = 0; S.videoHeight = 0;
+      S.documentMimeType = null; S.documentName = null; S.documentSize = 0;
       $('#ps').min = '1'; $('#ps').max = '8'; $('#ps').step = '1'; $('#ps').value = textPayloadSize;
       encodeMsg(); labSplit();
     } else {
       if (previousMode === 'text') textPayloadSize = $('#ps').value;
       $('#ps').min = '256'; $('#ps').max = '1200'; $('#ps').step = '16'; $('#ps').value = '1200';
       S.bytes = []; S.run = null;
-      $('#bytes').innerHTML = '<p class="hint">Choose a ' + mode + ' to inspect its binary data.</p>';
-      $('#bsum').textContent = 'No ' + mode + ' selected.';
+      $('#bytes').innerHTML = '<p class="hint">Choose a ' + (mode === 'document' ? 'document' : mode) + ' to inspect its binary data.</p>';
+      $('#bsum').textContent = 'No ' + (mode === 'document' ? 'document' : mode) + ' selected.';
       $('#mstats').innerHTML = '';
       labSplit();
     }
@@ -70,6 +74,7 @@ export function labInit() {
   $('#textMode').onclick = () => setMode('text');
   $('#imageMode').onclick = () => setMode('image');
   $('#videoMode').onclick = () => setMode('video');
+  $('#documentMode').onclick = () => setMode('document');
   $('#imageFile').addEventListener('change', async event => {
     const readToken = ++imageReadToken;
     const file = event.target.files && event.target.files[0];
@@ -118,6 +123,68 @@ export function labInit() {
       preview.append(player, meta);
       encodeMsg(); labSplit();
     } catch (error) { console.error('Video read failed', error); alert('The selected video could not be read.'); }
+  });
+  $('#documentFile').addEventListener('change', async event => {
+    const readToken = ++documentReadToken;
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const extension = file.name.split('.').pop().toLowerCase();
+    const documentTypes = {
+      pdf: 'application/pdf',
+      docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      doc: 'application/msword',
+      txt: 'text/plain',
+      rtf: 'application/rtf'
+    };
+    if (!Object.prototype.hasOwnProperty.call(documentTypes, extension)) {
+      alert('Choose a PDF, DOCX, DOC, TXT, or RTF document.');
+      event.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('For this animated lab, choose a document no larger than 5 MB.');
+      event.target.value = '';
+      return;
+    }
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      if (readToken !== documentReadToken || S.dataType !== 'document') return;
+      if (S.documentUrl) URL.revokeObjectURL(S.documentUrl);
+      S.documentUrl = URL.createObjectURL(file);
+      S.documentMimeType = file.type || documentTypes[extension];
+      S.documentName = file.name;
+      S.documentSize = file.size;
+      S.bytes = Array.from(bytes);
+      S.run = null;
+      const preview = $('#documentPreview');
+      preview.replaceChildren();
+      const meta = document.createElement('p');
+      meta.textContent = file.name + ' · ' + (file.size / 1024).toFixed(2) + ' KB · ' + extension.toUpperCase();
+      preview.append(meta);
+      if (extension === 'pdf') {
+        const frame = document.createElement('iframe');
+        frame.src = S.documentUrl;
+        frame.title = 'Selected PDF preview';
+        frame.className = 'document-pdf-preview';
+        frame.loading = 'lazy';
+        preview.append(frame);
+      } else if (extension === 'txt') {
+        const textPreview = document.createElement('pre');
+        textPreview.className = 'document-text-preview';
+        textPreview.textContent = new TextDecoder().decode(bytes).slice(0, 4000);
+        preview.append(textPreview);
+      } else {
+        const note = document.createElement('p');
+        note.className = 'hint';
+        note.textContent = 'This format will be preserved byte-for-byte and offered as a download after successful reconstruction.';
+        preview.append(note);
+      }
+      encodeMsg();
+      labSplit();
+    } catch (error) {
+      console.error('Document read failed', error);
+      alert('The selected document could not be read.');
+    }
   });
   $('#presets').innerHTML = PRESETS.map(
     p => `<button class="chipbtn" type="button">${esc(p)}</button>`
