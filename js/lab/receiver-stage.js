@@ -29,7 +29,7 @@ export function labRecv() {
   $('#rBody').hidden = !r;
   clearInterval(S.timer);
   if (!r) return;
-  const binaryMode = S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document';
+  const binaryMode = S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document' || S.dataType === 'audio';
   const previewLimit = binaryMode ? 32 : r.arr.length;
   const shownArr = r.arr.slice(0, previewLimit);
   $('#arr').innerHTML =
@@ -64,13 +64,13 @@ export function labRecv() {
     const part = S.dataType === 'text' ? dec.decode(new Uint8Array(prefix)) : '';
     res.classList.add('bad');
     flag('viewedGap');
-    const missingType = S.dataType === 'video' ? 'video' : S.dataType === 'image' ? 'image' : S.dataType === 'document' ? 'document' : 'message';
+    const missingType = S.dataType === 'video' ? 'video' : S.dataType === 'image' ? 'image' : S.dataType === 'document' ? 'document' : S.dataType === 'audio' ? 'audio file' : 'message';
     res.innerHTML = `Cannot reconstruct the complete ${missingType}: ${miss} packet${miss > 1 ? 's are' : ' is'} missing.${S.dataType === 'text' && prefix.length ? `<div class="partial">Only the in-order prefix can be read: <code>${esc(part)}</code></div>` : ''}`;
     $('#rhint').textContent = S.dataType === 'text' ? 'A missing packet leaves a hole that decoding cannot bridge. A cut-off multi-byte character would show as �.' : 'A missing packet leaves a gap in the binary file, so the complete ' + missingType + ' cannot be played or displayed.';
     return;
   }
   flag('rebuilt');
-  if (S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document') {
+  if (S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document' || S.dataType === 'audio') {
     const imageBytes = new Uint8Array(S.bytes.length);
     let byteOffset = 0;
     for (const packet of r.got) {
@@ -79,12 +79,27 @@ export function labRecv() {
     }
     const isVideo = S.dataType === 'video';
     const isDocument = S.dataType === 'document';
-    const mimeType = isDocument ? (S.documentMimeType || 'application/octet-stream') : isVideo ? (S.videoMimeType || 'video/mp4') : (S.imageMimeType || 'application/octet-stream');
+    const isAudio = S.dataType === 'audio';
+    const mimeType = isAudio ? (S.audioMimeType || 'audio/mpeg') : isDocument ? (S.documentMimeType || 'application/octet-stream') : isVideo ? (S.videoMimeType || 'video/mp4') : (S.imageMimeType || 'application/octet-stream');
     const blob = new Blob([imageBytes], { type: mimeType });
     if (S.reconstructedImageUrl) URL.revokeObjectURL(S.reconstructedImageUrl);
     if (S.reconstructedVideoUrl) URL.revokeObjectURL(S.reconstructedVideoUrl);
     if (S.reconstructedDocumentUrl) URL.revokeObjectURL(S.reconstructedDocumentUrl);
+    if (S.reconstructedAudioUrl) URL.revokeObjectURL(S.reconstructedAudioUrl);
     const url = URL.createObjectURL(blob);
+    if (isAudio) {
+      S.reconstructedAudioUrl = url;
+      const player = document.createElement('audio');
+      player.src = url; player.controls = true; player.preload = 'metadata'; player.className = 'reconstructed-audio';
+      res.replaceChildren(player); res.classList.add('audio-result');
+      const download = document.createElement('a');
+      download.href = url; download.download = S.audioName || 'reconstructed-audio';
+      download.className = 'btn'; download.textContent = 'Download reconstructed audio';
+      download.style.display = 'inline-flex'; download.style.marginTop = '0.8rem';
+      res.append(download);
+      $('#rhint').textContent = 'All ' + S.bytes.length.toLocaleString() + ' bytes were reassembled in sequence. Reconstructed ' + (S.audioName || 'audio file') + ' (' + (blob.size / (1024 * 1024)).toFixed(2) + ' MB).';
+      return;
+    }
     if (isDocument) {
       S.reconstructedDocumentUrl = url;
       const extension = (S.documentName || '').split('.').pop().toLowerCase();
