@@ -38,7 +38,7 @@ export function labRecv() {
     '<li>Nothing arrived.</li>';
   if (binaryMode && r.got.length > previewLimit) {
     const missing = r.got.reduce((count, packet) => count + (packet ? 0 : 1), 0);
-    $('#slots').innerHTML = `<div class="image-byte-summary"><strong>${r.arr.length.toLocaleString()} / ${r.got.length.toLocaleString()} packets received</strong><span>${missing.toLocaleString()} missing · Detailed slot rendering is limited for large image transfers to keep the page responsive.</span></div>` +
+    $('#slots').innerHTML = `<div class="image-byte-summary"><strong>${r.arr.length.toLocaleString()} / ${r.got.length.toLocaleString()} packets received</strong><span>${missing.toLocaleString()} missing · Detailed slot rendering is limited for large binary transfers to keep the page responsive.</span></div>` +
       r.got.slice(0, 12).map((p, i) => p
         ? `<div class="slot ok"><b>Slot ${i + 1}</b><span>${p.length} bytes</span></div>`
         : `<div class="slot miss"><b>Slot ${i + 1}</b><span>missing</span></div>`).join('');
