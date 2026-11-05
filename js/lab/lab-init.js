@@ -60,6 +60,7 @@ function showUploadError(input, message) {
   }
   warning.textContent = message;
   warning.hidden = !message;
+  input.setAttribute('aria-invalid', String(Boolean(message)));
   if (message) input.value = '';
 }
 
@@ -69,6 +70,7 @@ function clearUploadError(input) {
     warning.textContent = '';
     warning.hidden = true;
   }
+  input.setAttribute('aria-invalid', 'false');
 }
 
 
