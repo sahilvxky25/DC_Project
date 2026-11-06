@@ -92,7 +92,7 @@ regMod({
           const cipher=plain.replace(/[a-z]/gi,ch=>{const base=ch<='Z'?65:97;return String.fromCharCode((ch.charCodeAt(0)-base+shift)%26+base);});
           encrypted=new TextEncoder().encode(cipher); algorithmLabel='Caesar cipher';
           stages.push(addStage('Substitution','Shift each alphabetic character by '+shift,plain,cipher,'Same shift in reverse restores the text. Not secure against analysis.'));
-          restore=()=>new TextDecoder().decode(encrypted).replace(/[a-z]/gi,ch=>{const base=ch<='Z'?65:97;return String.fromCharCode((ch.charCodeAt(0)-base-shift+26)%26+base);});
+          restore=()=>new TextEncoder().encode(new TextDecoder().decode(encrypted).replace(/[a-z]/gi,ch=>{const base=ch<='Z'?65:97;return String.fromCharCode((ch.charCodeAt(0)-base-shift+26)%26+base);}));
         } else if(mode==='xor'){
           const xorKey=0x5A; encrypted=source.map(byte=>byte^xorKey); algorithmLabel='XOR byte cipher';
           stages.push(addStage('XOR operation','Each byte XOR 0x5A',bytesHex(source),bytesHex(encrypted),'The same key reverses XOR. This fixed demonstration key is deliberately insecure.'));
