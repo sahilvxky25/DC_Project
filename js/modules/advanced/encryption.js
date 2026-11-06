@@ -1,199 +1,175 @@
 /**
- * Advanced learning module: Encryption and decryption lab.
- *
- * Demonstrates optional payload encryption before packetization and authenticated
- * decryption after reassembly. Uses the browser Web Crypto API; no keys leave the browser.
+ * Encryption and decryption learning lab.
+ * Educational examples only; use TLS and vetted protocols in production.
  */
 import { regMod } from '../registry.js';
-import { panel, hn, chipRow, vd, statRow } from '../../core/ui-helpers.js';
+import { panel, hn, vd, statRow } from '../../core/ui-helpers.js';
 import { $, esc } from '../../core/utils.js';
 import { hex } from '../../core/encoding.js';
 
-const bytesHex = bytes => Array.from(bytes).slice(0, 96).map(hex).join(' ') +
-  (bytes.length > 96 ? ' …' : '');
+const bytesHex = bytes => Array.from(bytes).slice(0, 120).map(hex).join(' ') + (bytes.length > 120 ? ' …' : '');
+const b64 = bytes => btoa(String.fromCharCode(...bytes));
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 regMod({
   id: 'encryption',
   group: 'adv',
   title: 'Encryption and decryption lab',
-  desc: 'Encrypt text or files, send ciphertext in packets, reassemble it and verify it at the receiver.',
+  desc: 'Explore classical and modern encryption, follow every processing stage, and inspect the receiver result.',
   obj: [
-    'Compare plaintext transmission with AES-GCM encryption.',
-    'See how ECDH establishes a shared key for AES-GCM.',
-    'Observe authentication failure when ciphertext is changed.',
+    'Compare classical ciphers with modern authenticated encryption.',
+    'Understand symmetric, asymmetric and hybrid encryption.',
+    'Inspect intermediate outputs, packetization and receiver verification.',
   ],
   mount(root) {
     const supported = typeof crypto !== 'undefined' && !!crypto.subtle;
-    root.innerHTML = panel(
-      'Protect a message before it enters the network',
-      (supported
-        ? '<p class="hint">Choose a payload and security mode. The sender encrypts the bytes, splits the result into packets, and the receiver reassembles and decrypts them. Encryption is optional so you can compare both paths.</p>'
-        : '<p class="hint">Web Crypto is unavailable. Open the site over HTTPS or localhost to use this lab.</p>') +
-      (supported ? `
-        <div class="controls">
-          <div class="field grow"><label for="enc-message">Text message</label><textarea id="enc-message" rows="3">Meet at the network lab.</textarea></div>
-          <div class="field grow"><label for="enc-file">Or choose a file (image, video, audio, or document)</label><input id="enc-file" type="file"></div>
-        </div>
-        <div class="controls">
-          <div class="field"><label for="enc-mode">Security mode</label><select id="enc-mode">
-            <option value="none">No encryption (plain bytes)</option>
-            <option value="aes">AES-256-GCM (shared key)</option>
-            <option value="ecdh">ECDH P-256 + AES-256-GCM (hybrid)</option>
-          </select></div>
-          <div class="field"><label for="enc-size">Packet payload size</label><input id="enc-size" type="number" min="8" max="1024" value="16"></div>
-        </div>
-        <div class="btnrow"><button class="btn" id="enc-run">Encrypt and transmit</button><button class="btn ghost" id="enc-tamper" disabled>Tamper with ciphertext</button></div>
-        <div id="enc-output" aria-live="polite"></div>`
-      : ''),
-      'AES-GCM provides confidentiality and authenticated integrity. Packet CRCs detect accidental transmission errors; the GCM tag detects unauthorized changes.'
+    root.innerHTML = panel('Explore encryption, one stage at a time',
+      '<p class="hint">Select an algorithm and payload. Each stage reveals its actual input, operation and output before the next stage begins.</p>' +
+      '<div class="controls"><div class="field grow"><label for="enc-message">Text message</label><textarea id="enc-message" rows="3">Meet at the network lab.</textarea></div><div class="field grow"><label for="enc-file">Or choose a file (AES/RSA/ECDH/XOR)</label><input id="enc-file" type="file"></div></div>' +
+      '<div class="controls"><div class="field grow"><label for="enc-mode">Algorithm</label><select id="enc-mode">' +
+      '<option value="caesar">Caesar cipher (classical, text only)</option><option value="xor">XOR byte cipher (educational only)</option>' +
+      '<option value="aes">AES-256-GCM (symmetric)</option><option value="rsa">RSA-OAEP + AES-GCM (hybrid)</option>' +
+      '<option value="ecdh">ECDH P-256 + AES-GCM (key agreement)</option><option value="hash">SHA-256 (one-way hash, not encryption)</option>' +
+      '</select></div><div class="field"><label for="enc-size">Packet payload size (bytes)</label><input id="enc-size" type="number" min="8" max="1024" value="16"></div><div class="field" id="enc-shift-wrap"><label for="enc-shift">Caesar shift</label><input id="enc-shift" type="number" min="1" max="25" value="3"></div></div>' +
+      '<div class="btnrow"><button class="btn" id="enc-run" '+(!supported?'disabled':'')+'>Start step-by-step simulation</button><button class="btn ghost" id="enc-tamper" disabled>Test tampering</button></div>' +
+      (!supported?'<p class="hint">Web Crypto is unavailable. Open the site over HTTPS or localhost for AES, RSA, ECDH and SHA-256.</p>':'') +
+      '<div id="enc-output" aria-live="polite"></div>',
+      'Caesar and XOR are teaching examples, not secure protection. AES-GCM authenticates encrypted data. RSA-OAEP wraps a short symmetric key; it is not used to encrypt large files directly. SHA-256 is one-way hashing.'
     );
     if (!supported) return;
-    let last = null, downloadUrl = null;
-    if (!root.querySelector('#enc-motion-style')) {
-      const style = document.createElement('style');
-      style.id = 'enc-motion-style';
-      style.textContent = `
-        .enc-flow{margin:16px 0;padding:16px;border:1px solid var(--line,#ddd);border-radius:14px;overflow:hidden}
-        .enc-flow-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:center}
-        .enc-node{position:relative;min-height:90px;padding:12px 6px;border:1px solid var(--line,#ddd);border-radius:12px;text-align:center;opacity:.45;transform:scale(.96);transition:opacity .35s,transform .35s,border-color .35s,background .35s}
-        .enc-node.active{opacity:1;transform:scale(1.04);border-color:var(--accent,#4b8);background:color-mix(in srgb,var(--accent,#4b8) 12%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#4b8) 15%,transparent)}
-        .enc-node.done{opacity:1;transform:none}
-        .enc-symbol{display:block;font-size:25px;margin-bottom:6px}
-        .enc-packet-lane{height:38px;position:relative;margin:12px 0 0;border-radius:20px;background:color-mix(in srgb,var(--line,#888) 18%,transparent);overflow:hidden}
-        .enc-packet{position:absolute;top:7px;left:-42px;padding:4px 9px;border-radius:8px;font-size:12px;font-weight:700;background:var(--accent,#2878d0);color:white;animation:enc-travel 1.15s ease-in-out infinite}
-        .enc-packet:nth-child(2){animation-delay:.22s}.enc-packet:nth-child(3){animation-delay:.44s}
-        .enc-flow-status{margin:10px 0 0;font-size:13px}
-        .enc-progress{height:5px;background:color-mix(in srgb,var(--line,#888) 20%,transparent);border-radius:9px;overflow:hidden;margin-top:8px}
-        .enc-progress i{display:block;height:100%;width:0;background:var(--accent,#2878d0);transition:width .45s}
-        @keyframes enc-travel{0%{left:-42px;transform:rotate(-8deg)}100%{left:calc(100% + 42px);transform:rotate(8deg)}}
-        @keyframes enc-lock{0%,100%{transform:scale(1)}50%{transform:scale(1.22) rotate(-5deg)}}
-        .enc-node.active .enc-symbol{animation:enc-lock .7s ease-in-out}
-        @media(max-width:620px){.enc-flow-track{grid-template-columns:repeat(2,minmax(0,1fr))}.enc-node:last-child{grid-column:span 2}}
-        @media(prefers-reduced-motion:reduce){.enc-packet,.enc-node.active .enc-symbol{animation:none}.enc-node,.enc-progress i{transition:none}}
-      `;
-      root.appendChild(style);
+    let last = null, downloadUrl = null, running = false;
+    const out = $('#enc-output',root);
+    const modeEl = $('#enc-mode',root);
+    const shiftWrap = $('#enc-shift-wrap',root);
+    modeEl.addEventListener('change',()=>{shiftWrap.hidden=modeEl.value!=='caesar';});
+    shiftWrap.hidden=false;
+
+    if (!root.querySelector('#enc-stage-style')) {
+      const style=document.createElement('style'); style.id='enc-stage-style';
+      style.textContent=`
+        .enc-stage-list{display:grid;gap:12px;margin:16px 0}
+        .enc-stage{border:1px solid var(--line,#ccc);border-radius:12px;padding:12px;opacity:.48;transition:opacity .3s,border-color .3s,transform .3s}
+        .enc-stage.active{opacity:1;border-color:var(--accent,#2878d0);transform:translateX(3px);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent,#2878d0) 15%,transparent)}
+        .enc-stage.done{opacity:1}
+        .enc-stage h4{margin:0 0 6px}.enc-stage pre{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0;font-size:12px}
+        .enc-stage .enc-meta{font-size:12px;opacity:.75}
+        .enc-meter{height:6px;background:color-mix(in srgb,var(--line,#888) 20%,transparent);border-radius:9px;overflow:hidden;margin:10px 0}
+        .enc-meter i{display:block;width:0;height:100%;background:var(--accent,#2878d0);transition:width .45s}
+        .enc-stage.active h4:before{content:'▶ ';color:var(--accent,#2878d0)}
+        @media(prefers-reduced-motion:reduce){.enc-stage,.enc-meter i{transition:none}}
+      `; root.appendChild(style);
     }
 
-    const out = $('#enc-output', root);
-    const show = html => { out.innerHTML = html; };
-    const run = async tamper => {
-      const file = $('#enc-file', root).files[0];
-      const source = file ? new Uint8Array(await file.arrayBuffer()) : new TextEncoder().encode($('#enc-message', root).value);
-      if (!source.length) { show(vd('warn', 'Nothing to send.', 'Enter a message or choose a non-empty file.')); return; }
-      const mode = $('#enc-mode', root).value;
-      const packetSize = Math.max(8, Math.min(1024, Number($('#enc-size', root).value) || 16));
-      let payload = source, iv = null, key = null, exchange = '';
-      if (mode !== 'none') {
-        if (mode === 'aes') {
-          key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-          exchange = '<p class="hint">A fresh AES-256-GCM key was generated for this demonstration. In a real protocol, both peers need a secure key-establishment mechanism.</p>';
-        } else {
-          const pairA = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
-          const pairB = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey']);
-          const derive = (privateKey, publicKey) => crypto.subtle.deriveKey(
-            { name: 'ECDH', public: publicKey }, privateKey,
-            { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-          );
-          const [keyA, keyB] = await Promise.all([
-            derive(pairA.privateKey, pairB.publicKey), derive(pairB.privateKey, pairA.publicKey)
-          ]);
-          key = keyA;
-          const pubA = new Uint8Array(await crypto.subtle.exportKey('raw', pairA.publicKey));
-          const pubB = new Uint8Array(await crypto.subtle.exportKey('raw', pairB.publicKey));
-          exchange = '<p class="hint">ECDH P-256: client and server exchange public keys only. Both independently derive the same AES-256-GCM key; private keys stay local. Public-key fingerprints: ' +
-            esc(bytesHex(pubA.slice(0, 8))) + ' / ' + esc(bytesHex(pubB.slice(0, 8))) + '.</p>';
-          // Keep the receiver's independently derived key for the decryption step.
-          last = { receiverKey: keyB };
-        }
-        iv = crypto.getRandomValues(new Uint8Array(12));
-        payload = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, source));
+    const addStage=(title,operation,input,output,meta='')=>({title,operation,input,output,meta});
+    const renderStage=(s,index,total)=>'<article class="enc-stage" data-stage="'+index+'"><h4>Stage '+(index+1)+': '+esc(s.title)+'</h4><div class="enc-meta">'+esc(s.operation)+'</div><p><strong>Input</strong></p><pre>'+esc(s.input)+'</pre><p><strong>Result</strong></p><pre>'+esc(s.output)+'</pre>'+(s.meta?'<div class="enc-meta">'+esc(s.meta)+'</div>':'')+'</article>';
+    const showStages=async stages=>{
+      out.innerHTML='<section class="enc-stage-list"><h3>Processing stages</h3><div class="enc-meter"><i></i></div>'+stages.map(renderStage).join('')+'</section>';
+      const cards=out.querySelectorAll('.enc-stage'), meter=out.querySelector('.enc-meter i');
+      for(let i=0;i<cards.length;i++){
+        if(!root.isConnected)return;
+        cards[i].classList.add('active');
+        cards[i].scrollIntoView?.({behavior:'smooth',block:'nearest'});
+        meter.style.width=((i+1)/cards.length*100)+'%';
+        await wait(700);
+        cards[i].classList.remove('active'); cards[i].classList.add('done');
       }
-      const originalPayload = payload.slice();
-      const packets = [];
-      for (let offset = 0; offset < payload.length; offset += packetSize) {
-        packets.push(payload.slice(offset, Math.min(offset + packetSize, payload.length)));
-      }
-
-      const flow = document.createElement('div');
-      flow.className = 'enc-flow';
-      flow.innerHTML = '<h3>Live encryption journey</h3><div class="enc-flow-track">' +
-        [['🔑','Key exchange'],['🔒','Encrypt'],['📦','Packetize'],['🌐','Transmit'],['🔓','Decrypt']].map((item,index) =>
-          '<div class="enc-node" data-enc-node="'+index+'"><span class="enc-symbol">'+item[0]+'</span><strong>'+item[1]+'</strong></div>'
-        ).join('') + '</div><div class="enc-packet-lane"><span class="enc-packet">PKT 01</span><span class="enc-packet">PKT 02</span><span class="enc-packet">PKT 03</span></div><p class="enc-flow-status" aria-live="polite">Preparing secure transmission…</p><div class="enc-progress"><i></i></div>';
-      out.innerHTML = '';
-      out.appendChild(flow);
-      const flowSteps = mode === 'none'
-        ? ['Preparing payload bytes…','Encryption skipped: plaintext remains readable.','Splitting payload into packets…','Packets are travelling across the network…','Receiver is rebuilding the original bytes…']
-        : ['Exchanging public key material / preparing session key…','Encrypting payload with AES-256-GCM…','Splitting ciphertext and authentication tag into packets…','Encrypted packets are travelling across the network…','Receiver is reassembling and authenticating ciphertext…'];
-      for (let step = 0; step < 5; step++) {
-        if (!root.isConnected) return;
-        flow.querySelectorAll('.enc-node').forEach((node,index) => {
-          node.classList.toggle('active', index === step);
-          node.classList.toggle('done', index < step);
-        });
-        flow.querySelector('.enc-flow-status').textContent = flowSteps[step];
-        flow.querySelector('.enc-progress i').style.width = ((step + 1) * 20) + '%';
-        await new Promise(resolve => setTimeout(resolve, step === 3 ? 1500 : 850));
-      }
-      flow.querySelectorAll('.enc-node').forEach(node => { node.classList.remove('active'); node.classList.add('done'); });
-      flow.querySelector('.enc-flow-status').textContent = 'Transmission sequence complete. Inspect the packet and receiver details below.';
-
-      // Reassemble in sequence order to model the receiver's packet buffer.
-      let received = new Uint8Array(packets.reduce((sum, packet) => sum + packet.length, 0));
-      let cursor = 0;
-      packets.forEach(packet => { received.set(packet, cursor); cursor += packet.length; });
-      if (tamper && mode !== 'none' && received.length) received[0] ^= 1;
-      let restored = null, errorText = '';
-      if (mode === 'none') restored = received;
-      else {
-        try {
-          const receiverKey = mode === 'ecdh' && last?.receiverKey ? last.receiverKey : key;
-          restored = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, receiverKey, received));
-        } catch (error) { errorText = 'Authentication failed: ciphertext or authentication tag was changed.'; }
-      }
-      if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
-      const preview = restored
-        ? (file ? 'File bytes restored successfully. <a class="btn sm" id="enc-download" download="' + esc(file.name) + '">Save restored file</a>' :
-            '“' + esc(new TextDecoder().decode(restored).slice(0, 240)) + '”')
-        : 'The receiver rejected the payload. No plaintext is released.';
-      const packetRows = packets.slice(0, 12).map((packet, index) =>
-        '<tr><td>' + (index + 1) + '</td><td>' + packet.length + '</td><td><code>' + esc(bytesHex(packet)) + '</code></td></tr>'
-      ).join('');
-      show(panel('Sender → network → receiver',
-        exchange +
-        statRow([[source.length + ' bytes', 'original payload'], [payload.length + ' bytes', mode === 'none' ? 'transmitted payload' : 'ciphertext + GCM tag'], [packets.length, 'packets created']]) +
-        '<h4>Original bytes</h4>' + hn(esc(bytesHex(source))) +
-        '<h4>' + (mode === 'none' ? 'Plain transmitted bytes' : 'Encrypted bytes') + '</h4>' +
-        hn(mode === 'none' ? 'Encryption is disabled. These bytes are readable by anyone who can inspect the traffic.' : 'Nonce (12 bytes): ' + esc(bytesHex(iv)) + '. The final 16 bytes of AES-GCM output are the authentication tag.') +
-        chipRow(Array.from(payload).slice(0, 64).map(hex), i => i >= payload.length - 16 && mode !== 'none' ? 'c2' : 'c0') +
-        '<h4>Packetization</h4><div class="tscroll"><table class="tb"><thead><tr><th>Packet</th><th>Bytes</th><th>Payload preview</th></tr></thead><tbody>' + packetRows + '</tbody></table></div>' +
-        (packets.length > 12 ? '<p class="hint">Showing the first 12 of ' + packets.length + ' packets.</p>' : '') +
-        '<h4>Receiver</h4>' +
-        (restored ? vd('ok', 'Reassembly and decryption successful.', preview) :
-          vd('bad', 'Decryption refused.', errorText || 'The payload could not be restored.')) +
-        (mode === 'none' ? '<p class="hint">No cryptographic authentication is present in plain mode.</p>' : '')
-      ));
-      last = { source, payload: originalPayload, iv, key, receiverKey: mode === 'ecdh' ? last?.receiverKey : key, mode, packetSize };
-      if (restored && file) {
-        downloadUrl = URL.createObjectURL(new Blob([restored], { type: file.type || 'application/octet-stream' }));
-        const download = $('#enc-download', out);
-        if (download) download.href = downloadUrl;
-      }
-      $('#enc-tamper', root).disabled = mode === 'none';
-      $('#enc-tamper', root).textContent = 'Tamper with ciphertext and retry';
     };
-    $('#enc-run', root).onclick = () => run(false).catch(error => show(vd('bad', 'Encryption could not run.', esc(error.message))));
-    $('#enc-tamper', root).onclick = async () => {
-      if (!last || last.mode === 'none') return;
-      const received = last.payload.slice();
-      if (received.length) received[0] ^= 1;
+    const run=async()=>{
+      if(running)return; running=true;
+      $('#enc-run',root).disabled=true; $('#enc-tamper',root).disabled=true;
       try {
-        await crypto.subtle.decrypt({ name: 'AES-GCM', iv: last.iv }, last.receiverKey || last.key, received);
-        show(vd('bad', 'Unexpected result.', 'The modified payload was accepted; inspect the browser crypto implementation.'));
-      } catch (error) {
-        show(vd('ok', 'Tampering detected.', 'AES-GCM authentication failed, so the receiver rejected the altered ciphertext.'));
-      }
+        const file=$('#enc-file',root).files[0], mode=modeEl.value;
+        const source=file?new Uint8Array(await file.arrayBuffer()):new TextEncoder().encode($('#enc-message',root).value);
+        if(!source.length){out.innerHTML=vd('warn','Nothing to process.','Enter text or choose a non-empty file.');return;}
+        if(mode==='caesar'&&file){out.innerHTML=vd('warn','Text input required.','Caesar cipher operates on text only. Choose a text message or another algorithm.');return;}
+        const packetSize=Math.max(8,Math.min(1024,Number($('#enc-size',root).value)||16));
+        const stages=[];
+        stages.push(addStage('Input','Convert input to bytes',file?'File: '+file.name+' ('+source.length+' bytes)':'Text: '+$('#enc-message',root).value,bytesHex(source)));
+        let encrypted=source.slice(),iv=null,key=null,receiverKey=null,wrappedKey=null,algorithmLabel='',restore=null,oneWay=false;
+        if(mode==='caesar'){
+          const shift=Math.max(1,Math.min(25,Number($('#enc-shift',root).value)||3));
+          const plain=$('#enc-message',root).value;
+          const cipher=plain.replace(/[a-z]/gi,ch=>{const base=ch<='Z'?65:97;return String.fromCharCode((ch.charCodeAt(0)-base+shift)%26+base);});
+          encrypted=new TextEncoder().encode(cipher); algorithmLabel='Caesar cipher';
+          stages.push(addStage('Substitution','Shift each alphabetic character by '+shift,plain,cipher,'Same shift in reverse restores the text. Not secure against analysis.'));
+          restore=()=>new TextDecoder().decode(encrypted).replace(/[a-z]/gi,ch=>{const base=ch<='Z'?65:97;return String.fromCharCode((ch.charCodeAt(0)-base-shift+26)%26+base);});
+        } else if(mode==='xor'){
+          const xorKey=0x5A; encrypted=source.map(byte=>byte^xorKey); algorithmLabel='XOR byte cipher';
+          stages.push(addStage('XOR operation','Each byte XOR 0x5A',bytesHex(source),bytesHex(encrypted),'The same key reverses XOR. This fixed demonstration key is deliberately insecure.'));
+          restore=()=>encrypted.map(byte=>byte^xorKey);
+        } else if(mode==='hash'){
+          encrypted=new Uint8Array(await crypto.subtle.digest('SHA-256',source)); algorithmLabel='SHA-256'; oneWay=true;
+          stages.push(addStage('Hashing','SHA-256 compression function',bytesHex(source),bytesHex(encrypted),'A fixed 256-bit digest. There is no decryption operation.'));
+        } else {
+          if(mode==='aes'){
+            key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+            receiverKey=key; algorithmLabel='AES-256-GCM';
+            const raw=new Uint8Array(await crypto.subtle.exportKey('raw',key));
+            stages.push(addStage('Key generation','Generate a random 256-bit symmetric key','No previous key',bytesHex(raw),'The same secret key is used by sender and receiver in this local demonstration.'));
+          } else if(mode==='rsa'){
+            const rsa=await crypto.subtle.generateKey({name:'RSA-OAEP',modulusLength:2048,publicExponent:new Uint8Array([1,0,1]),hash:'SHA-256'},true,['encrypt','decrypt']);
+            key=await crypto.subtle.generateKey({name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+            receiverKey=key;
+            const raw=new Uint8Array(await crypto.subtle.exportKey('raw',key));
+            wrappedKey=new Uint8Array(await crypto.subtle.encrypt({name:'RSA-OAEP'},rsa.publicKey,raw));
+            const unwrapped=await crypto.subtle.decrypt({name:'RSA-OAEP'},rsa.privateKey,wrappedKey);
+            receiverKey=await crypto.subtle.importKey('raw',unwrapped,{name:'AES-GCM'},false,['decrypt']);
+            algorithmLabel='RSA-OAEP + AES-256-GCM';
+            stages.push(addStage('Session key creation','Generate AES-256-GCM key','Random session key',bytesHex(raw),'AES handles the data; RSA is only used to protect the short session key.'));
+            stages.push(addStage('Public-key wrapping','RSA-OAEP with SHA-256',bytesHex(raw),bytesHex(wrappedKey),'Only the matching RSA private key can unwrap this session key.'));
+          } else {
+            const a=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+            const b=await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey']);
+            const derive=(priv,pub)=>crypto.subtle.deriveKey({name:'ECDH',public:pub},priv,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);
+            key=await derive(a.privateKey,b.publicKey); receiverKey=await derive(b.privateKey,a.publicKey); algorithmLabel='ECDH P-256 + AES-256-GCM';
+            const pubA=new Uint8Array(await crypto.subtle.exportKey('raw',a.publicKey)),pubB=new Uint8Array(await crypto.subtle.exportKey('raw',b.publicKey));
+            stages.push(addStage('Public-key exchange','Exchange ECDH P-256 public keys',bytesHex(pubA),bytesHex(pubB),'Private keys remain with their owners; both sides derive the same shared secret.'));
+            stages.push(addStage('Shared-key derivation','ECDH → AES-256-GCM key','Client private + server public; server private + client public','Two independently derived AES-256 keys','The Web Crypto API derives equivalent shared keys on both sides.'));
+          }
+          iv=crypto.getRandomValues(new Uint8Array(12));
+          encrypted=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,source));
+          stages.push(addStage('Authenticated encryption','AES-256-GCM',bytesHex(source),bytesHex(encrypted),'Nonce: '+bytesHex(iv)+'. Final 16 bytes are the authentication tag.'));
+          if(wrappedKey)stages.push(addStage('Key transport','Send wrapped AES key with ciphertext',bytesHex(wrappedKey), 'RSA-wrapped session key ('+wrappedKey.length+' bytes)','The private key is never sent.'));
+          restore=async bytes=>new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},receiverKey,bytes));
+        }
+        const packets=[];for(let i=0;i<encrypted.length;i+=packetSize)packets.push(encrypted.slice(i,i+packetSize));
+        stages.push(addStage('Packetization','Split output into '+packets.length+' packet(s)',bytesHex(encrypted),packets.slice(0,8).map((p,i)=>'Packet '+(i+1)+': '+bytesHex(p)).join('\n')+(packets.length>8?'\n… '+(packets.length-8)+' more packets':''),'Packet size setting: '+packetSize+' bytes.'));
+        const received=new Uint8Array(packets.reduce((n,p)=>n+p.length,0));let offset=0;packets.forEach(p=>{received.set(p,offset);offset+=p.length;});
+        stages.push(addStage('Transmission and reassembly','Receiver collects packet payloads',packets.length+' packets / '+received.length+' bytes',bytesHex(received),'Reassembled in sequence order for this demonstration.'));
+        let restored=null,failed=false;
+        if(oneWay){
+          stages.push(addStage('Verification','Compare digest with a separately calculated digest',bytesHex(encrypted),bytesHex(new Uint8Array(await crypto.subtle.digest('SHA-256',source))),'Hashing is one-way; the original cannot be recovered from the digest.'));
+        } else {
+          try{
+            restored=restore?await restore(received):received;
+            if(restored instanceof Promise)restored=await restored;
+            stages.push(addStage('Decryption','Reverse cipher / authenticate and decrypt',bytesHex(received),bytesHex(restored),'Receiver recovered the original bytes.'));
+          }catch(e){failed=true;stages.push(addStage('Decryption','Authenticate ciphertext and recover plaintext',bytesHex(received),'REJECTED — authentication/decryption failed','The receiver does not release unauthenticated plaintext.'));}
+        }
+        stages.push(addStage(oneWay?'Final digest':'Final result',oneWay?'One-way output':'Recovered payload',bytesHex(encrypted),oneWay?'SHA-256: '+bytesHex(encrypted):(restored?file?'Original file bytes restored ('+restored.length+' bytes).':new TextDecoder().decode(restored):'No plaintext released.')));
+        await showStages(stages);
+        if(downloadUrl){URL.revokeObjectURL(downloadUrl);downloadUrl=null;}
+        const resultText=oneWay?'SHA-256 digest generated. This operation cannot be decrypted.':failed?'Decryption failed; data was rejected.':file?'File restored successfully.':'Restored text: '+new TextDecoder().decode(restored);
+        let finalHtml=panel('Simulation result',statRow([[source.length+' bytes','input'],[encrypted.length+' bytes',oneWay?'digest':mode==='caesar'||mode==='xor'?'ciphertext':'encrypted payload'],[packets.length,'packets']])+
+          (failed?vd('bad','Authentication failed',resultText):oneWay?vd('info','Hash created',resultText):vd('ok','Processing complete',esc(resultText)))+
+          '<p class="hint">Algorithm: '+esc(algorithmLabel)+'. '+(oneWay?'SHA-256 is a one-way hash, not encryption.':'')+'</p>');
+        out.insertAdjacentHTML('beforeend',finalHtml);
+        if(restored&&file&&!oneWay){
+          downloadUrl=URL.createObjectURL(new Blob([restored],{type:file.type||'application/octet-stream'}));
+          out.insertAdjacentHTML('beforeend','<p><a class="btn sm" id="enc-download" download="'+esc(file.name)+'">Save restored file</a></p>');
+          $('#enc-download',out).href=downloadUrl;
+        }
+        last={mode,encrypted:encrypted.slice(),iv,receiverKey,key,restore,oneWay,source:source.slice(),fileName:file?.name};
+        $('#enc-tamper',root).disabled=oneWay||mode==='caesar'||mode==='xor';
+      } finally {running=false;$('#enc-run',root).disabled=false;}
     };
-    return () => { last = null; if (downloadUrl) URL.revokeObjectURL(downloadUrl); };
+    $('#enc-run',root).onclick=()=>run().catch(error=>{out.innerHTML=vd('bad','Simulation error',esc(error.message||String(error)));});
+    $('#enc-tamper',root).onclick=async()=>{
+      if(!last||!['aes','rsa','ecdh'].includes(last.mode))return;
+      const altered=last.encrypted.slice();if(altered.length)altered[0]^=1;
+      try{await last.restore(altered);out.insertAdjacentHTML('beforeend',vd('bad','Unexpected result','Modified ciphertext was accepted.'));}
+      catch(e){out.insertAdjacentHTML('beforeend',vd('ok','Tampering detected','AES-GCM authentication rejected the modified ciphertext.'));}
+    };
+    return()=>{if(downloadUrl)URL.revokeObjectURL(downloadUrl);last=null;};
   },
 });
