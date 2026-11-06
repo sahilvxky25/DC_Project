@@ -49,6 +49,31 @@ regMod({
     );
     if (!supported) return;
     let last = null, downloadUrl = null;
+    if (!root.querySelector('#enc-motion-style')) {
+      const style = document.createElement('style');
+      style.id = 'enc-motion-style';
+      style.textContent = `
+        .enc-flow{margin:16px 0;padding:16px;border:1px solid var(--line,#ddd);border-radius:14px;overflow:hidden}
+        .enc-flow-track{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:center}
+        .enc-node{position:relative;min-height:90px;padding:12px 6px;border:1px solid var(--line,#ddd);border-radius:12px;text-align:center;opacity:.45;transform:scale(.96);transition:opacity .35s,transform .35s,border-color .35s,background .35s}
+        .enc-node.active{opacity:1;transform:scale(1.04);border-color:var(--accent,#4b8);background:color-mix(in srgb,var(--accent,#4b8) 12%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#4b8) 15%,transparent)}
+        .enc-node.done{opacity:1;transform:none}
+        .enc-symbol{display:block;font-size:25px;margin-bottom:6px}
+        .enc-packet-lane{height:38px;position:relative;margin:12px 0 0;border-radius:20px;background:color-mix(in srgb,var(--line,#888) 18%,transparent);overflow:hidden}
+        .enc-packet{position:absolute;top:7px;left:-42px;padding:4px 9px;border-radius:8px;font-size:12px;font-weight:700;background:var(--accent,#2878d0);color:white;animation:enc-travel 1.15s ease-in-out infinite}
+        .enc-packet:nth-child(2){animation-delay:.22s}.enc-packet:nth-child(3){animation-delay:.44s}
+        .enc-flow-status{margin:10px 0 0;font-size:13px}
+        .enc-progress{height:5px;background:color-mix(in srgb,var(--line,#888) 20%,transparent);border-radius:9px;overflow:hidden;margin-top:8px}
+        .enc-progress i{display:block;height:100%;width:0;background:var(--accent,#2878d0);transition:width .45s}
+        @keyframes enc-travel{0%{left:-42px;transform:rotate(-8deg)}100%{left:calc(100% + 42px);transform:rotate(8deg)}}
+        @keyframes enc-lock{0%,100%{transform:scale(1)}50%{transform:scale(1.22) rotate(-5deg)}}
+        .enc-node.active .enc-symbol{animation:enc-lock .7s ease-in-out}
+        @media(max-width:620px){.enc-flow-track{grid-template-columns:repeat(2,minmax(0,1fr))}.enc-node:last-child{grid-column:span 2}}
+        @media(prefers-reduced-motion:reduce){.enc-packet,.enc-node.active .enc-symbol{animation:none}.enc-node,.enc-progress i{transition:none}}
+      `;
+      root.appendChild(style);
+    }
+
     const out = $('#enc-output', root);
     const show = html => { out.innerHTML = html; };
     const run = async tamper => {
@@ -88,6 +113,31 @@ regMod({
       for (let offset = 0; offset < payload.length; offset += packetSize) {
         packets.push(payload.slice(offset, Math.min(offset + packetSize, payload.length)));
       }
+
+      const flow = document.createElement('div');
+      flow.className = 'enc-flow';
+      flow.innerHTML = '<h3>Live encryption journey</h3><div class="enc-flow-track">' +
+        [['🔑','Key exchange'],['🔒','Encrypt'],['📦','Packetize'],['🌐','Transmit'],['🔓','Decrypt']].map((item,index) =>
+          '<div class="enc-node" data-enc-node="'+index+'"><span class="enc-symbol">'+item[0]+'</span><strong>'+item[1]+'</strong></div>'
+        ).join('') + '</div><div class="enc-packet-lane"><span class="enc-packet">PKT 01</span><span class="enc-packet">PKT 02</span><span class="enc-packet">PKT 03</span></div><p class="enc-flow-status" aria-live="polite">Preparing secure transmission…</p><div class="enc-progress"><i></i></div>';
+      out.innerHTML = '';
+      out.appendChild(flow);
+      const flowSteps = mode === 'none'
+        ? ['Preparing payload bytes…','Encryption skipped: plaintext remains readable.','Splitting payload into packets…','Packets are travelling across the network…','Receiver is rebuilding the original bytes…']
+        : ['Exchanging public key material / preparing session key…','Encrypting payload with AES-256-GCM…','Splitting ciphertext and authentication tag into packets…','Encrypted packets are travelling across the network…','Receiver is reassembling and authenticating ciphertext…'];
+      for (let step = 0; step < 5; step++) {
+        if (!root.isConnected) return;
+        flow.querySelectorAll('.enc-node').forEach((node,index) => {
+          node.classList.toggle('active', index === step);
+          node.classList.toggle('done', index < step);
+        });
+        flow.querySelector('.enc-flow-status').textContent = flowSteps[step];
+        flow.querySelector('.enc-progress i').style.width = ((step + 1) * 20) + '%';
+        await new Promise(resolve => setTimeout(resolve, step === 3 ? 1500 : 850));
+      }
+      flow.querySelectorAll('.enc-node').forEach(node => { node.classList.remove('active'); node.classList.add('done'); });
+      flow.querySelector('.enc-flow-status').textContent = 'Transmission sequence complete. Inspect the packet and receiver details below.';
+
       // Reassemble in sequence order to model the receiver's packet buffer.
       let received = new Uint8Array(packets.reduce((sum, packet) => sum + packet.length, 0));
       let cursor = 0;
