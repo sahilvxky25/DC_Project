@@ -48,7 +48,7 @@ regMod({
       'AES-GCM provides confidentiality and authenticated integrity. Packet CRCs detect accidental transmission errors; the GCM tag detects unauthorized changes.'
     );
     if (!supported) return;
-    let last = null;
+    let last = null, downloadUrl = null;
     const out = $('#enc-output', root);
     const show = html => { out.innerHTML = html; };
     const run = async tamper => {
@@ -101,8 +101,9 @@ regMod({
           restored = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, receiverKey, received));
         } catch (error) { errorText = 'Authentication failed: ciphertext or authentication tag was changed.'; }
       }
+      if (downloadUrl) { URL.revokeObjectURL(downloadUrl); downloadUrl = null; }
       const preview = restored
-        ? (file ? 'File bytes restored successfully; the receiver can now save or render the original file.' :
+        ? (file ? 'File bytes restored successfully. <a class="btn sm" id="enc-download" download="' + esc(file.name) + '">Save restored file</a>' :
             '“' + esc(new TextDecoder().decode(restored).slice(0, 240)) + '”')
         : 'The receiver rejected the payload. No plaintext is released.';
       const packetRows = packets.slice(0, 12).map((packet, index) =>
@@ -123,6 +124,11 @@ regMod({
         (mode === 'none' ? '<p class="hint">No cryptographic authentication is present in plain mode.</p>' : '')
       ));
       last = { source, payload: originalPayload, iv, key, receiverKey: mode === 'ecdh' ? last?.receiverKey : key, mode, packetSize };
+      if (restored && file) {
+        downloadUrl = URL.createObjectURL(new Blob([restored], { type: file.type || 'application/octet-stream' }));
+        const download = $('#enc-download', out);
+        if (download) download.href = downloadUrl;
+      }
       $('#enc-tamper', root).disabled = mode === 'none';
       $('#enc-tamper', root).textContent = 'Tamper with ciphertext and retry';
     };
@@ -138,6 +144,6 @@ regMod({
         show(vd('ok', 'Tampering detected.', 'AES-GCM authentication failed, so the receiver rejected the altered ciphertext.'));
       }
     };
-    return () => { last = null; };
+    return () => { last = null; if (downloadUrl) URL.revokeObjectURL(downloadUrl); };
   },
 });
