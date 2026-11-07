@@ -28,7 +28,8 @@ import { hn, on, panel, sel, vd } from '../../core/ui-helpers.js';
 import { $, esc } from '../../core/utils.js';
 import { ERR_METHODS, errChecks, fmtCheck } from '../../simulations/error-detection.js';
 import { encodeSecded, decodeSecded } from '../../simulations/hamming-code.js';
-import { encode2DParity } from '../../simulations/two-dimensional-parity.js';
+import { encode2DParity, correct2DError } from '../../simulations/two-dimensional-parity.js';
+import { encodeRS1511, decodeRS1511 } from '../../simulations/reed-solomon.js';
 import { ERROR_PATTERNS, corruptBytes } from '../../simulations/error-injection.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
@@ -101,6 +102,8 @@ regMod({
       panel('Two-dimensional parity',
         '<p class="hint">Row and column parity can locate a single flipped data bit at their intersection.</p>' +
         '<div class="controls"><div class="field grow"><label for="e2ddata">Original data (one binary row per line)</label><textarea id="e2ddata" rows="3">1011\n0110\n1100</textarea></div><div class="field grow"><label for="e2drecv">Received data</label><textarea id="e2drecv" rows="3">1011\n0010\n1100</textarea></div></div><button class="btn sm" id="e2dcheck">Check parity</button><div id="e2dresult"></div>') +
+      panel('Reed–Solomon RS(15,11) — correct up to 2 byte errors',
+        '<p class="hint">This code works on byte-sized symbols. Four parity bytes protect eleven data bytes and can correct up to two corrupted bytes.</p><div class="controls"><div class="field grow"><label for="ersdata">11 data bytes (decimal, comma-separated)</label><input id="ersdata" value="72,101,108,108,111,32,87,111,114,108,100"></div><button class="btn sm" id="ersencode">Encode</button></div><div id="ersencoded"></div><div class="controls"><div class="field grow"><label for="ersrecv">Received 15-byte codeword (decimal, comma-separated)</label><textarea id="ersrecv" rows="3"></textarea></div><button class="btn sm" id="ersdecode">Decode / correct</button></div><div id="ersresult"></div>');
       panel(
         'How often does each method notice?',
         `<p class="hint">Corrupt random bits many times and count how often each method detects it. This uses your current data.</p>
@@ -298,18 +301,20 @@ regMod({
     $('#ehdecode', root).onclick = () => {
       const code = $('#ehrecv', root).value;
       if (!/^[01]{8}$/.test(code)) { $('#ehresult', root).innerHTML = vd('warn', 'Enter exactly eight binary digits.'); return; }
-      const x = decodeSecded(code);
-      $('#ehresult', root).innerHTML = vd(x.status.includes('corrected') || x.status === 'No error detected' ? 'ok' : 'warn', x.status, 'Corrected: ' + x.corrected + ' · Data: ' + x.data + ' · Syndrome: ' + x.syndrome);
+      const x = decodeSecded(code); const good=x.status.includes('corrected')||x.status==='No error detected';
+      $('#ehresult', root).innerHTML = vd(good?'ok':'warn',x.status,'Received: '+x.received+' → Corrected: '+x.corrected+' · Recovered data: '+x.data+' · Syndrome: '+x.syndrome+(x.correctedBit?' · Corrected bit: '+x.correctedBit:''))+'<p class="hint">SECDED corrects one bit. It detects two-bit errors but does not guess a correction.</p>';
     };
+    $('#ersencode',root).onclick=()=>{try{const values=$('#ersdata',root).value.split(',').map(x=>Number(x.trim())),code=encodeRS1511(values);$('#ersrecv',root).value=code.join(',');$('#ersencoded',root).innerHTML=vd('ok','Encoded codeword: '+code.join(', '),'11 data bytes + 4 parity bytes. Change up to two received byte values to simulate errors.');}catch(e){$('#ersencoded',root).innerHTML=vd('warn',esc(e.message));}};
+    $('#ersdecode',root).onclick=()=>{try{const values=$('#ersrecv',root).value.split(',').map(x=>Number(x.trim())),x=decodeRS1511(values),good=x.positions.length>0||x.status==='No symbol errors detected';$('#ersresult',root).innerHTML=vd(good?'ok':'warn',x.status,'Corrected codeword: '+x.corrected.join(', ')+' · Recovered data: '+x.data.join(', ')+(x.positions.length?' · Corrected byte positions: '+x.positions.map(p=>p+1).join(', '):''));if(good)$('#ersrecv',root).value=x.corrected.join(',');}catch(e){$('#ersresult',root).innerHTML=vd('warn',esc(e.message));}};
     $('#e2dcheck', root).onclick = () => {
       try {
-        const original = encode2DParity($('#e2ddata', root).value.split(/\n/));
-        const received = $('#e2drecv', root).value.split(/\n/).map(row => row.replace(/[^01]/g, ''));
-        if (received.length !== original.matrix.length || received.some(row => row.length !== original.matrix[0].length)) throw new Error('Received data must have the same dimensions as the original.');
-        const badRows = received.map((row, i) => row.split('').reduce((a, b) => a ^ Number(b), 0) ^ original.rowParity[i]).map((v, i) => v ? i : -1).filter(i => i >= 0);
-        const badCols = original.colParity.map((p, col) => received.reduce((a, row) => a ^ Number(row[col]), 0) ^ p).map((v, i) => v ? i : -1).filter(i => i >= 0);
-        const single = badRows.length === 1 && badCols.length === 1;
-        $('#e2dresult', root).innerHTML = single ? vd('warn', 'Single-bit error located at row ' + (badRows[0] + 1) + ', column ' + (badCols[0] + 1) + '.', 'Multi-bit errors can be ambiguous.') : (badRows.length || badCols.length) ? vd('warn', 'Parity mismatch: rows ' + badRows.map(x => x + 1).join(', ') + '; columns ' + badCols.map(x => x + 1).join(', ')) : vd('ok', 'No parity mismatch detected.');
+        const original=encode2DParity($('#e2ddata',root).value.split(/\n/)); const received=$('#e2drecv',root).value.split(/\n/).map(x=>x.trim()).filter(Boolean); if(received.length!==original.matrix.length||received.some(x=>!new RegExp('^[01]{'+original.matrix[0].length+'}
+      } catch (e) { $('#e2dresult', root).innerHTML = vd('warn', esc(e.message)); }
+    };
+    refresh();
+  },
+});
+).test(x)))throw new Error('Received data must be a rectangular binary matrix with the same dimensions as the original.'); const result=correct2DError(received),fixed=result.corrected.map(r=>r.join('')).join('\n'); $('#e2dresult',root).innerHTML=vd(result.status.includes('corrected')||result.status==='No error detected'?'ok':'warn',result.status,result.correctedBit?'Located row '+(result.correctedBit.row+1)+', column '+(result.correctedBit.column+1)+'. Corrected matrix: '+fixed:'Rows: '+result.badRows.map(x=>x+1).join(', ')+' · Columns: '+result.badCols.map(x=>x+1).join(', ')+' · Matrix unchanged: '+fixed); if(result.status.includes('corrected'))$('#e2drecv',root).value=fixed;
       } catch (e) { $('#e2dresult', root).innerHTML = vd('warn', esc(e.message)); }
     };
     refresh();
