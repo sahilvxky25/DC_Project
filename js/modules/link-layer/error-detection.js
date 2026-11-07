@@ -312,7 +312,7 @@ regMod({
         const received = $('#e2drecv', root).value.split(/\n/).map(x => x.trim()).filter(Boolean);
         if (received.length !== original.matrix.length || received.some(x => !new RegExp('^[01]{' + original.matrix[0].length + '}$').test(x)))
           throw new Error('Received data must be a rectangular binary matrix with the same dimensions as the original.');
-        const result = correct2DError(received);
+        const result = correct2DError(received, original.matrix.map(row => row.join('')));
         const fixed = result.corrected.map(row => row.join('')).join('\n');
         $('#e2dresult', root).innerHTML = vd(
           result.status.includes('corrected') || result.status === 'No error detected' ? 'ok' : 'warn',
