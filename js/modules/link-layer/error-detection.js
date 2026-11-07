@@ -65,6 +65,10 @@ regMod({
     };
     root.innerHTML =
       panel(
+        'Start here — a 2-minute guide',
+        '<ol class="hint"><li>Start with the examples already filled in.</li><li>In Error detection, click a bit or inject an error, then compare sender and receiver checks.</li><li>In Error correction, encode the data, introduce an error, and decode it to see what can be recovered.</li></ol><p class="hint">Detection tells you that data changed. Correction tries to restore the original data without asking for it again.</p>'
+      ) +
+      panel(
         'Data to protect',
         `
       <div class="controls"><div class="field grow"><label for="etext">Text (first 8 bytes are used)</label><input id="etext" type="text" maxlength="8" value="${esc(text)}" spellcheck="false" autocomplete="off"></div>
@@ -95,15 +99,15 @@ regMod({
         <select id="epattern" aria-label="Error pattern">${ERROR_PATTERNS.map(p => `<option value="${p.id}">${p.label}</option>`).join('')}</select><button class="btn ghost sm" id="epatterngo">Inject pattern</button><button class="btn ghost sm" id="eadj">Flip two adjacent bits</button><button class="btn ghost sm" id="eswap">Swap first two bytes</button><button class="btn ghost sm" id="ereset">Reset</button></div>`
       ) +
       panel('Receiver verdict', '<div id="etab"></div><div id="enote"></div>') +
-      panel('Hamming code — detect and correct',
-        '<p class="hint">Extended Hamming (8,4) can correct one flipped bit and detect (but not correct) two flipped bits.</p>' +
+      panel('1. Hamming code — correct a flipped bit',
+        '<p class="hint">Try the example: encode 1011, flip one position in the received codeword, then decode. SECDED corrects one flipped bit and detects (but cannot correct) two.</p>' +
         '<div class="controls"><div class="field grow"><label for="ehdata">4 data bits</label><input id="ehdata" value="1011" maxlength="4"></div><button class="btn sm" id="ehencode">Encode</button></div><div id="ehencoded"></div>' +
-        '<div class="controls"><div class="field grow"><label for="ehrecv">Received 8-bit codeword</label><input id="ehrecv" value="01100110" maxlength="8"></div><button class="btn sm" id="ehdecode">Decode / correct</button></div><div id="ehresult"></div>') +
-      panel('Two-dimensional parity',
-        '<p class="hint">Row and column parity can locate a single flipped data bit at their intersection.</p>' +
-        '<div class="controls"><div class="field grow"><label for="e2ddata">Original data (one binary row per line)</label><textarea id="e2ddata" rows="3">1011\n0110\n1100</textarea></div><div class="field grow"><label for="e2drecv">Received data</label><textarea id="e2drecv" rows="3">1011\n0010\n1100</textarea></div></div><button class="btn sm" id="e2dcheck">Check parity</button><div id="e2dresult"></div>') +
-      panel('Reed–Solomon RS(15,11) — correct up to 2 byte errors',
-        '<p class="hint">This code works on byte-sized symbols. Four parity bytes protect eleven data bytes and can correct up to two corrupted bytes.</p><div class="controls"><div class="field grow"><label for="ersdata">11 data bytes (decimal, comma-separated)</label><input id="ersdata" value="72,101,108,108,111,32,87,111,114,108,100"></div><button class="btn sm" id="ersencode">Encode</button></div><div id="ersencoded"></div><div class="controls"><div class="field grow"><label for="ersrecv">Received 15-byte codeword (decimal, comma-separated)</label><textarea id="ersrecv" rows="3"></textarea></div><button class="btn sm" id="ersdecode">Decode / correct</button></div><div id="ersresult"></div>') +
+        '<div class="controls"><div class="field grow"><label for="ehrecv">Received 8-bit codeword</label><input id="ehrecv" value="01100110" maxlength="8" inputmode="numeric" autocomplete="off"></div><button class="btn sm" id="ehflip">Flip a random bit</button><button class="btn sm" id="ehdecode">Decode / correct</button><button class="btn ghost sm" id="ehreset">Restore encoded word</button></div><div id="ehresult"></div>') +
+      panel('2. Two-dimensional parity — locate and fix one bit',
+        '<p class="hint">The sender keeps the original data as a reference. Change one bit in the received matrix, then check it. The row and column that fail meet at the damaged bit.</p>' +
+        '<div class="controls"><div class="field grow"><label for="e2ddata">Original data (one binary row per line)</label><textarea id="e2ddata" rows="3">1011\n0110\n1100</textarea><small class="hint">Keep this unchanged — it represents the sender\'s copy.</small></div><div class="field grow"><label for="e2drecv">Received data</label><textarea id="e2drecv" rows="3">1011\n0010\n1100</textarea><small class="hint">Edit one 0 or 1 here to simulate a transmission error.</small></div></div><div class="btnrow"><button class="btn sm" id="e2dcheck">Find and correct error</button><button class="btn ghost sm" id="e2dreset">Restore example</button></div><div id="e2dresult"></div>') +
+      panel('3. Reed–Solomon — repair up to 2 damaged bytes',
+        '<p class="hint">This advanced example uses 11 data bytes plus 4 check bytes. You do not need to type these numbers: press Encode, then use the error buttons to simulate damage.</p><div class="controls"><div class="field grow"><label for="ersdata">Data (11 decimal byte values, 0–255)</label><input id="ersdata" value="72,101,108,108,111,32,87,111,114,108,100" inputmode="numeric"></div><button class="btn sm" id="ersencode">1. Encode example</button></div><div id="ersencoded"></div><div class="field"><label for="ersrecv">Received codeword (15 decimal byte values)</label><textarea id="ersrecv" rows="3" placeholder="Press Encode example first"></textarea></div><div class="btnrow"><button class="btn ghost sm" id="ersdamage1">Damage 1 byte</button><button class="btn ghost sm" id="ersdamage2">Damage 2 bytes</button><button class="btn sm" id="ersdecode">Decode / correct</button><button class="btn ghost sm" id="ersreset">Reset example</button></div><div id="ersresult"></div>') +
       panel(
         'How often does each method notice?',
         `<p class="hint">Corrupt random bits many times and count how often each method detects it. This uses your current data.</p>
@@ -298,14 +302,53 @@ regMod({
       const code = encodeSecded(data); $('#ehrecv', root).value = code;
       $('#ehencoded', root).innerHTML = vd('ok', 'Encoded SECDED codeword: ' + code, 'The eighth bit is overall parity.');
     };
+    let lastHammingCode = '';
+    $('#ehencode', root).onclick = () => {
+      const data = $('#ehdata', root).value;
+      if (!/^[01]{4}$/.test(data)) { $('#ehencoded', root).innerHTML = vd('warn', 'Enter exactly four binary digits.'); return; }
+      lastHammingCode = encodeSecded(data);
+      $('#ehrecv', root).value = lastHammingCode;
+      $('#ehencoded', root).innerHTML = vd('ok', 'Encoded codeword: ' + lastHammingCode, 'Seven Hamming bits plus one overall parity bit.');
+      $('#ehresult', root).innerHTML = '';
+    };
+    $('#ehflip', root).onclick = () => {
+      const value=$('#ehrecv',root).value;
+      if(!/^[01]{8}$/.test(value)){ $('#ehresult',root).innerHTML=vd('warn','Encode a valid 4-bit message first.'); return; }
+      const i=Math.floor(Math.random()*8),bits=value.split('');
+      bits[i]=bits[i]==='0'?'1':'0';$('#ehrecv',root).value=bits.join('');
+      $('#ehresult',root).innerHTML=vd('info','Bit '+(i+1)+' flipped.','Now choose Decode / correct to see how SECDED repairs it.');
+    };
+    $('#ehreset',root).onclick=()=>{const value=lastHammingCode||encodeSecded($('#ehdata',root).value);$('#ehrecv',root).value=value;$('#ehresult',root).innerHTML=vd('info','Original codeword restored.');};
     $('#ehdecode', root).onclick = () => {
       const code = $('#ehrecv', root).value;
       if (!/^[01]{8}$/.test(code)) { $('#ehresult', root).innerHTML = vd('warn', 'Enter exactly eight binary digits.'); return; }
       const x = decodeSecded(code); const good=x.status.includes('corrected')||x.status==='No error detected';
       $('#ehresult', root).innerHTML = vd(good?'ok':'warn',x.status,'Received: '+x.received+' → Corrected: '+x.corrected+' · Recovered data: '+x.data+' · Syndrome: '+x.syndrome+(x.correctedBit?' · Corrected bit: '+x.correctedBit:''))+'<p class="hint">SECDED corrects one bit. It detects two-bit errors but does not guess a correction.</p>';
     };
-    $('#ersencode',root).onclick=()=>{try{const values=$('#ersdata',root).value.split(',').map(x=>Number(x.trim())),code=encodeRS1511(values);$('#ersrecv',root).value=code.join(',');$('#ersencoded',root).innerHTML=vd('ok','Encoded codeword: '+code.join(', '),'11 data bytes + 4 parity bytes. Change up to two received byte values to simulate errors.');}catch(e){$('#ersencoded',root).innerHTML=vd('warn',esc(e.message));}};
+    const encodeRsFromInput = () => {
+      const values=$('#ersdata',root).value.split(',').map(x=>Number(x.trim()));
+      const code=encodeRS1511(values);$('#ersrecv',root).value=code.join(',');
+      $('#ersencoded',root).innerHTML=vd('ok','Codeword ready.','11 original bytes + 4 parity bytes. Use Damage 1 byte or Damage 2 bytes, then decode.');
+      $('#ersresult',root).innerHTML='';
+    };
+    const damageRs = count => {
+      try {
+        const values=$('#ersrecv',root).value.split(',').map(x=>Number(x.trim()));
+        if(values.length!==15)throw new Error('Press Encode example first.');
+        const positions=new Set();
+        while(positions.size<count)positions.add(Math.floor(Math.random()*15));
+        positions.forEach((p,i)=>{values[p]^=(37+((p*29)%190));});
+        $('#ersrecv',root).value=values.join(', ');
+        $('#ersresult',root).innerHTML=vd('info',count+' byte(s) changed.','Now choose Decode / correct to recover the original data.');
+      } catch(e) { $('#ersresult',root).innerHTML=vd('warn',esc(e.message)); }
+    };
+    $('#ersencode',root).onclick=()=>{try{encodeRsFromInput();}catch(e){$('#ersencoded',root).innerHTML=vd('warn',esc(e.message));}};
+    $('#ersdamage1',root).onclick=()=>damageRs(1);
+    $('#ersdamage2',root).onclick=()=>damageRs(2);
+    $('#ersreset',root).onclick=()=>{try{encodeRsFromInput();$('#ersresult',root).innerHTML=vd('info','Original codeword restored.');}catch(e){$('#ersencoded',root).innerHTML=vd('warn',esc(e.message));}};
+()=>{try{const values=$('#ersdata',root).value.split(',').map(x=>Number(x.trim())),code=encodeRS1511(values);$('#ersrecv',root).value=code.join(',');$('#ersencoded',root).innerHTML=vd('ok','Encoded codeword: '+code.join(', '),'11 data bytes + 4 parity bytes. Change up to two received byte values to simulate errors.');}catch(e){$('#ersencoded',root).innerHTML=vd('warn',esc(e.message));}};
     $('#ersdecode',root).onclick=()=>{try{const values=$('#ersrecv',root).value.split(',').map(x=>Number(x.trim())),x=decodeRS1511(values),good=x.positions.length>0||x.status==='No symbol errors detected';$('#ersresult',root).innerHTML=vd(good?'ok':'warn',x.status,'Corrected codeword: '+x.corrected.join(', ')+' · Recovered data: '+x.data.join(', ')+(x.positions.length?' · Corrected byte positions: '+x.positions.map(p=>p+1).join(', '):''));if(good)$('#ersrecv',root).value=x.corrected.join(',');}catch(e){$('#ersresult',root).innerHTML=vd('warn',esc(e.message));}};
+    $('#e2dreset',root).onclick=()=>{ $('#e2drecv',root).value=$('#e2ddata',root).value; $('#e2dresult',root).innerHTML=vd('info','Received data reset to match the sender.'); };
     $('#e2dcheck', root).onclick = () => {
       try {
         const original = encode2DParity($('#e2ddata', root).value.split(/\n/));
