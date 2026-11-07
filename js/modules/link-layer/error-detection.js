@@ -308,8 +308,23 @@ regMod({
     $('#ersdecode',root).onclick=()=>{try{const values=$('#ersrecv',root).value.split(',').map(x=>Number(x.trim())),x=decodeRS1511(values),good=x.positions.length>0||x.status==='No symbol errors detected';$('#ersresult',root).innerHTML=vd(good?'ok':'warn',x.status,'Corrected codeword: '+x.corrected.join(', ')+' · Recovered data: '+x.data.join(', ')+(x.positions.length?' · Corrected byte positions: '+x.positions.map(p=>p+1).join(', '):''));if(good)$('#ersrecv',root).value=x.corrected.join(',');}catch(e){$('#ersresult',root).innerHTML=vd('warn',esc(e.message));}};
     $('#e2dcheck', root).onclick = () => {
       try {
-        const original=encode2DParity($('#e2ddata',root).value.split(/\n/)); const received=$('#e2drecv',root).value.split(/\n/).map(x=>x.trim()).filter(Boolean); if(received.length!==original.matrix.length||received.some(x=>!new RegExp('^[01]{'+original.matrix[0].length+'}
-      } catch (e) { $('#e2dresult', root).innerHTML = vd('warn', esc(e.message)); }
+        const original = encode2DParity($('#e2ddata', root).value.split(/\n/));
+        const received = $('#e2drecv', root).value.split(/\n/).map(x => x.trim()).filter(Boolean);
+        if (received.length !== original.matrix.length || received.some(x => !new RegExp('^[01]{' + original.matrix[0].length + '}$').test(x)))
+          throw new Error('Received data must be a rectangular binary matrix with the same dimensions as the original.');
+        const result = correct2DError(received);
+        const fixed = result.corrected.map(row => row.join('')).join('\n');
+        $('#e2dresult', root).innerHTML = vd(
+          result.status.includes('corrected') || result.status === 'No error detected' ? 'ok' : 'warn',
+          result.status,
+          result.correctedBit
+            ? 'Located row ' + (result.correctedBit.row + 1) + ', column ' + (result.correctedBit.column + 1) + '. Corrected matrix: ' + fixed
+            : 'Rows: ' + result.badRows.map(x => x + 1).join(', ') + ' · Columns: ' + result.badCols.map(x => x + 1).join(', ') + ' · Matrix unchanged: ' + fixed
+        );
+        if (result.status.includes('corrected')) $('#e2drecv', root).value = fixed;
+      } catch (e) {
+        $('#e2dresult', root).innerHTML = vd('warn', esc(e.message));
+      }
     };
     refresh();
   },
