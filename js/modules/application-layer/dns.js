@@ -348,7 +348,33 @@ regMod({
                 if(!response.ok) throw new Error(data.error||'The hosted DNS service returned an error.');
                 const labels={root:'Root DNS server',tld:'TLD DNS server',authoritative:'Authoritative DNS server'};
                 let html=panel('Actual DNS resolution path',statRow([[data.rcode===0?'NOERROR':data.rcode,'DNS response'],[data.steps.length,'DNS queries'],[data.steps.reduce((n,s)=>n+s.elapsedMs,0)+' ms','measured query time'],[data.method,'method']]));
-                html+=data.steps.map((step,i)=>panel('Step '+(i+1)+' · '+(labels[step.stage]||step.stage),'<p><strong>Server:</strong> '+escapeHtml(step.server)+'</p><p><strong>Query:</strong> '+escapeHtml(step.query)+'</p><p><strong>Response:</strong> '+escapeHtml(step.rcode===0?'NOERROR':step.rcode)+' · '+escapeHtml(step.elapsedMs)+' ms'+(step.authoritative?' · Authoritative answer':'')+'</p>'+(step.referrals.length?'<p><strong>Delegation:</strong> '+escapeHtml(step.referrals.map(x=>x.data).join(', '))+'</p>':'')+(step.glue.length?'<p><strong>Glue records:</strong> '+escapeHtml(step.glue.map(x=>x.name+' '+x.type+' '+x.data).join(' · '))+'</p>':'')+(step.answers.length?tbl(['Name','Type','TTL','Value'],step.answers.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),escapeHtml(typeof a.data==='object'?JSON.stringify(a.data):a.data)])):''));
+                html += data.steps.map((step, i) => {
+                  const records = step.answers.length
+                    ? tbl(
+                        ['Name', 'Type', 'TTL', 'Value'],
+                        step.answers.map(a => [
+                          escapeHtml(a.name),
+                          escapeHtml(a.type),
+                          escapeHtml(a.ttl),
+                          escapeHtml(typeof a.data === 'object' ? JSON.stringify(a.data) : a.data),
+                        ])
+                      )
+                    : '';
+                  const referrals = step.referrals.length
+                    ? '<p><strong>Delegation:</strong> ' + escapeHtml(step.referrals.map(x => x.data).join(', ')) + '</p>'
+                    : '';
+                  const glue = step.glue.length
+                    ? '<p><strong>Glue records:</strong> ' + escapeHtml(step.glue.map(x => x.name + ' ' + x.type + ' ' + x.data).join(' · ')) + '</p>'
+                    : '';
+                  const details =
+                    '<p><strong>Server:</strong> ' + escapeHtml(step.server) + '</p>' +
+                    '<p><strong>Query:</strong> ' + escapeHtml(step.query) + '</p>' +
+                    '<p><strong>Response:</strong> ' + escapeHtml(step.rcode === 0 ? 'NOERROR' : step.rcode) +
+                    ' · ' + escapeHtml(step.elapsedMs) + ' ms' +
+                    (step.authoritative ? ' · Authoritative answer' : '') + '</p>' +
+                    referrals + glue + records;
+                  return panel('Step ' + (i + 1) + ' · ' + (labels[step.stage] || step.stage), details);
+                }).join('');
                 if(data.answers.length) html+=panel('Final answer',tbl(['Name','Type','TTL','Value'],data.answers.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),escapeHtml(typeof a.data==='object'?JSON.stringify(a.data):a.data)])));
                 else html+=vd('warn','No answer records returned.','The DNS response did not contain an answer for this record type.');
                 html+=hn('Live trace timestamp: '+escapeHtml(data.queriedAt));
