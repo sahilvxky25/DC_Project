@@ -329,9 +329,3 @@ regMod({
     refresh();
   },
 });
-).test(x)))throw new Error('Received data must be a rectangular binary matrix with the same dimensions as the original.'); const result=correct2DError(received),fixed=result.corrected.map(r=>r.join('')).join('\n'); $('#e2dresult',root).innerHTML=vd(result.status.includes('corrected')||result.status==='No error detected'?'ok':'warn',result.status,result.correctedBit?'Located row '+(result.correctedBit.row+1)+', column '+(result.correctedBit.column+1)+'. Corrected matrix: '+fixed:'Rows: '+result.badRows.map(x=>x+1).join(', ')+' · Columns: '+result.badCols.map(x=>x+1).join(', ')+' · Matrix unchanged: '+fixed); if(result.status.includes('corrected'))$('#e2drecv',root).value=fixed;
-      } catch (e) { $('#e2dresult', root).innerHTML = vd('warn', esc(e.message)); }
-    };
-    refresh();
-  },
-});
