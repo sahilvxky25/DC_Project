@@ -327,59 +327,92 @@ regMod({
             p.innerHTML = panel(
               'Resolve a real domain through the DNS hierarchy',
               `<div class="controls"><div class="field grow"><label for="live-dns-name">Public domain</label><input id="live-dns-name" type="text" value="google.com" spellcheck="false" autocomplete="off" placeholder="example.com"></div><div class="field"><label for="live-dns-type">Record type</label>${sel('live-dns-type',['A','AAAA','MX','NS','CNAME','TXT','SOA','CAA'].map(x=>[x,x]),'A')}</div></div>
-              <div class="field"><label for="live-dns-endpoint">Hosted resolver URL</label><input id="live-dns-endpoint" type="url" value="${localStorage.getItem('dcl.dns.worker') || ''}" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
-              <div class="btnrow"><button class="btn" id="live-dns-run" type="button">Run real lookup</button><span class="hint" id="live-dns-status" role="status">Deploy the included hosted Worker, then paste its URL here.</span></div>
-              <div class="hint">This sends real DNS queries from the hosted service to public DNS servers over TCP port 53. No Python, terminal, or local agent is needed on the learner's device.</div>`,
+              <div class="btnrow"><button class="btn" id="live-dns-run" type="button">Run real lookup</button><span class="hint" id="live-dns-status" role="status">Ready to query public DNS servers.</span></div>
+              <div class="hint">Connected to the DC_Project hosted DNS resolver. Real DNS queries are performed remotely over TCP port 53; learners do not need Python, a terminal, or a local agent.</div>`,
               'Unlike the teaching simulation, this mode queries public root, TLD and authoritative DNS servers. Network restrictions may prevent a trace; errors are shown rather than replaced with fabricated steps.'
             ) + '<div id="live-dns-output"></div>';
-            $('#live-dns-endpoint',p).onchange=()=>localStorage.setItem('dcl.dns.worker',$('#live-dns-endpoint',p).value.trim());
+            const LIVE_DNS_WORKER = 'https://dc-project-live-dns.sahilpatra274.workers.dev';
             const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+            const displayValue = value => escapeHtml(typeof value === 'object' ? JSON.stringify(value) : value);
+            const renderRecords = records => records && records.length
+              ? '<div class="dns-live-table-wrap">' + tbl(['Name','Type','TTL','Value'],records.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),displayValue(a.data)])) + '</div>'
+              : '<p class="hint">No records of this category were returned at this stage.</p>';
+            const renderList = (title, items, formatter) => items && items.length
+              ? '<details class="dns-live-details"><summary>' + escapeHtml(title) + ' <span class="dns-live-count">' + items.length + '</span></summary><div class="dns-live-details-body">' + items.map(formatter).join('') + '</div></details>'
+              : '';
             const run = async () => {
-              const name=$('#live-dns-name',p).value.trim(), type=$('#live-dns-type',p).value, endpoint=$('#live-dns-endpoint',p).value.trim().replace(/\/$/,'');
+              const name=$('#live-dns-name',p).value.trim(), type=$('#live-dns-type',p).value;
               const status=$('#live-dns-status',p), output=$('#live-dns-output',p), button=$('#live-dns-run',p);
-              if(!endpoint){status.textContent='Enter the deployed Worker URL first.';return;}
-              let parsed;
-              try { parsed=new URL(endpoint); if(parsed.protocol!=='https:') throw new Error('Use an HTTPS Worker URL.'); }
-              catch(e){status.textContent=e.message||'Enter a valid HTTPS URL.';return;}
-              button.disabled=true;status.textContent='Querying root, TLD and authoritative servers…';output.innerHTML=hn('Waiting for live DNS responses…');
+              if(!name || !/^(?=.{1,253}$)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.?$/i.test(name) || name.split('.').some(label=>!label || label.length>63)){
+                status.textContent='Enter a valid public domain name.'; output.innerHTML=vd('warn','Check the domain name.','Use a name such as google.com.'); return;
+              }
+              button.disabled=true;status.textContent='Querying root, TLD and authoritative servers…';output.innerHTML='<div class="dns-live-loading"><span class="dns-live-spinner"></span><span>Following DNS referrals…</span></div>';
               try {
-                const response=await fetch(endpoint+'/trace?name='+encodeURIComponent(name)+'&type='+encodeURIComponent(type),{headers:{Accept:'application/json'}});
+                const response=await fetch(LIVE_DNS_WORKER+'/trace?name='+encodeURIComponent(name)+'&type='+encodeURIComponent(type),{headers:{Accept:'application/json'}});
                 const data=await response.json();
                 if(!response.ok) throw new Error(data.error||'The hosted DNS service returned an error.');
-                const labels={root:'Root DNS server',tld:'TLD DNS server',authoritative:'Authoritative DNS server'};
-                let html=panel('Actual DNS resolution path',statRow([[data.rcode===0?'NOERROR':data.rcode,'DNS response'],[data.steps.length,'DNS queries'],[data.steps.reduce((n,s)=>n+s.elapsedMs,0)+' ms','measured query time'],[data.method,'method']]));
-                html += data.steps.map((step, i) => {
-                  const records = step.answers.length
-                    ? tbl(
-                        ['Name', 'Type', 'TTL', 'Value'],
-                        step.answers.map(a => [
-                          escapeHtml(a.name),
-                          escapeHtml(a.type),
-                          escapeHtml(a.ttl),
-                          escapeHtml(typeof a.data === 'object' ? JSON.stringify(a.data) : a.data),
-                        ])
-                      )
-                    : '';
-                  const referrals = step.referrals.length
-                    ? '<p><strong>Delegation:</strong> ' + escapeHtml(step.referrals.map(x => x.data).join(', ')) + '</p>'
-                    : '';
-                  const glue = step.glue.length
-                    ? '<p><strong>Glue records:</strong> ' + escapeHtml(step.glue.map(x => x.name + ' ' + x.type + ' ' + x.data).join(' · ')) + '</p>'
-                    : '';
-                  const details =
-                    '<p><strong>Server:</strong> ' + escapeHtml(step.server) + '</p>' +
-                    '<p><strong>Query:</strong> ' + escapeHtml(step.query) + '</p>' +
-                    '<p><strong>Response:</strong> ' + escapeHtml(step.rcode === 0 ? 'NOERROR' : step.rcode) +
-                    ' · ' + escapeHtml(step.elapsedMs) + ' ms' +
-                    (step.authoritative ? ' · Authoritative answer' : '') + '</p>' +
-                    referrals + glue + records;
-                  return panel('Step ' + (i + 1) + ' · ' + (labels[step.stage] || step.stage), details);
-                }).join('');
-                if(data.answers.length) html+=panel('Final answer',tbl(['Name','Type','TTL','Value'],data.answers.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),escapeHtml(typeof a.data==='object'?JSON.stringify(a.data):a.data)])));
-                else html+=vd('warn','No answer records returned.','The DNS response did not contain an answer for this record type.');
-                html+=hn('Live trace timestamp: '+escapeHtml(data.queriedAt));
-                output.innerHTML=html;status.textContent='Live DNS trace completed.';
-              } catch(error) { output.innerHTML=vd('bad','Live DNS lookup failed.',escapeHtml(error.message)+' Check that the Worker is deployed and its URL is correct.');status.textContent='Lookup failed.'; }
+                const steps=Array.isArray(data.steps)?data.steps:[];
+                const answers=Array.isArray(data.answers)?data.answers:[];
+                const totalMs=steps.reduce((n,s)=>n+(Number(s.elapsedMs)||0),0);
+                const success=String(data.rcode) === '0' || String(data.rcode).toUpperCase()==='NOERROR';
+                const primary=answers.find(a=>String(a.type).toUpperCase()===type) || answers[0];
+                const primaryValue=primary ? (typeof primary.data==='object'?JSON.stringify(primary.data):primary.data) : '';
+                const labels={root:'Root server',tld:'TLD server',authoritative:'Authoritative server'};
+                let html='<style>
+                  .dns-live-results{display:grid;gap:16px;margin-top:16px}
+                  .dns-live-hero{position:relative;overflow:hidden;padding:22px;border:1px solid var(--line,rgba(148,163,184,.25));border-radius:16px;background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(59,130,246,.10))}
+                  .dns-live-kicker{font-size:.76rem;letter-spacing:.09em;text-transform:uppercase;opacity:.72;font-weight:700}
+                  .dns-live-domain{font-size:1.12rem;font-weight:700;margin-top:7px;overflow-wrap:anywhere}
+                  .dns-live-ip{font-size:clamp(1.35rem,3vw,2rem);font-weight:800;letter-spacing:-.03em;margin:7px 0;overflow-wrap:anywhere}
+                  .dns-live-meta{font-size:.88rem;opacity:.78}
+                  .dns-live-copy{margin-left:8px}
+                  .dns-live-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+                  .dns-live-stat{padding:14px;border:1px solid var(--line,rgba(148,163,184,.22));border-radius:12px;background:var(--panel,rgba(148,163,184,.06));min-width:0}
+                  .dns-live-stat strong{display:block;font-size:1.05rem;overflow-wrap:anywhere}
+                  .dns-live-stat span{display:block;font-size:.78rem;opacity:.7;margin-top:4px}
+                  .dns-live-timeline{display:grid;gap:0}
+                  .dns-live-stage{position:relative;padding:0 0 17px 29px;margin-left:10px;border-left:2px solid var(--line,rgba(148,163,184,.3))}
+                  .dns-live-stage:last-child{border-left-color:transparent;padding-bottom:0}
+                  .dns-live-dot{position:absolute;left:-9px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--accent,#38bdf8);box-shadow:0 0 0 5px rgba(56,189,248,.12)}
+                  .dns-live-stage-card{border:1px solid var(--line,rgba(148,163,184,.22));border-radius:13px;padding:14px;background:var(--panel,rgba(148,163,184,.05))}
+                  .dns-live-stage-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+                  .dns-live-stage-title{font-weight:750}
+                  .dns-live-stage-server{font-size:.84rem;opacity:.76;margin-top:4px;overflow-wrap:anywhere}
+                  .dns-live-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+                  .dns-live-badge{font-size:.74rem;border-radius:999px;padding:4px 9px;background:rgba(56,189,248,.12)}
+                  .dns-live-details{margin-top:10px;border-top:1px solid var(--line,rgba(148,163,184,.18));padding-top:9px}
+                  .dns-live-details summary{cursor:pointer;font-weight:650;font-size:.86rem}
+                  .dns-live-count{display:inline-block;margin-left:5px;padding:1px 7px;border-radius:999px;background:rgba(148,163,184,.15);font-size:.72rem}
+                  .dns-live-details-body{padding:9px 0 0;overflow-wrap:anywhere}
+                  .dns-live-detail-item{font-size:.82rem;padding:5px 0;border-bottom:1px solid var(--line,rgba(148,163,184,.12))}
+                  .dns-live-table-wrap{overflow-x:auto}
+                  .dns-live-section{padding:16px;border:1px solid var(--line,rgba(148,163,184,.22));border-radius:14px}
+                  .dns-live-section h3{margin:0 0 12px}
+                  .dns-live-loading{display:flex;align-items:center;gap:10px;padding:18px;border-radius:12px;background:var(--panel,rgba(148,163,184,.06))}
+                  .dns-live-spinner{width:18px;height:18px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dnsLiveSpin .8s linear infinite}
+                  @keyframes dnsLiveSpin{to{transform:rotate(360deg)}}
+                  @media(max-width:600px){.dns-live-hero{padding:16px}.dns-live-stage{padding-left:23px}}
+                </style><div class="dns-live-results">';
+                html+='<section class="dns-live-hero"><div class="dns-live-kicker">'+(success?'✓ Resolution successful':'DNS response: '+escapeHtml(data.rcode))+'</div><div class="dns-live-domain">'+escapeHtml(name)+' · '+escapeHtml(type)+'</div><div class="dns-live-ip">'+(primary?displayValue(primaryValue):'No matching answer')+'</div><div class="dns-live-meta">'+(primary?'TTL '+escapeHtml(primary.ttl)+' seconds · Final DNS answer':'The server did not return an answer record for this query type')+'</div></section>';
+                html+='<div class="dns-live-stats"><div class="dns-live-stat"><strong>'+escapeHtml(data.rcode===0?'NOERROR':data.rcode)+'</strong><span>Response code</span></div><div class="dns-live-stat"><strong>'+steps.length+'</strong><span>DNS queries</span></div><div class="dns-live-stat"><strong>'+totalMs+' ms</strong><span>Total measured query time</span></div><div class="dns-live-stat"><strong>TCP / 53</strong><span>Resolution transport</span></div></div>';
+                html+='<section class="dns-live-section"><h3>Resolution journey</h3><div class="dns-live-timeline">'+steps.map((step,i)=>{
+                  const stage=labels[step.stage]||String(step.stage||'DNS server');
+                  const referrals=Array.isArray(step.referrals)?step.referrals:[];
+                  const glue=Array.isArray(step.glue)?step.glue:[];
+                  const detailItems=[
+                    '<div class="dns-live-detail-item"><strong>Query:</strong> '+escapeHtml(step.query)+'</div>',
+                    '<div class="dns-live-detail-item"><strong>Response:</strong> '+escapeHtml(step.rcode===0?'NOERROR':step.rcode)+'</div>',
+                    '<div class="dns-live-detail-item"><strong>Server:</strong> '+escapeHtml(step.server)+'</div>'
+                  ];
+                  const referralHtml=renderList('Delegated nameservers',referrals,x=>'<div class="dns-live-detail-item">'+escapeHtml(x.data)+'</div>');
+                  const glueHtml=renderList('Glue records',glue,x=>'<div class="dns-live-detail-item"><strong>'+escapeHtml(x.name)+'</strong> · '+escapeHtml(x.type)+' · '+escapeHtml(x.data)+'</div>');
+                  const answerHtml=renderList('Records returned at this stage',step.answers||[],x=>'<div class="dns-live-detail-item"><strong>'+escapeHtml(x.name)+'</strong> · '+escapeHtml(x.type)+' · TTL '+escapeHtml(x.ttl)+' · '+displayValue(x.data)+'</div>');
+                  return '<div class="dns-live-stage"><span class="dns-live-dot"></span><article class="dns-live-stage-card"><div class="dns-live-stage-head"><div><div class="dns-live-stage-title">'+String(i+1).padStart(2,'0')+' · '+escapeHtml(stage)+'</div><div class="dns-live-stage-server">'+escapeHtml(step.server)+'</div></div><span class="dns-live-badge">'+escapeHtml(step.elapsedMs)+' ms</span></div><div class="dns-live-badges"><span class="dns-live-badge">'+escapeHtml(step.rcode===0?'NOERROR':step.rcode)+'</span>'+(step.authoritative?'<span class="dns-live-badge">Authoritative answer</span>':'<span class="dns-live-badge">Referral / lookup</span>')+'</div><details class="dns-live-details"><summary>View query and response details</summary><div class="dns-live-details-body">'+detailItems.join('')+referralHtml+glueHtml+answerHtml+'</div></details></article></div>';
+                }).join('')+'</div></section>';
+                html+='<section class="dns-live-section"><h3>Final DNS records</h3>'+renderRecords(answers)+'</section>';
+                html+='<section class="dns-live-section"><h3>Trace information</h3><div class="dns-live-meta">Method: '+escapeHtml(data.method)+' · Queried: '+escapeHtml(data.queriedAt)+'</div></section></div>';
+                output.innerHTML=html;status.textContent='Live DNS trace completed successfully.';
+              } catch(error) { output.innerHTML=vd('bad','Live DNS lookup failed.',escapeHtml(error.message)+' Check the hosted resolver deployment.');status.textContent='Lookup failed.'; }
               finally { button.disabled=false; }
             };
             $('#live-dns-run',p).onclick=run;
