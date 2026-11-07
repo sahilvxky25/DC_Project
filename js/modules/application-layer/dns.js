@@ -322,6 +322,44 @@ regMod({
           },
         },
         {
+          label: 'Live iterative DNS',
+          render(p) {
+            p.innerHTML = panel(
+              'Resolve a real domain through the DNS hierarchy',
+              `<div class="controls"><div class="field grow"><label for="live-dns-name">Public domain</label><input id="live-dns-name" type="text" value="google.com" spellcheck="false" autocomplete="off" placeholder="example.com"></div><div class="field"><label for="live-dns-type">Record type</label>${sel('live-dns-type',['A','AAAA','MX','NS','CNAME','TXT','SOA','CAA'].map(x=>[x,x]),'A')}</div></div>
+              <div class="field"><label for="live-dns-endpoint">Hosted resolver URL</label><input id="live-dns-endpoint" type="url" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
+              <div class="btnrow"><button class="btn" id="live-dns-run" type="button">Run real lookup</button><span class="hint" id="live-dns-status" role="status">Deploy the included hosted Worker, then paste its URL here.</span></div>
+              <div class="hint">This sends real DNS queries from the hosted service to public DNS servers over TCP port 53. No Python, terminal, or local agent is needed on the learner's device.</div>`,
+              'Unlike the teaching simulation, this mode queries public root, TLD and authoritative DNS servers. Network restrictions may prevent a trace; errors are shown rather than replaced with fabricated steps.'
+            ) + '<div id="live-dns-output"></div>';
+            const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+            const run = async () => {
+              const name=$('#live-dns-name',p).value.trim(), type=$('#live-dns-type',p).value, endpoint=$('#live-dns-endpoint',p).value.trim().replace(/\/$/,'');
+              const status=$('#live-dns-status',p), output=$('#live-dns-output',p), button=$('#live-dns-run',p);
+              if(!endpoint){status.textContent='Enter the deployed Worker URL first.';return;}
+              let parsed;
+              try { parsed=new URL(endpoint); if(parsed.protocol!=='https:') throw new Error('Use an HTTPS Worker URL.'); }
+              catch(e){status.textContent=e.message||'Enter a valid HTTPS URL.';return;}
+              button.disabled=true;status.textContent='Querying root, TLD and authoritative servers…';output.innerHTML=hn('Waiting for live DNS responses…');
+              try {
+                const response=await fetch(endpoint+'/trace?name='+encodeURIComponent(name)+'&type='+encodeURIComponent(type),{headers:{Accept:'application/json'}});
+                const data=await response.json();
+                if(!response.ok) throw new Error(data.error||'The hosted DNS service returned an error.');
+                const labels={root:'Root DNS server',tld:'TLD DNS server',authoritative:'Authoritative DNS server'};
+                let html=panel('Actual DNS resolution path',statRow([[data.rcode===0?'NOERROR':data.rcode,'DNS response'],[data.steps.length,'DNS queries'],[data.steps.reduce((n,s)=>n+s.elapsedMs,0)+' ms','measured query time'],[data.method,'method']]));
+                html+=data.steps.map((step,i)=>panel('Step '+(i+1)+' · '+(labels[step.stage]||step.stage),'<p><strong>Server:</strong> '+escapeHtml(step.server)+'</p><p><strong>Query:</strong> '+escapeHtml(step.query)+'</p><p><strong>Response:</strong> '+escapeHtml(step.rcode===0?'NOERROR':step.rcode)+' · '+escapeHtml(step.elapsedMs)+' ms'+(step.authoritative?' · Authoritative answer':'')+'</p>'+(step.referrals.length?'<p><strong>Delegation:</strong> '+escapeHtml(step.referrals.map(x=>x.data).join(', '))+'</p>':'')+(step.glue.length?'<p><strong>Glue records:</strong> '+escapeHtml(step.glue.map(x=>x.name+' '+x.type+' '+x.data).join(' · '))+'</p>':'')+(step.answers.length?tbl(['Name','Type','TTL','Value'],step.answers.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),escapeHtml(typeof a.data==='object'?JSON.stringify(a.data):a.data)])):''));
+                if(data.answers.length) html+=panel('Final answer',tbl(['Name','Type','TTL','Value'],data.answers.map(a=>[escapeHtml(a.name),escapeHtml(a.type),escapeHtml(a.ttl),escapeHtml(typeof a.data==='object'?JSON.stringify(a.data):a.data)])));
+                else html+=vd('warn','No answer records returned.','The DNS response did not contain an answer for this record type.');
+                html+=hn('Live trace timestamp: '+escapeHtml(data.queriedAt));
+                output.innerHTML=html;status.textContent='Live DNS trace completed.';
+              } catch(error) { output.innerHTML=vd('bad','Live DNS lookup failed.',escapeHtml(error.message)+' Check that the Worker is deployed and its URL is correct.');status.textContent='Lookup failed.'; }
+              finally { button.disabled=false; }
+            };
+            $('#live-dns-run',p).onclick=run;
+            $('#live-dns-name',p).onkeydown=e=>{if(e.key==='Enter')run();};
+          },
+        },
+        {
           label: 'Record types',
           render(p) {
             p.innerHTML = panel(
