@@ -327,11 +327,12 @@ regMod({
             p.innerHTML = panel(
               'Resolve a real domain through the DNS hierarchy',
               `<div class="controls"><div class="field grow"><label for="live-dns-name">Public domain</label><input id="live-dns-name" type="text" value="google.com" spellcheck="false" autocomplete="off" placeholder="example.com"></div><div class="field"><label for="live-dns-type">Record type</label>${sel('live-dns-type',['A','AAAA','MX','NS','CNAME','TXT','SOA','CAA'].map(x=>[x,x]),'A')}</div></div>
-              <div class="field"><label for="live-dns-endpoint">Hosted resolver URL</label><input id="live-dns-endpoint" type="url" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
+              <div class="field"><label for="live-dns-endpoint">Hosted resolver URL</label><input id="live-dns-endpoint" type="url" value="${localStorage.getItem(\'dcl.dns.worker\') || \'\'}" placeholder="https://your-worker.your-subdomain.workers.dev"></div>
               <div class="btnrow"><button class="btn" id="live-dns-run" type="button">Run real lookup</button><span class="hint" id="live-dns-status" role="status">Deploy the included hosted Worker, then paste its URL here.</span></div>
               <div class="hint">This sends real DNS queries from the hosted service to public DNS servers over TCP port 53. No Python, terminal, or local agent is needed on the learner's device.</div>`,
               'Unlike the teaching simulation, this mode queries public root, TLD and authoritative DNS servers. Network restrictions may prevent a trace; errors are shown rather than replaced with fabricated steps.'
             ) + '<div id="live-dns-output"></div>';
+            $('#live-dns-endpoint',p).onchange=()=>localStorage.setItem('dcl.dns.worker',$('#live-dns-endpoint',p).value.trim());
             const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
             const run = async () => {
               const name=$('#live-dns-name',p).value.trim(), type=$('#live-dns-type',p).value, endpoint=$('#live-dns-endpoint',p).value.trim().replace(/\/$/,'');
