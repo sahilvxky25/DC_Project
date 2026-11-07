@@ -94,7 +94,7 @@ function pickNsIp(message) {
 }
 function zoneFor(name) {const p=name.split(".");return p.length>=2?p.slice(-2).join("."):name;}
 async function traceLookup(name,type) {
-  const steps=[];let current=name,answers=[],server=ROOTS[0],rcode=0;
+  const steps=[];let current=name,answers=[],allAnswers=[],server=ROOTS[0],rcode=0;
   for(let alias=0;alias<6;alias++) {
     let stage="root";
     for(let depth=0;depth<3;depth++) {
@@ -114,11 +114,13 @@ async function traceLookup(name,type) {
       stage=depth===0?"tld":depth===1?"authoritative":"authoritative";
     }
     const cname=answers.find(x=>x.type==="CNAME");
-    if(!cname||type==="CNAME"||rcode!==0)break;
+    if(!cname||type==="CNAME"||rcode!==0){allAnswers.push(...answers);break;}
+    allAnswers.push(cname);
     current=String(cname.data);
     answers=[];
+    server=ROOTS[0];
   }
-  return {name,type,rcode,steps,answers,queriedAt:new Date().toISOString(),method:"Direct iterative DNS over TCP/53"};
+  return {name,type,rcode,steps,answers:allAnswers.length?allAnswers:answers,queriedAt:new Date().toISOString(),method:"Direct iterative DNS over TCP/53"};
 }
 function validName(value) {
   const name=String(value||"").trim().toLowerCase().replace(/\.$/,"");
