@@ -38,8 +38,8 @@ import { flag } from '../../app/progress.js';
 regMod({
   id: 'errors',
   group: 'link',
-  title: 'Error detection',
-  desc: 'Add parity, a checksum or a CRC, then corrupt the data and see which method notices.',
+  title: 'Error detection & correction',
+  desc: 'Detect transmission errors and recover corrupted data with Hamming, 2D parity and Reed–Solomon codes.',
   obj: [
     'Compute parity, an Internet checksum and CRCs on real data.',
     'Flip bits by hand and read the pass or fail result of each method.',
@@ -98,12 +98,12 @@ regMod({
       panel('Hamming code — detect and correct',
         '<p class="hint">Extended Hamming (8,4) can correct one flipped bit and detect (but not correct) two flipped bits.</p>' +
         '<div class="controls"><div class="field grow"><label for="ehdata">4 data bits</label><input id="ehdata" value="1011" maxlength="4"></div><button class="btn sm" id="ehencode">Encode</button></div><div id="ehencoded"></div>' +
-        '<div class="controls"><div class="field grow"><label for="ehrecv">Received 8-bit codeword</label><input id="ehrecv" value="10110100" maxlength="8"></div><button class="btn sm" id="ehdecode">Decode / correct</button></div><div id="ehresult"></div>') +
+        '<div class="controls"><div class="field grow"><label for="ehrecv">Received 8-bit codeword</label><input id="ehrecv" value="01100110" maxlength="8"></div><button class="btn sm" id="ehdecode">Decode / correct</button></div><div id="ehresult"></div>') +
       panel('Two-dimensional parity',
         '<p class="hint">Row and column parity can locate a single flipped data bit at their intersection.</p>' +
         '<div class="controls"><div class="field grow"><label for="e2ddata">Original data (one binary row per line)</label><textarea id="e2ddata" rows="3">1011\n0110\n1100</textarea></div><div class="field grow"><label for="e2drecv">Received data</label><textarea id="e2drecv" rows="3">1011\n0010\n1100</textarea></div></div><button class="btn sm" id="e2dcheck">Check parity</button><div id="e2dresult"></div>') +
       panel('Reed–Solomon RS(15,11) — correct up to 2 byte errors',
-        '<p class="hint">This code works on byte-sized symbols. Four parity bytes protect eleven data bytes and can correct up to two corrupted bytes.</p><div class="controls"><div class="field grow"><label for="ersdata">11 data bytes (decimal, comma-separated)</label><input id="ersdata" value="72,101,108,108,111,32,87,111,114,108,100"></div><button class="btn sm" id="ersencode">Encode</button></div><div id="ersencoded"></div><div class="controls"><div class="field grow"><label for="ersrecv">Received 15-byte codeword (decimal, comma-separated)</label><textarea id="ersrecv" rows="3"></textarea></div><button class="btn sm" id="ersdecode">Decode / correct</button></div><div id="ersresult"></div>');
+        '<p class="hint">This code works on byte-sized symbols. Four parity bytes protect eleven data bytes and can correct up to two corrupted bytes.</p><div class="controls"><div class="field grow"><label for="ersdata">11 data bytes (decimal, comma-separated)</label><input id="ersdata" value="72,101,108,108,111,32,87,111,114,108,100"></div><button class="btn sm" id="ersencode">Encode</button></div><div id="ersencoded"></div><div class="controls"><div class="field grow"><label for="ersrecv">Received 15-byte codeword (decimal, comma-separated)</label><textarea id="ersrecv" rows="3"></textarea></div><button class="btn sm" id="ersdecode">Decode / correct</button></div><div id="ersresult"></div>') +
       panel(
         'How often does each method notice?',
         `<p class="hint">Corrupt random bits many times and count how often each method detects it. This uses your current data.</p>
