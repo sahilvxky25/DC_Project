@@ -1,15 +1,4 @@
-/** Two-dimensional even parity helpers. */
-export function encode2DParity(rows) {
-  const matrix=rows.map(r=>String(r).replace(/[^01]/g,'').split('').map(Number)).filter(r=>r.length);
-  const width=Math.max(1,...matrix.map(r=>r.length));
-  matrix.forEach(r=>{while(r.length<width)r.push(0);});
-  const rowParity=matrix.map(r=>r.reduce((a,b)=>a^b,0));
-  const colParity=Array.from({length:width},(_,c)=>matrix.reduce((a,r)=>a^r[c],0));
-  return {matrix,rowParity,colParity,corner:colParity.reduce((a,b)=>a^b,0)};
-}
-export function locate2DError(rows) {
-  const result=encode2DParity(rows);
-  const badRows=result.rowParity.map((v,i)=>v?i:-1).filter(i=>i>=0);
-  const badCols=result.colParity.map((v,i)=>v?i:-1).filter(i=>i>=0);
-  return {...result,badRows,badCols,location:badRows.length===1&&badCols.length===1?{row:badRows[0],column:badCols[0]}:null};
-}
+/** Two-dimensional even parity helpers with safe single-bit correction. */
+export function encode2DParity(rows){const matrix=rows.map(r=>String(r).trim()).filter(Boolean).map(r=>{if(!/^[01]+$/.test(r))throw new Error('Each row must contain only 0s and 1s.');return r.split('').map(Number);});if(!matrix.length||matrix.some(r=>r.length!==matrix[0].length))throw new Error('Enter a non-empty rectangular binary matrix.');const width=matrix[0].length,rowParity=matrix.map(r=>r.reduce((a,b)=>a^b,0)),colParity=Array.from({length:width},(_,c)=>matrix.reduce((a,r)=>a^r[c],0));return{matrix,rowParity,colParity,corner:colParity.reduce((a,b)=>a^b,0)};}
+export function locate2DError(rows){const result=encode2DParity(rows),badRows=result.rowParity.map((v,i)=>v?i:-1).filter(i=>i>=0),badCols=result.colParity.map((v,i)=>v?i:-1).filter(i=>i>=0);return{...result,badRows,badCols,location:badRows.length===1&&badCols.length===1?{row:badRows[0],column:badCols[0]}:null};}
+export function correct2DError(rows){const result=locate2DError(rows),matrix=result.matrix.map(r=>r.slice());if(!result.badRows.length&&!result.badCols.length)return{...result,status:'No error detected',corrected:matrix,correctedBit:null};if(result.location){const{row,column}=result.location;matrix[row][column]^=1;return{...result,status:'Single-bit error corrected',corrected:matrix,correctedBit:{row,column}};}return{...result,status:'Error pattern is ambiguous; data was not changed',corrected:matrix,correctedBit:null};}
