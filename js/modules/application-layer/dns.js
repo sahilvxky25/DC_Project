@@ -358,7 +358,7 @@ regMod({
                 const primary=answers.find(a=>String(a.type).toUpperCase()===type) || answers[0];
                 const primaryValue=primary ? (typeof primary.data==='object'?JSON.stringify(primary.data):primary.data) : '';
                 const labels={root:'Root server',tld:'TLD server',authoritative:'Authoritative server'};
-                let html='<style>
+                let html=`<style>
                   .dns-live-results{display:grid;gap:16px;margin-top:16px}
                   .dns-live-hero{position:relative;overflow:hidden;padding:22px;border:1px solid var(--line,rgba(148,163,184,.25));border-radius:16px;background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(59,130,246,.10))}
                   .dns-live-kicker{font-size:.76rem;letter-spacing:.09em;text-transform:uppercase;opacity:.72;font-weight:700}
@@ -392,7 +392,7 @@ regMod({
                   .dns-live-spinner{width:18px;height:18px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:dnsLiveSpin .8s linear infinite}
                   @keyframes dnsLiveSpin{to{transform:rotate(360deg)}}
                   @media(max-width:600px){.dns-live-hero{padding:16px}.dns-live-stage{padding-left:23px}}
-                </style><div class="dns-live-results">';
+                </style><div class="dns-live-results"`;';
                 html+='<section class="dns-live-hero"><div class="dns-live-kicker">'+(success?'✓ Resolution successful':'DNS response: '+escapeHtml(data.rcode))+'</div><div class="dns-live-domain">'+escapeHtml(name)+' · '+escapeHtml(type)+'</div><div class="dns-live-ip">'+(primary?displayValue(primaryValue):'No matching answer')+'</div><div class="dns-live-meta">'+(primary?'TTL '+escapeHtml(primary.ttl)+' seconds · Final DNS answer':'The server did not return an answer record for this query type')+'</div></section>';
                 html+='<div class="dns-live-stats"><div class="dns-live-stat"><strong>'+escapeHtml(data.rcode===0?'NOERROR':data.rcode)+'</strong><span>Response code</span></div><div class="dns-live-stat"><strong>'+steps.length+'</strong><span>DNS queries</span></div><div class="dns-live-stat"><strong>'+totalMs+' ms</strong><span>Total measured query time</span></div><div class="dns-live-stat"><strong>TCP / 53</strong><span>Resolution transport</span></div></div>';
                 html+='<section class="dns-live-section"><h3>Resolution journey</h3><div class="dns-live-timeline">'+steps.map((step,i)=>{
