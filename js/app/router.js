@@ -179,7 +179,7 @@ function renderInfoPage(page) {
           <article class="developer-card"><div class="developer-avatar" aria-hidden="true">AA</div><h3>Aiyush Anand</h3><p>Developer</p><a href="https://github.com/AIYUSHH" target="_blank" rel="noopener noreferrer">GitHub · @AIYUSHH ↗</a></article>
         </div>
       </section>
-      <section class="info-cta"><div><span class="info-kicker">KEEP EXPLORING</span><h2>Curiosity is where understanding begins.</h2><p>Try the lab and explore how data moves through a network.</p></div><a class="btn" href="#/">Open BitSecure <span aria-hidden="true">→</span></a></section>`;
+      <section class="info-cta"><div><span class="info-kicker">KEEP EXPLORING</span><h2>Curiosity is where understanding begins.</h2><p>Try the lab and explore how data moves through a network.</p></div><div class="info-cta-actions"><a class="btn" href="#/">Open BitSecure <span aria-hidden="true">→</span></a><a class="btn ghost" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View GitHub Repository ↗</a></div></section>`;
   } else {
     crumbs(['Support BitSecure']);
     document.title = 'Support Us · BitSecure';
@@ -194,6 +194,6 @@ function renderInfoPage(page) {
         <div class="support-list"><div><b>01</b><span><strong>More course simulations</strong><small>Bring interactive learning to new subjects and disciplines.</small></span></div><div><b>02</b><span><strong>Better learning experiences</strong><small>Improve usability, animations, accessibility, and explanations.</small></span></div><div><b>03</b><span><strong>Accessible education</strong><small>Keep building practical resources that learners can explore at their own pace.</small></span></div></div>
       </section>
       <section class="support-coming-soon"><span class="coming-soon-pill">COMING SOON</span><h2>Support us on Patreon</h2><p>We are preparing our Patreon page. Once it is live, this page will include a link for anyone who wants to support the project.</p><button class="btn" type="button" disabled aria-disabled="true">Patreon page coming soon</button><p class="info-muted">There is no payment link available yet. Please check back later.</p></section>
-      <div class="info-back-link"><a href="#/about">Learn more about our mission →</a></div>`;
+      <div class="info-back-link"><a href="#/about">Learn more about our mission →</a><p><a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></p></div>`;
   }
 }
