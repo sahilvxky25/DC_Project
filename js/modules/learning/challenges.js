@@ -472,7 +472,7 @@ regMod({
         if (pct > P.stats.quizBest) setStat('quizBest', pct);
         const passed=pct>=70, completedLevel=level, nextLevel=passed?Math.min(5,level+1):level;
         if(nextLevel>(Number(P.stats.quizLevel)||1)) setStat('quizLevel',nextLevel);
-        if(completedLevel>(Number(P.stats.quizHighestLevel)||1)) setStat('quizHighestLevel',completedLevel);
+        if(nextLevel>(Number(P.stats.quizHighestLevel)||1)) setStat('quizHighestLevel',nextLevel);
         level = nextLevel;
         const history=Array.isArray(P.stats.quizHistory)?P.stats.quizHistory.slice(0,7):[];
         history.unshift({level:completedLevel,score:pct,points:pts,ts:Date.now()}); setStat('quizHistory',history.slice(0,8));
@@ -484,7 +484,7 @@ regMod({
         });
         root.innerHTML = panel(
           'Quiz results',
-          `<div class="quizq"><small class="tagc">${LEVELS[completedLevel-1]} · Level ${completedLevel}</small><p class="big">${c} of ${qs.length} correct (${pct}%)</p><p>${passed ? (completedLevel < 5 ? 'Level passed — next level unlocked.' : 'Master level cleared — highest tier reached.') : 'Level not passed. Score at least 70% to unlock the next level.'}</p></div>${statRow([[pts + '/' + qs.length * 2, 'points (hints cost half)'],[P.stats.quizBest + '%', 'all-time best'],[P.stats.quizRuns, 'quizzes taken'],[Math.max(1,Number(P.stats.quizHighestLevel)||1)+'/5', 'highest level']])}<div class="quizq"><b>Difficulty progress</b><div class="bar"><i style="width:${(Math.max(1,Number(P.stats.quizHighestLevel)||1)/5)*100}%"></i></div><small>Next: ${LEVELS[nextLevel-1]}</small></div>${tbl(['Topic','Correct'],Object.entries(tags).map(([t,v])=>[t,v[0]+' of '+v[1]]))}${tbl(['Recent level','Score'],history.slice(0,5).map(run=>[LEVELS[Math.max(1,Math.min(5,run.level))-1],run.score+'%']))}${passed ? vd('ok','Well done.','Your performance unlocked the next step.') : vd('info','Keep practising.','Review the topic breakdown and retry this level.')}<div class="btnrow"><button class="btn" id="qagain">${passed && completedLevel < 5 ? 'Start next level' : 'Retry level'}</button></div>`
+          `<div class="quizq"><small class="tagc">${LEVELS[completedLevel-1]} · Level ${completedLevel}</small><p class="big">${c} of ${qs.length} correct (${pct}%)</p><p>${passed ? (completedLevel < 5 ? 'Level passed — next level unlocked.' : 'Master level cleared — highest tier reached.') : 'Level not passed. Score at least 70% to unlock the next level.'}</p></div>${statRow([[pts + '/' + qs.length * 2, 'points (hints cost half)'],[P.stats.quizBest + '%', 'all-time best'],[P.stats.quizRuns, 'quizzes taken'],[Math.max(1,Number(P.stats.quizHighestLevel)||1)+'/5', 'highest level unlocked']])}<div class="quizq"><b>Difficulty progress</b><div class="bar"><i style="width:${(Math.max(1,Number(P.stats.quizHighestLevel)||1)/5)*100}%"></i></div><small>Next: ${LEVELS[nextLevel-1]}</small></div>${tbl(['Topic','Correct'],Object.entries(tags).map(([t,v])=>[t,v[0]+' of '+v[1]]))}${tbl(['Recent level','Score'],history.slice(0,5).map(run=>[LEVELS[Math.max(1,Math.min(5,run.level))-1],run.score+'%']))}${passed ? vd('ok','Well done.','Your performance unlocked the next step.') : vd('info','Keep practising.','Review the topic breakdown and retry this level.')}<div class="btnrow"><button class="btn" id="qagain">${passed && completedLevel < 5 ? 'Start next level' : 'Retry level'}</button></div>`
         );
         $('#qagain', root).onclick = start;
         return;
