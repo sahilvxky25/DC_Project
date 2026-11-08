@@ -150,7 +150,7 @@ export function renderFlow(mod, root, freePlay) {
     stage.className = 'gstage';
     const mixed = shuffle([...meta.q, ...(MSQ_BANK[meta.z] || [])]);
     const labels = mixed.map((item, index) => LEVEL_LABELS[Math.min(index, LEVEL_LABELS.length - 1)]);
-    runQuiz(stage, mixed, labels, (r, secs) => { const whole = Math.round(r); res = applyResult(mod.id, whole, mixed.length, secs); res.right = r; res.total = mixed.length; if (res.m > 0) boom(); go('reward'); });
+    runQuiz(stage, mixed, labels, (r, secs) => { res = applyResult(mod.id, r, mixed.length, secs); res.right = r; res.total = mixed.length; if (res.m > 0) boom(); go('reward'); });
   }
   function reward() {
     stage.className = 'gstage';
