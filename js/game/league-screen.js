@@ -1,7 +1,7 @@
 /** Weekly competition screen: one Firestore-backed batch of up to 20 learners per league. */
 import { $, esc } from '../core/utils.js';
 import { ensureLeagueMembership, getLeagueSnapshot } from './league-service.js';
-import { LEAGUE_SIZE } from './leagues.js';
+import { LEAGUES, LEAGUE_SIZE } from './leagues.js';
 
 const nextMonday = () => {
   const d = new Date();
@@ -23,6 +23,13 @@ export async function renderLeague() {
     const promotion = state.rank <= 5 && state.league.order < 4;
     const demotion = state.rank >= 16 && state.league.order > 0;
     const reset = nextMonday().toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    const leagueDetails = {
+      bronze: { range: 'Starting tier', detail: 'Begin here and build your weekly XP.', color: '#f2d1b0', dark: '#8a542f' },
+      silver: { range: 'Tier 2 of 5', detail: 'Move up by finishing in the top 5 of Bronze.', color: '#e8edf5', dark: '#65758d' },
+      gold: { range: 'Tier 3 of 5', detail: 'Compete for a place among the top learners in Silver.', color: '#ffedaa', dark: '#9a6a00' },
+      platinum: { range: 'Tier 4 of 5', detail: 'Reach Platinum by finishing in the top 5 of Gold.', color: '#d9e9f2', dark: '#527e99' },
+      diamond: { range: 'Highest tier', detail: 'The highest league. Hold your position and aim for the top.', color: '#d9ccff', dark: '#6542b5' }
+    };
     root.innerHTML = `<div class="ghome"><a class="gback" href="#/">‹ Map</a>
       <div class="gcard static league-hero">
         <span class="ge">${state.league.icon}</span><small>YOUR CURRENT LEAGUE</small>
@@ -35,6 +42,18 @@ export async function renderLeague() {
         <small>Weekly reset: ${esc(reset)}</small>
       </div>
       <div class="league-zones"><span class="league-promo">▲ Ranks 1–5 · Promotion</span><span class="league-safe">Ranks 6–15 · Stay</span><span class="league-demo">▼ Ranks 16–20 · Demotion</span></div>
+      <h3 class="gh">Explore all leagues</h3>
+      <p class="gfoot">There are five league tiers. Finish in the top 5 of your batch to advance one tier next week; ranks 16–20 move down one tier. Your current tier is highlighted.</p>
+      <div class="ggrid">${LEAGUES.map(league => {
+        const detail = leagueDetails[league.id];
+        const current = league.id === state.league.id;
+        const relation = current ? 'YOUR CURRENT LEAGUE' : league.order === state.league.order + 1 ? 'NEXT TIER TO REACH' : league.order > state.league.order ? 'HIGHER TIER' : league.order === state.league.order - 1 ? 'PREVIOUS TIER' : 'LEAGUE TIER';
+        return `<div class="gcard static ${current ? 'league-decoration' : ''}" style="--l:${detail.color};--d:${detail.dark}">
+          <span class="ge">${league.icon}</span><small>${relation}</small><b>${esc(league.name)}</b>
+          <small>${detail.range}</small><p>${detail.detail}</p>
+          ${current ? '<strong>✓ You are here</strong>' : ''}
+        </div>`;
+      }).join('')}</div>
       <h3 class="gh">Your batch · ${state.memberCount} of ${LEAGUE_SIZE} learners</h3>
       <div class="gcard static league-board"><ol>${state.leaderboard.map(member => `<li class="${member.uid === state.uid ? 'is-you' : ''}">
         <span class="league-rank">#${member.rank}</span><b>${esc(member.name || 'Learner')}${member.uid === state.uid ? ' (You)' : ''}</b><span>${Number(member.weeklyXp) || 0} XP</span>
