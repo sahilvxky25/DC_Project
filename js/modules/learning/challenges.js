@@ -558,9 +558,13 @@ regMod({
         const feedback = multi
           ? `<p>You selected ${correctSelections} correct option(s), ${incorrectSelections} incorrect option(s), and missed ${missedSelections} correct option(s). Partial credit: ${Math.round(credit * 100)}%.</p>`
           : '';
+        const solution = multi
+          ? `<section class="msq-solution"><strong>Correct answers:</strong> ${correctSet.map(k => `${'ABCD'[k]}. ${esc(q[2][k])}`).join('; ')}<p><strong>Explanation:</strong> ${esc(q[4])}</p></section>`
+          : '';
         $('#qfb', root).innerHTML =
           (ok ? vd('ok', feedbackTitle, esc(q[4])) : vd('bad', feedbackTitle, esc(q[4]))) +
           feedback +
+          solution +
           `<div class="btnrow"><button class="btn" id="qn">${i + 1 >= qs.length ? 'See results' : 'Next question'}</button></div>`;
         $('#qn', root).onclick = () => {
           i++;
