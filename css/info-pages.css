@@ -40,3 +40,15 @@
  .info-cta { align-items: flex-start; flex-direction: column; }
  .patreon-panel { flex-direction: column; }
 }
+
+/* Always-available project pages in the signed-in application header. */
+.topbar-info-links { display: inline-flex; align-items: center; gap: .45rem; flex: 0 0 auto; }
+.topbar-info-links a { color: var(--muted); text-decoration: none; font-size: .82rem; font-weight: 600; padding: .42rem .58rem; border-radius: 9px; white-space: nowrap; }
+.topbar-info-links a:hover, .topbar-info-links a:focus-visible { color: var(--text); background: var(--surface); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .topbar-info-links { gap: .15rem; }
+  .topbar-info-links a { font-size: .74rem; padding: .35rem .4rem; }
+}
+@media (max-width: 520px) {
+  .topbar-info-links { order: 5; width: 100%; justify-content: flex-start; }
+}

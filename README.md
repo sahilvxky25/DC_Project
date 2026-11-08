@@ -24,6 +24,12 @@ BitSecure is an interactive, browser-based Data Communications and Computer Netw
 - Build and explore network topologies.
 - Experiment with a Wi-Fi simulator covering access points, clients, SSID, band, channel, signal coverage, simplified interference, and obstacles.
 
+### Live local network inventory
+- Optionally inspect this computer's OS-reported network interfaces, default routes, neighbour cache, and current Wi-Fi connection.
+- Uses a separate Python 3.9+ helper bound to `127.0.0.1`; the browser module is read-only and works only while the helper is running.
+- The helper performs no host discovery, ping, port scan, packet capture, or network configuration changes.
+- Neighbour-cache entries are not a complete device inventory or physical topology. See `tools/network-agent/README.md` for setup and limitations.
+
 ### Transport layer
 - Compare TCP and UDP and inspect transport headers and ports.
 - Step through the TCP handshake.
@@ -53,6 +59,70 @@ BitSecure is an interactive, browser-based Data Communications and Computer Netw
 - Firestore synchronizes account-specific learning progress, achievements, run history, quiz statistics, notes, theme, and last visited screen.
 - A local account-specific cache helps preserve progress when cloud access is temporarily unavailable.
 - Responsive navigation includes a collapsible desktop sidebar and a mobile navigation drawer.
+
+## Daily quizzes and weekly leagues
+
+- The daily quiz selects five questions from the registered module-question bank and changes its selection each UTC day.
+- A daily attempt is recorded once per learner per day and awards XP based on the score.
+- Weekly competition uses five tiers: Bronze, Silver, Gold, Platinum, and Diamond.
+- Each batch targets a maximum of 20 learners. The leaderboard ranks weekly XP; ranks 1–5 are promotion positions, 6–15 stay in the same tier, and 16–20 are demotion positions. Diamond is the highest tier and Bronze is the entry tier.
+- Eligible module quiz rewards count once per module per competition week. The daily quiz counts once per day. Lifetime XP and the existing progress document remain separate from weekly XP.
+- Top-five finishes unlock exclusive profile decoration records. Decorations are displayed on the learner profile.
+
+### Firestore data used by leagues
+
+The league feature uses these additional paths:
+
+```text
+users/{uid}/league/profile
+leagueWeeks/{weekId}/batches/{batchId}
+leagueWeeks/{weekId}/batches/{batchId}/members/{uid}
+```
+
+The batch stores its tier and member count; each learner's score is in their own member document. This keeps one learner from directly editing another learner's member document when rules are configured accordingly.
+
+For a **prototype-only test**, add the following match blocks inside your existing `service cloud.firestore { match /databases/{database}/documents { ... } }` rules. Keep your existing `users/{userId}` ownership rules:
+
+```javascript
+match /leagueWeeks/{weekId}/batches/{batchId} {
+  allow read: if request.auth != null;
+  allow create: if request.auth != null
+    && request.resource.data.tier in ['bronze', 'silver', 'gold', 'platinum', 'diamond']
+    && request.resource.data.memberCount == 1;
+  allow update: if request.auth != null
+    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'updatedAt'])
+    && request.resource.data.memberCount == resource.data.memberCount + 1
+    && request.resource.data.memberCount <= 20;
+  allow delete: if false;
+
+  match /members/{uid} {
+    allow read: if request.auth != null;
+    allow create: if request.auth != null
+      && request.auth.uid == uid
+      && request.resource.data.weeklyXp == 0
+      && request.resource.data.eventIds.size() == 0;
+    allow update: if request.auth != null
+      && request.auth.uid == uid
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['weeklyXp', 'eventIds', 'updatedAt'])
+      && request.resource.data.weeklyXp >= resource.data.weeklyXp
+      && request.resource.data.weeklyXp <= resource.data.weeklyXp + 100
+      && request.resource.data.eventIds.size() <= 100;
+    allow delete: if false;
+  }
+}
+```
+
+These rules restrict writes to each learner's own score document, but **do not make the score trustworthy**: a user can still award themselves repeated increments. Use them only for a closed prototype with no valuable rewards. Replace client score writes with a trusted server endpoint before opening the competition publicly.
+
+The query index for batch allocation is in `firestore.indexes.json`; deploy it with the Firebase CLI:
+
+```bash
+firebase deploy --only firestore:indexes
+```
+
+**Important competition security limitation:** this branch's browser implementation submits XP events directly to Firestore. Per-user member documents help isolate writes, but a determined user can still forge their own score by calling the Firestore API. Do not use these scores for prizes, paid benefits, or trusted rankings until quiz attempts and score awards are validated by a trusted Firebase Cloud Function or your existing Azure API. In production, deny direct client writes to league scores and let that trusted backend create memberships, award XP, settle weekly ranks, and grant decorations. Firestore rules must also permit authenticated reads of the relevant batch and member documents while restricting member writes to the matching UID. Do not use broad test-mode rules in production.
+
+The client computes promotion/demotion when a learner returns in the new UTC week using the frozen prior-week leaderboard. This is suitable for a prototype; a trusted scheduled settlement job should finalize all batches and rewards for production.
 
 ## Technology
 
@@ -247,3 +317,14 @@ Keep protocol logic separate from DOM rendering where practical, reuse shared he
 - **ES module:** A JavaScript file that shares functionality through `import` and `export`.
 - **Hash routing:** Using the URL fragment (the part after `#`) to select a screen without a full page reload.
 - **TLS:** Transport Layer Security; a protocol for protecting data in transit.
+
+## Game layer (new look)
+
+The interface is now a game-style shell around the existing modules. Nothing in `js/modules/`, `js/simulations/`, `js/core/` or `js/lab/` was rewritten.
+
+- **Flow:** every quiz module runs Watch → Play → Quiz → Reward. *Play* is the module's own `mount(root)`. Add `/play` to a module URL (`#/m/dns/play`) for free play with no quiz and no XP.
+- **Screens:** home map (`#/`), zones (`#/zone/<id>`), profile and badges (`#/profile`), daily challenge (`#/daily`).
+- **Themes:** light = Sticker, dark = Game tiles. Both are token overrides in `css/game.css`, so every simulator is restyled automatically.
+- **Code:** `js/game/data.js` (zones, difficulty, Watch scenes, quizzes), `rules.js` (pure XP, medal, level and streak rules), `store.js` (saves into the existing progress object, so Firebase sync keeps working), `flow.js`, `screens.js`, `ui.js`.
+- **Add a quiz to a module:** add an entry to `META` in `js/game/data.js` (`z` zone, `d` difficulty, `e` emoji, `w` Watch scene, `q` five `question|correct|wrong|wrong` strings).
+- **Tests:** `node --test tests/rules.test.mjs`

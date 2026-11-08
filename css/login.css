@@ -169,3 +169,4 @@
 .verification-lead, .verification-help, .verification-resend-note { margin: 0; color: var(--muted); line-height: 1.6; font-size: .9rem; }
 .verification-address { margin: -5px 0 0; padding: 11px 12px; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg2); color: var(--text); font-weight: 700; }
 .verification-resend-note { font-size: .8rem; }
+
