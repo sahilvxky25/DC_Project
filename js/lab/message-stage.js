@@ -1,0 +1,82 @@
+/**
+ * core lab stage 1: message -> UTF-8 bytes
+ *
+ * Reads the text box, encodes it to UTF-8 and draws one card per byte showing its character, hex,
+ * decimal and bit pattern. It stores the result in S.bytes, from which every later stage works.
+ *
+ * Imports:
+ *   - ../core/utils.js (tiny DOM, math and timing helpers): $, esc
+ *   - ../core/state.js (shared in-memory state): S
+ *   - ../core/encoding.js (bytes, hex, bits and UTF-8 helpers): bin8, enc, hex
+ *   - ../app/progress.js (achievements, flags and statistics): flag
+ *   - ./top-stats.js (top-bar counters): setTop
+ *
+ * Exports: encodeMsg
+ *
+ * Used by: lab/lab-init.js
+ */
+
+import { bin8, enc, hex } from '../core/encoding.js';
+import { S } from '../core/state.js';
+import { $, esc } from '../core/utils.js';
+import { flag } from '../app/progress.js';
+import { setTop } from './top-stats.js';
+
+/**
+ * Stage 1: encodes the message box to UTF-8, stores S.bytes and draws the byte cards.
+ *
+ * Side effects: updates S.msg and S.bytes, the DOM, the top-bar counters, and records the "typed" flag.
+ */
+export function encodeMsg() {
+  if (S.dataType === 'image' || S.dataType === 'video' || S.dataType === 'document' || S.dataType === 'audio') {
+    const isVideo = S.dataType === 'video';
+    const isDocument = S.dataType === 'document';
+    const isAudio = S.dataType === 'audio';
+    const fileName = isAudio ? S.audioName : isDocument ? S.documentName : isVideo ? S.videoName : S.imageName;
+    const mimeType = isAudio ? S.audioMimeType : isDocument ? S.documentMimeType : isVideo ? S.videoMimeType : S.imageMimeType;
+    const fileSize = isAudio ? S.audioSize : isDocument ? S.documentSize : isVideo ? S.videoSize : S.imageSize;
+    const details = isAudio ? 'Audio' + (S.audioDuration ? ' · ' + S.audioDuration.toFixed(1) + ' sec' : '') : isDocument ? (mimeType || 'Document') + ' · original file bytes' : isVideo ? (S.videoWidth && S.videoHeight ? S.videoWidth + ' × ' + S.videoHeight : 'Video') + (S.videoDuration ? ' · ' + S.videoDuration.toFixed(1) + ' sec' : '') : 'Binary image';
+    $('#bytes').innerHTML = '<div class="image-byte-summary"><strong>' + S.bytes.length.toLocaleString() + ' binary bytes</strong><span>Original file bytes are preserved; no UTF-8 conversion is performed.</span></div>';
+    $('#bsum').textContent = (fileName || (isAudio ? 'Audio' : isDocument ? 'Document' : isVideo ? 'Video' : 'Image')) + ' · ' + S.bytes.length.toLocaleString() + ' bytes · ' + (mimeType || 'binary data');
+    $('#mstats').innerHTML = [[S.bytes.length.toLocaleString(), 'bytes'], [fileSize ? (fileSize / (1024 * 1024)).toFixed(2) + ' MB' : '—', 'file size'], [details, isAudio ? 'audio details' : isDocument ? 'document format' : isVideo ? 'video details' : 'data format']].map(([v, name]) => '<div class="stat"><b>' + v + '</b><span>' + name + '</span></div>').join('');
+    setTop(S.bytes.length);
+    return;
+  }
+  const text = $('#msg').value,
+    // Array.from splits by Unicode code point; text.split("") would cut emoji and other astral
+    // characters in half.
+    chars = Array.from(text);
+  S.msg = text;
+  S.bytes = [];
+  let h = '';
+  chars.forEach(c => {
+    // UTF-8 encode one character: 1 byte for ASCII, up to 4 bytes for others. Bytes after the
+    // first are "continuation" bytes.
+    const bs = Array.from(enc.encode(c));
+    bs.forEach((b, j) => {
+      S.bytes.push(b);
+      const label = j === 0 ? esc(c === ' ' ? '␠' : c) : `part ${j + 1}`;
+      h += `<div class="by" title="${j === 0 ? 'U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0') : 'continuation byte'}"><div class="g${j ? ' c' : ''}">${label}</div><div class="h">${hex(b)}</div><div class="dec">decimal ${b}</div><div class="bits">${bin8(
+        b
+      )
+        .split('')
+        .map(x => `<i class="${x === '1' ? 'on' : ''}"></i>`)
+        .join('')}</div></div>`;
+    });
+  });
+  $('#bytes').innerHTML = h || '<p class="hint">Type a message above to see its bytes.</p>';
+  const multi = chars.filter(c => enc.encode(c).length > 1).length;
+  $('#bsum').textContent = chars.length
+    ? `${chars.length} character${chars.length > 1 ? 's' : ''} became ${S.bytes.length} byte${S.bytes.length > 1 ? 's' : ''}.${multi ? ` ${multi} of them needed more than one byte.` : ' All of them fit in a single byte.'}`
+    : 'The message is empty.';
+  $('#mstats').innerHTML = [
+    [chars.length, 'characters'],
+    [S.bytes.length, 'bytes'],
+    [chars.length ? (S.bytes.length / chars.length).toFixed(2) : '0', 'bytes per char'],
+    [multi, 'multi-byte chars'],
+  ]
+    .map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`)
+    .join('');
+  setTop(S.bytes.length);
+  flag('typed');
+}
