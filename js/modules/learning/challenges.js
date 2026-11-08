@@ -456,7 +456,7 @@ regMod({
     let qs = [], i = 0, pts = 0, answered = false, hinted = false, res = [], level = Math.max(1, Math.min(5, Number(P.stats.quizLevel) || 1));
     const shuffle = items => { const copy=items.slice(); for(let n=copy.length-1;n>0;n--){const j=Math.floor(Math.random()*(n+1));[copy[n],copy[j]]=[copy[j],copy[n]];} return copy; };
     const start = () => {
-      const tier = level === 1 ? QBANK : [...(LEVEL_BANKS[level] || []), ...QBANK];
+      const tier = level === 1 ? QBANK : (LEVEL_BANKS[level] || QBANK);
       const bank = shuffle(tier).slice(0, 6);
       qs = shuffle([...bank, genQuestion(level), genQuestion(level)]);
       i = 0;
