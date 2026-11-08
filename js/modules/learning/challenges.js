@@ -511,7 +511,7 @@ regMod({
       root.innerHTML = panel(
         `Question ${i + 1} of ${qs.length}`,
         `<div class="quizq"><small class="tagc">Level ${level} · ${esc(LEVELS[level-1])} · Question ${i+1}/${qs.length}</small><div class="bar"><i style="width:${(i / qs.length) * 100}%"></i></div><small class="tagc">${q[0]}</small><p class="big">${esc(q[1])}</p></div>
-        <small class="tagc">${Array.isArray(q[3]) ? 'MSQ · Select all that apply' : 'MCQ · Select one answer'}</small><div class="opts" id="qo">${q[2].map((o, k) => `<button type="button" class="opt" data-k="${k}" aria-pressed="false"><span>${'ABCD'[k]}</span>${esc(o)}</button>`).join('')}</div><div id="qfb"></div>
+        <small class="tagc">${Array.isArray(q[3]) ? 'MSQ · Select all that apply' : 'MCQ · Select one answer'}</small><div class="opts ${Array.isArray(q[3]) ? 'msq-options' : 'mcq-options'}" id="qo">${q[2].map((o, k) => Array.isArray(q[3]) ? `<label class="msq-option"><input class="msq-check" type="checkbox" data-k="${k}"><span><b>${'ABCD'[k]}.</b> ${esc(o)}</span></label>` : `<button type="button" class="opt" data-k="${k}"><span>${'ABCD'[k]}</span>${esc(o)}</button>`).join('')}</div><div id="qfb"></div>
         <div class="btnrow">${Array.isArray(q[3]) ? '<button class="btn" id="qsubmit">Submit answers</button>' : ''}<button class="btn ghost sm" id="qh">Show hint</button><button class="btn ghost sm" id="qs">Skip</button></div>`
       );
       $('#qh', root).onclick = () => {
@@ -528,7 +528,9 @@ regMod({
       const multi = Array.isArray(q[3]);
       const submitAnswer = () => {
         if (answered) return;
-        const selected = $$('.opt.selected', root).map(o => +o.dataset.k);
+        const selected = multi
+          ? $('.msq-check:checked', root).map(input => +input.dataset.k)
+          : $('.opt.selected', root).map(o => +o.dataset.k);
         const correctSet = multi ? q[3] : [q[3]];
         if (multi && selected.length === 0) {
           $('#qfb', root).innerHTML = vd('info', 'Select at least one answer.', 'Choose every option you believe is correct before submitting.');
@@ -544,12 +546,13 @@ regMod({
         const ok = credit >= 0.999;
         res.push({ tag: q[0], ok, credit });
         pts += credit * (hinted ? 1 : 2);
-        $$('.opt', root).forEach((o, n) => {
+        $('.opt, .msq-option', root).forEach((o, n) => {
           const isCorrect = correctSet.includes(n);
           const wasSelected = selected.includes(n);
           o.classList.toggle('right', isCorrect);
           o.classList.toggle('wrong', wasSelected && !isCorrect);
-          o.disabled = true;
+          const control = o.matches('.msq-option') ? $('input', o) : o;
+          if (control) control.disabled = true;
         });
         const feedbackTitle = ok ? 'Correct.' : (credit > 0 ? 'Partially correct.' : 'Not quite.');
         const feedback = multi
@@ -565,20 +568,22 @@ regMod({
         };
         $('#qn', root).focus();
       };
-      $('#qo', root).onclick = e => {
-        const b = e.target.closest('.opt');
-        if (!b || answered) return;
-        if (multi) {
-          const selected = !b.classList.contains('selected');
-          b.classList.toggle('selected', selected);
-          b.setAttribute('aria-pressed', String(selected));
-          return;
-        }
-        $$('.opt', root).forEach(o => o.classList.remove('selected'));
-        b.classList.add('selected');
-        submitAnswer();
-      };
-      if (multi) $('#qsubmit', root).onclick = submitAnswer;
+      if (multi) {
+        // Native checkbox controls handle selection; keep the label highlighted for feedback.
+        $('#qo', root).onchange = e => {
+          if (answered || !e.target.matches('.msq-check')) return;
+          e.target.closest('.msq-option')?.classList.toggle('selected', e.target.checked);
+        };
+        $('#qsubmit', root).onclick = submitAnswer;
+      } else {
+        $('#qo', root).onclick = e => {
+          const b = e.target.closest('.opt');
+          if (!b || answered) return;
+          $('.opt', root).forEach(o => o.classList.remove('selected'));
+          b.classList.add('selected');
+          submitAnswer();
+        };
+      }
     };
     start();
   },
