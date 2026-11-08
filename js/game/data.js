@@ -158,3 +158,28 @@ export const FACTS = [
   'The client-server model has a client request a service and a server respond to that request.',
   'The OSI model has seven layers, from the physical layer up to the application layer.',
 ];
+
+
+/** Multi-select questions added alongside the legacy MCQ bank. Each answer list contains every correct option. */
+export const MSQ_BANK = {
+  link: [
+    { q: 'Which techniques can detect transmission errors?', a: ['Parity bit', 'CRC'], o: ['Parity bit', 'CRC', 'Encryption', 'Routing'] },
+    { q: 'Which are ARQ reliability mechanisms?', a: ['Stop-and-Wait', 'Go-Back-N', 'Selective Repeat'], o: ['Stop-and-Wait', 'Go-Back-N', 'Selective Repeat', 'DNS caching'] },
+  ],
+  network: [
+    { q: 'Which are valid private IPv4 address ranges?', a: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16'], o: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '8.8.8.0/24'] },
+    { q: 'Which devices commonly forward traffic at Layer 3?', a: ['Router', 'Layer-3 switch'], o: ['Router', 'Layer-3 switch', 'Repeater', 'Hub'] },
+  ],
+  transport: [
+    { q: 'Which statements about TCP are true?', a: ['It provides ordered byte-stream delivery', 'It uses acknowledgements', 'It can retransmit lost data'], o: ['It provides ordered byte-stream delivery', 'It uses acknowledgements', 'It can retransmit lost data', 'It has no connection state'] },
+    { q: 'Which are commonly associated with UDP?', a: ['Low protocol overhead', 'Datagram delivery', 'No built-in retransmission guarantee'], o: ['Low protocol overhead', 'Datagram delivery', 'No built-in retransmission guarantee', 'Guaranteed in-order delivery'] },
+  ],
+  application: [
+    { q: 'Which are common DNS record types?', a: ['A', 'AAAA', 'MX', 'CNAME'], o: ['A', 'AAAA', 'MX', 'CNAME', 'SYN'] },
+    { q: 'Which are HTTP request methods?', a: ['GET', 'POST', 'PUT', 'DELETE'], o: ['GET', 'POST', 'PUT', 'DELETE', 'ACK'] },
+  ],
+  security: [
+    { q: 'Which are core goals of secure communication?', a: ['Confidentiality', 'Integrity', 'Authentication'], o: ['Confidentiality', 'Integrity', 'Authentication', 'Higher bandwidth'] },
+    { q: 'Which practices improve account security?', a: ['Use unique passwords', 'Enable multi-factor authentication', 'Apply least privilege'], o: ['Use unique passwords', 'Enable multi-factor authentication', 'Apply least privilege', 'Reuse one password everywhere'] },
+  ],
+};
