@@ -461,7 +461,7 @@ regMod({
   id: 'challenges',
   group: 'learn',
   title: 'Challenges and checks',
-  desc: 'Eight-question quizzes drawn from a bank of questions plus freshly generated calculations, with hints and explanations.',
+  desc: 'Eight-question mixed MCQ and MSQ quizzes drawn from a question bank plus freshly generated calculations, with partial credit, hints and explanations.',
   obj: [
     'Answer knowledge checks across every layer.',
     'Use hints sparingly: a hinted answer scores half.',
