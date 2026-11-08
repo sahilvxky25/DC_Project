@@ -122,6 +122,7 @@ export function route() {
           <div class="developer-grid">
             <article class="developer-card"><div class="developer-avatar">SP</div><div><h3>Sahil Patra</h3><p>Developer</p><a href="https://github.com/sahilvxky25" target="_blank" rel="noopener noreferrer">@sahilvxky25 ↗</a></div></article>
             <article class="developer-card"><div class="developer-avatar">AA</div><div><h3>Aiyush Anand</h3><p>Developer</p><a href="https://github.com/AIYUSHH" target="_blank" rel="noopener noreferrer">@AIYUSHH ↗</a></div></article>
+            <article class="developer-card"><div class="developer-avatar">SR</div><div><h3>Somya Ranjan</h3><p>Developer</p><a href="https://github.com/Somya22005" target="_blank" rel="noopener noreferrer">@Somya22005 ↗</a></div></article>
           </div>
         </section>
         <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>`
