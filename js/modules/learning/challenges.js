@@ -473,6 +473,7 @@ regMod({
         const passed=pct>=70, completedLevel=level, nextLevel=passed?Math.min(5,level+1):level;
         if(nextLevel>(Number(P.stats.quizLevel)||1)) setStat('quizLevel',nextLevel);
         if(completedLevel>(Number(P.stats.quizHighestLevel)||1)) setStat('quizHighestLevel',completedLevel);
+        level = nextLevel;
         const history=Array.isArray(P.stats.quizHistory)?P.stats.quizHistory.slice(0,7):[];
         history.unshift({level:completedLevel,score:pct,points:pts,ts:Date.now()}); setStat('quizHistory',history.slice(0,8));
         const tags = {};
