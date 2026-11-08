@@ -529,8 +529,8 @@ regMod({
       const submitAnswer = () => {
         if (answered) return;
         const selected = multi
-          ? $('.msq-check:checked', root).map(input => +input.dataset.k)
-          : $('.opt.selected', root).map(o => +o.dataset.k);
+          ? $$('.msq-check:checked', root).map(input => +input.dataset.k)
+          : $$('.opt.selected', root).map(o => +o.dataset.k);
         const correctSet = multi ? q[3] : [q[3]];
         if (multi && selected.length === 0) {
           $('#qfb', root).innerHTML = vd('info', 'Select at least one answer.', 'Choose every option you believe is correct before submitting.');
@@ -546,7 +546,7 @@ regMod({
         const ok = credit >= 0.999;
         res.push({ tag: q[0], ok, credit });
         pts += credit * (hinted ? 1 : 2);
-        $('.opt, .msq-option', root).forEach((o, n) => {
+        $$('.opt, .msq-option', root).forEach((o, n) => {
           const isCorrect = correctSet.includes(n);
           const wasSelected = selected.includes(n);
           o.classList.toggle('right', isCorrect);
