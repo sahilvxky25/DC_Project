@@ -579,7 +579,7 @@ regMod({
         $('#qo', root).onclick = e => {
           const b = e.target.closest('.opt');
           if (!b || answered) return;
-          $('.opt', root).forEach(o => o.classList.remove('selected'));
+          $$('.opt', root).forEach(o => o.classList.remove('selected'));
           b.classList.add('selected');
           submitAnswer();
         };
