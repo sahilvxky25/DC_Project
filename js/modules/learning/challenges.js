@@ -528,7 +528,7 @@ regMod({
       const multi = Array.isArray(q[3]);
       const submitAnswer = () => {
         if (answered) return;
-        const selected = $('.opt.selected', root).map(o => +o.dataset.k);
+        const selected = $$('.opt.selected', root).map(o => +o.dataset.k);
         const correctSet = multi ? q[3] : [q[3]];
         if (multi && selected.length === 0) {
           $('#qfb', root).innerHTML = vd('info', 'Select at least one answer.', 'Choose every option you believe is correct before submitting.');
@@ -544,7 +544,7 @@ regMod({
         const ok = credit >= 0.999;
         res.push({ tag: q[0], ok, credit });
         pts += credit * (hinted ? 1 : 2);
-        $('.opt', root).forEach((o, n) => {
+        $$('.opt', root).forEach((o, n) => {
           const isCorrect = correctSet.includes(n);
           const wasSelected = selected.includes(n);
           o.classList.toggle('right', isCorrect);
@@ -574,7 +574,7 @@ regMod({
           b.setAttribute('aria-pressed', String(selected));
           return;
         }
-        $('.opt', root).forEach(o => o.classList.remove('selected'));
+        $$('.opt', root).forEach(o => o.classList.remove('selected'));
         b.classList.add('selected');
         submitAnswer();
       };
