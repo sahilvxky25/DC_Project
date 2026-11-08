@@ -339,6 +339,21 @@ const QBANK = [
   ],
 ];
 
+// Multi-select questions use an array of correct option indexes. Legacy questions
+// above and in LEVEL_BANKS keep their original single-correct-index format.
+const MSQ_QBANK = [
+  ['Encoding', 'Which statements about UTF-8 are correct?', ['ASCII characters use one byte', 'UTF-8 uses one to four bytes per code point', 'Every Unicode character uses exactly four bytes', 'UTF-8 is variable length'], [0, 1, 3], 'UTF-8 is variable length and preserves ASCII as one-byte sequences.', 'Look for the statements describing variable-length encoding and ASCII compatibility.'],
+  ['Framing', 'Which statements about bit stuffing are correct?', ['A 0 is inserted after five consecutive 1s', 'The receiver removes stuffed 0s', 'Stuffing encrypts the payload', 'It helps prevent data from looking like a flag'], [0, 1, 3], 'Bit stuffing inserts a 0 after five 1s and the receiver removes it; it is not encryption.', 'Think about how the flag pattern is kept distinct from data.'],
+  ['Errors', 'Which statements about CRC are correct?', ['It uses polynomial division', 'It can detect many burst errors', 'It guarantees correction of every error', 'Ethernet uses a CRC in its frame check sequence'], [0, 1, 3], 'CRC detects errors; it does not itself correct every possible error.', 'Separate error detection from error correction.'],
+  ['ARQ', 'Which statements about Selective Repeat are correct?', ['Correctly received out-of-order frames can be buffered', 'Only missing or damaged frames need retransmission', 'Its window can be the full sequence-number space', 'It uses acknowledgements for individual frames'], [0, 1, 3], 'Selective Repeat buffers valid out-of-order frames and retransmits selectively; its window is at most half the sequence space.', 'Compare selective retransmission with Go-Back-N.'],
+  ['IP', 'Which statements about IPv4 fragmentation are correct?', ['Fragment offsets are measured in 8-byte units', 'All fragments except the last have data lengths divisible by 8', 'The fragment offset identifies the original packet number', 'The MF flag indicates more fragments follow'], [0, 1, 3], 'Offsets use 8-byte units, non-final fragment data is aligned to 8 bytes, and MF marks additional fragments.', 'Recall the fragment offset units and MF flag.'],
+  ['TCP', 'Which statements about TCP are correct?', ['It provides a reliable byte stream', 'It preserves application message boundaries', 'It uses sequence and acknowledgement numbers', 'It includes flow control'], [0, 2, 3], 'TCP is a reliable byte stream with sequence/ACK numbers and receiver flow control; it does not preserve message boundaries.', 'Think about stream semantics versus message-oriented protocols.'],
+  ['DNS', 'Which statements about DNS are correct?', ['An A record stores an IPv4 address', 'An AAAA record stores an IPv6 address', 'MX records identify mail exchangers', 'DNS caching ignores TTL values'], [0, 1, 2], 'A, AAAA and MX records have those roles; cached records are governed by TTL.', 'Match each record type to its purpose.'],
+  ['HTTP', 'Which statements about HTTP methods are correct?', ['GET is intended to retrieve a representation', 'PUT is defined as idempotent', 'POST is always idempotent', 'DELETE requests removal of a resource association'], [0, 1, 3], 'GET retrieves, PUT is idempotent, and DELETE requests removal; POST is not guaranteed idempotent.', 'Consider the intended semantics of each method.'],
+  ['TLS', 'Which statements about TLS are correct?', ['Certificates can authenticate a server identity', 'Authenticated encryption can provide confidentiality and integrity', 'TLS removes the need for application authentication in every case', 'The handshake negotiates cryptographic parameters'], [0, 1, 3], 'TLS authenticates endpoints and negotiates cryptographic parameters; application-level authorization may still be needed.', 'Separate transport security from application authorization.'],
+  ['Routing', 'Which statements about routing are correct?', ['Longest-prefix match selects the most specific matching route', 'A default route is commonly represented by /0 in IPv4', 'A router forwards every packet to all interfaces', 'Routing tables can contain a next hop and outgoing interface'], [0, 1, 3], 'Routers use longest-prefix match, may use a default route, and select a next hop/interface.', 'Think about route selection, not flooding.'],
+];
+
 const LEVELS = ['Beginner','Intermediate','Advanced','Expert','Master'];
 const LEVEL_BANKS = {
 2: [['Subnetting','A /27 subnet is carved from a /24. How many /27 subnets fit?',['4','8','16','32'],1,'Three extra network bits give 2^3 = 8 subnets.','Compare prefix lengths.'],['TCP','A 12,000-byte congestion window uses 1,200-byte MSS. How many full segments fit?',['8','9','10','12'],2,'12,000 / 1,200 = 10 segments.','Divide window by MSS.'],['Routing','Routes /8, /16 and /21 match 10.4.9.7. Which wins?',['/8','/16','/21','None'],2,'The /21 is the most specific matching route.','Use longest-prefix matching.'],['DNS','A 900-second TTL was cached 240 seconds ago. How long remains?',['240 s','660 s','900 s','1,140 s'],1,'900 − 240 = 660 seconds remain.','Subtract elapsed time.'],['Errors','A CRC generator has degree 4. How many zero bits are appended?',['2','3','4','5'],2,'CRC appends r zeros where r is the generator degree.','Use polynomial degree.'],['HTTP','Repeating the same PUT request should be…',['Non-repeatable','Idempotent','A GET','A new resource each time'],1,'PUT is idempotent: repetition has the same intended effect.','Think about repeating an operation.']],
@@ -457,7 +472,7 @@ regMod({
     const shuffle = items => { const copy=items.slice(); for(let n=copy.length-1;n>0;n--){const j=Math.floor(Math.random()*(n+1));[copy[n],copy[j]]=[copy[j],copy[n]];} return copy; };
     const start = () => {
       const tier = level === 1 ? QBANK : (LEVEL_BANKS[level] || QBANK);
-      const bank = shuffle(tier).slice(0, 6);
+      const bank = shuffle([...tier, ...MSQ_QBANK]).slice(0, 6);
       qs = shuffle([...bank, genQuestion(level), genQuestion(level)]);
       i = 0;
       pts = 0;
@@ -466,8 +481,9 @@ regMod({
     };
     const show = () => {
       if (i >= qs.length) {
-        const c = res.filter(r => r.ok).length,
-          pct = Math.round((c / qs.length) * 100);
+        const c = res.filter(r => (r.credit || 0) >= 0.999).length,
+          earned = res.reduce((sum, r) => sum + (r.credit || 0), 0),
+          pct = Math.round((earned / qs.length) * 100);
         stat('quizRuns');
         if (pct > P.stats.quizBest) setStat('quizBest', pct);
         const passed=pct>=70, completedLevel=level, nextLevel=passed?Math.min(5,level+1):level;
@@ -480,11 +496,11 @@ regMod({
         res.forEach(r => {
           tags[r.tag] = tags[r.tag] || [0, 0];
           tags[r.tag][1]++;
-          if (r.ok) tags[r.tag][0]++;
+          tags[r.tag][0] += (r.credit || 0);
         });
         root.innerHTML = panel(
           'Quiz results',
-          `<div class="quizq"><small class="tagc">${LEVELS[completedLevel-1]} · Level ${completedLevel}</small><p class="big">${c} of ${qs.length} correct (${pct}%)</p><p>${passed ? (completedLevel < 5 ? 'Level passed — next level unlocked.' : 'Master level cleared — highest tier reached.') : 'Level not passed. Score at least 70% to unlock the next level.'}</p></div>${statRow([[pts + '/' + qs.length * 2, 'points (hints cost half)'],[P.stats.quizBest + '%', 'all-time best'],[P.stats.quizRuns, 'quizzes taken'],[Math.max(1,Number(P.stats.quizHighestLevel)||1)+'/5', 'highest level unlocked']])}<div class="quizq"><b>Difficulty progress</b><div class="bar"><i style="width:${(Math.max(1,Number(P.stats.quizHighestLevel)||1)/5)*100}%"></i></div><small>Next: ${LEVELS[nextLevel-1]}</small></div>${tbl(['Topic','Correct'],Object.entries(tags).map(([t,v])=>[t,v[0]+' of '+v[1]]))}${tbl(['Recent level','Score'],history.slice(0,5).map(run=>[LEVELS[Math.max(1,Math.min(5,run.level))-1],run.score+'%']))}${passed ? vd('ok','Well done.','Your performance unlocked the next step.') : vd('info','Keep practising.','Review the topic breakdown and retry this level.')}<div class="btnrow"><button class="btn" id="qagain">${passed && completedLevel < 5 ? 'Start next level' : 'Retry level'}</button></div>`
+          `<div class="quizq"><small class="tagc">${LEVELS[completedLevel-1]} · Level ${completedLevel}</small><p class="big">${c} fully correct · ${pct}% overall (${earned.toFixed(2)} / ${qs.length} question-points)</p><p>${passed ? (completedLevel < 5 ? 'Level passed — next level unlocked.' : 'Master level cleared — highest tier reached.') : 'Level not passed. Score at least 70% to unlock the next level.'}</p></div>${statRow([[pts + '/' + qs.length * 2, 'points (partial credit; hints halve points)'],[P.stats.quizBest + '%', 'all-time best'],[P.stats.quizRuns, 'quizzes taken'],[Math.max(1,Number(P.stats.quizHighestLevel)||1)+'/5', 'highest level unlocked']])}<div class="quizq"><b>Difficulty progress</b><div class="bar"><i style="width:${(Math.max(1,Number(P.stats.quizHighestLevel)||1)/5)*100}%"></i></div><small>Next: ${LEVELS[nextLevel-1]}</small></div>${tbl(['Topic','Score'],Object.entries(tags).map(([t,v])=>[t,Math.round((v[0]/v[1])*100)+'%']))}${tbl(['Recent level','Score'],history.slice(0,5).map(run=>[LEVELS[Math.max(1,Math.min(5,run.level))-1],run.score+'%']))}${passed ? vd('ok','Well done.','Your performance unlocked the next step.') : vd('info','Keep practising.','Review the topic breakdown and retry this level.')}<div class="btnrow"><button class="btn" id="qagain">${passed && completedLevel < 5 ? 'Start next level' : 'Retry level'}</button></div>`
         );
         $('#qagain', root).onclick = start;
         return;
@@ -495,8 +511,8 @@ regMod({
       root.innerHTML = panel(
         `Question ${i + 1} of ${qs.length}`,
         `<div class="quizq"><small class="tagc">Level ${level} · ${esc(LEVELS[level-1])} · Question ${i+1}/${qs.length}</small><div class="bar"><i style="width:${(i / qs.length) * 100}%"></i></div><small class="tagc">${q[0]}</small><p class="big">${esc(q[1])}</p></div>
-        <div class="opts" id="qo">${q[2].map((o, k) => `<button class="opt" data-k="${k}"><span>${'ABCD'[k]}</span>${esc(o)}</button>`).join('')}</div><div id="qfb"></div>
-        <div class="btnrow"><button class="btn ghost sm" id="qh">Show hint</button><button class="btn ghost sm" id="qs">Skip</button></div>`
+        <small class="tagc">${Array.isArray(q[3]) ? 'MSQ · Select all that apply' : 'MCQ · Select one answer'}</small><div class="opts" id="qo">${q[2].map((o, k) => `<button type="button" class="opt" data-k="${k}" aria-pressed="false"><span>${'ABCD'[k]}</span>${esc(o)}</button>`).join('')}</div><div id="qfb"></div>
+        <div class="btnrow">${Array.isArray(q[3]) ? '<button class="btn" id="qsubmit">Submit answers</button>' : ''}<button class="btn ghost sm" id="qh">Show hint</button><button class="btn ghost sm" id="qs">Skip</button></div>`
       );
       $('#qh', root).onclick = () => {
         hinted = true;
@@ -509,21 +525,39 @@ regMod({
           show();
         }
       };
-      $('#qo', root).onclick = e => {
-        const b = e.target.closest('.opt');
-        if (!b || answered) return;
+      const multi = Array.isArray(q[3]);
+      const submitAnswer = () => {
+        if (answered) return;
+        const selected = $('.opt.selected', root).map(o => +o.dataset.k);
+        const correctSet = multi ? q[3] : [q[3]];
+        if (multi && selected.length === 0) {
+          $('#qfb', root).innerHTML = vd('info', 'Select at least one answer.', 'Choose every option you believe is correct before submitting.');
+          return;
+        }
         answered = true;
-        const k = +b.dataset.k,
-          ok = k === q[3];
-        res.push({ tag: q[0], ok });
-        if (ok) pts += hinted ? 1 : 2;
-        $$('.opt', root).forEach((o, n) => {
-          o.classList.toggle('right', n === q[3]);
-          o.classList.toggle('wrong', n === k && !ok);
+        const correctSelections = selected.filter(k => correctSet.includes(k)).length;
+        const incorrectSelections = selected.filter(k => !correctSet.includes(k)).length;
+        const missedSelections = correctSet.length - correctSelections;
+        const credit = multi
+          ? Math.max(0, (correctSelections - incorrectSelections) / correctSet.length)
+          : (selected[0] === q[3] ? 1 : 0);
+        const ok = credit >= 0.999;
+        res.push({ tag: q[0], ok, credit });
+        pts += credit * (hinted ? 1 : 2);
+        $('.opt', root).forEach((o, n) => {
+          const isCorrect = correctSet.includes(n);
+          const wasSelected = selected.includes(n);
+          o.classList.toggle('right', isCorrect);
+          o.classList.toggle('wrong', wasSelected && !isCorrect);
           o.disabled = true;
         });
+        const feedbackTitle = ok ? 'Correct.' : (credit > 0 ? 'Partially correct.' : 'Not quite.');
+        const feedback = multi
+          ? `<p>You selected ${correctSelections} correct option(s), ${incorrectSelections} incorrect option(s), and missed ${missedSelections} correct option(s). Partial credit: ${Math.round(credit * 100)}%.</p>`
+          : '';
         $('#qfb', root).innerHTML =
-          (ok ? vd('ok', 'Correct.', esc(q[4])) : vd('bad', 'Not quite.', esc(q[4]))) +
+          (ok ? vd('ok', feedbackTitle, esc(q[4])) : vd('bad', feedbackTitle, esc(q[4]))) +
+          feedback +
           `<div class="btnrow"><button class="btn" id="qn">${i + 1 >= qs.length ? 'See results' : 'Next question'}</button></div>`;
         $('#qn', root).onclick = () => {
           i++;
@@ -531,6 +565,20 @@ regMod({
         };
         $('#qn', root).focus();
       };
+      $('#qo', root).onclick = e => {
+        const b = e.target.closest('.opt');
+        if (!b || answered) return;
+        if (multi) {
+          const selected = !b.classList.contains('selected');
+          b.classList.toggle('selected', selected);
+          b.setAttribute('aria-pressed', String(selected));
+          return;
+        }
+        $('.opt', root).forEach(o => o.classList.remove('selected'));
+        b.classList.add('selected');
+        submitAnswer();
+      };
+      if (multi) $('#qsubmit', root).onclick = submitAnswer;
     };
     start();
   },
