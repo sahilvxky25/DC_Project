@@ -53,7 +53,7 @@ export function renderHome() {
     <h3 class="gh">Toolbox · free play</h3>
     <div class="ggrid">${TOOLS.filter(byId).map(id => card('#/m/' + id, META[id].e, byId(id).title, byId(id).desc.split('.')[0] + '.', null, P.visited[id] ? '<small>✅ opened</small>' : '')).join('')}</div>
     <div class="gcols">
-      <div class="gcard static" style="--l:#ffe9a8;--d:#8a5cff"><small>💡 Did you know?</small><b>${esc(FACTS[dailyIndex(dayNum(), FACTS.length)])}</b></div>
+      <div class="gcard static" style="--l:#ffe9a8;--d:#8a5cff"><small>💡 Did you know?</small><b>${esc(FACTS[Math.floor(Math.random() * FACTS.length)])}</b></div>
       <div class="gcard static" style="--l:#fff;--d:#ffffff22"><small>🏅 Recent badges</small><div class="gbadges">${badgeIds.slice(0, 8).map(b => `<span class="gbadge ${hasBadge(b) ? '' : 'lock'}" title="${esc(BADGES[b][0])}">${hasBadge(b) ? BADGES[b][1] : '?'}</span>`).join('')}</div>
         <a class="btn ghost sm" href="#/profile">See all →</a></div>
     </div>
