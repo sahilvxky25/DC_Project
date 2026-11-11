@@ -1,13 +1,13 @@
 /** game screens: home, zone, profile and daily challenge. All render into #dash. */
 import { DC } from '../core/state.js';
-import { P } from '../core/storage.js';
+import { P, save } from '../core/storage.js';
 import { $, esc } from '../core/utils.js';
 import { ACH } from '../app/progress.js';
 import { ZONES, META, TOOLS, LAB, FACTS } from './data.js';
 import { dailyIndex, dayNum, levelFor } from './rules.js';
 import { dailyQuestionSet, dailyQuizXp } from './leagues.js';
-import { awardLeagueXp, getLeagueDecorations } from './league-service.js';
-import { BADGES, MEDALS, addXp, hasBadge, isDone, medal, quizIds, streak, xp, checkMeta } from './store.js';
+import { claimDailyQuizReward, getLeagueDecorations } from './league-service.js';
+import { BADGES, MEDALS, hasBadge, isDone, medal, quizIds, streak, xp, checkMeta, updatePill } from './store.js';
 import { LEVEL_LABELS, runQuiz } from './flow.js';
 import { boom } from './ui.js';
 
@@ -114,14 +114,26 @@ export function renderDaily() {
   runQuiz(stage, questions, questions.map((_, i) => 'Daily · ' + (i + 1) + '/' + questions.length), async right => {
     const gained = dailyQuizXp(right, questions.length);
     try {
-      const awarded = await awardLeagueXp(gained, 'daily:' + day);
-      if (!awarded) {
+      const result = await claimDailyQuizReward(gained, 'daily:' + day, day);
+      if (!result.awarded) {
+        // The durable event exists: reconcile this device's cache without awarding either score again.
+        P.stats.xp = Math.max(Number(P.stats.xp) || 0, result.lifetimeXp);
+        P.stats.dailyDay = result.dailyDay;
+        P.stats.streak = result.streak;
+        P.stats.lastDay = result.lastDay;
+        save();
+        updatePill();
         stage.innerHTML = '<div class="greward"><div class="gmedal">✅</div><h3>Daily quiz already recorded</h3><p>Your score has already been counted for today.</p></div>';
         next.textContent = 'Back to map ▸'; next.hidden = false; next.onclick = () => (location.hash = '#/');
         return;
       }
-      P.stats.dailyDay = day;
-      addXp(gained);
+      // The transaction is the source of truth; never call addXp() here or lifetime XP doubles.
+      P.stats.xp = Math.max(Number(P.stats.xp) || 0, result.lifetimeXp);
+      P.stats.dailyDay = result.dailyDay;
+      P.stats.streak = result.streak;
+      P.stats.lastDay = result.lastDay;
+      save();
+      updatePill();
       checkMeta();
       if (right === questions.length) boom();
       stage.innerHTML = `<div class="greward"><div class="gmedal">${right === questions.length ? '🌟' : '💪'}</div><h3>${right}/${questions.length} correct · +${gained} XP</h3><p>Your daily reward has been added to lifetime XP and this week's league score.</p></div>`;

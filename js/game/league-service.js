@@ -9,12 +9,15 @@ import {
   collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { LEAGUES, LEAGUE_SIZE, nextLeague, rankMembers, weekId } from './leagues.js';
+import { dayNum, streakNext } from './rules.js';
 
 const profileRef = uid => doc(db, 'users', uid, 'league', 'profile');
 const batchesRef = week => collection(db, 'leagueWeeks', week, 'batches');
 const batchRef = (week, id) => doc(db, 'leagueWeeks', week, 'batches', id);
 const membersRef = (week, id) => collection(db, 'leagueWeeks', week, 'batches', id, 'members');
 const memberRef = (week, id, uid) => doc(db, 'leagueWeeks', week, 'batches', id, 'members', uid);
+const progressRef = uid => doc(db, 'users', uid, 'progress', 'overview');
+const rewardEventRef = (uid, eventId) => doc(db, 'users', uid, 'rewardEvents', eventId);
 const safeName = user => (user.displayName || user.email?.split('@')[0] || 'Learner').slice(0, 32);
 
 function requireUser() {
@@ -86,6 +89,114 @@ export async function ensureLeagueMembership() {
   });
 
   return getLeagueSnapshot();
+}
+
+/**
+ * Atomically records a daily quiz reward in both reward systems.
+ *
+ * A durable per-user event document is the idempotency key. The member's legacy eventIds list
+ * is also checked so rewards created by the previous two-step implementation can be repaired:
+ * if league XP was already awarded but lifetime XP was not, only the lifetime side is applied.
+ */
+export async function claimDailyQuizReward(amount, eventId, day) {
+  const user = requireUser();
+  const points = Math.max(0, Math.min(100, Math.floor(Number(amount) || 0)));
+  const rewardDay = Number(day);
+  if (!points || !Number.isFinite(rewardDay) || !eventId ||
+      !/^[A-Za-z0-9:_-]{1,120}$/.test(String(eventId))) {
+    throw new Error('The daily quiz reward details are invalid.');
+  }
+
+  const profile = await ensureLeagueMembership();
+  if (!profile?.weekId || !profile?.batchId) {
+    throw new Error('Your weekly league membership could not be loaded.');
+  }
+
+  const member = memberRef(profile.weekId, profile.batchId, user.uid);
+  const progress = progressRef(user.uid);
+  const rewardEvent = rewardEventRef(user.uid, String(eventId));
+  const today = dayNum();
+
+  return runTransaction(db, async tx => {
+    // Firestore requires every read to finish before the first write.
+    const [eventSnap, memberSnap, progressSnap] = await Promise.all([
+      tx.get(rewardEvent), tx.get(member), tx.get(progress)
+    ]);
+    if (eventSnap.exists()) {
+      const saved = progressSnap.exists() ? progressSnap.data() : {};
+      const savedProgress = saved.progress && typeof saved.progress === 'object' ? saved.progress : {};
+      const savedStats = savedProgress.stats && typeof savedProgress.stats === 'object' ? savedProgress.stats : {};
+      return {
+        awarded: false,
+        lifetimeXp: Number(savedStats.xp) || 0,
+        dailyDay: Number(savedStats.dailyDay) || rewardDay,
+        streak: Number(savedStats.streak) || 0,
+        lastDay: Number(savedStats.lastDay) || 0
+      };
+    }
+    if (!memberSnap.exists()) throw new Error('Your league membership could not be found.');
+
+    const memberData = memberSnap.data();
+    const legacyEvents = Array.isArray(memberData.eventIds) ? memberData.eventIds : [];
+    const leagueAlreadyAwarded = legacyEvents.includes(String(eventId));
+    const progressData = progressSnap.exists() ? progressSnap.data() : {};
+    const existingProgress = progressData.progress && typeof progressData.progress === 'object'
+      ? progressData.progress : {};
+    const stats = existingProgress.stats && typeof existingProgress.stats === 'object'
+      ? existingProgress.stats : {};
+    // The previous implementation saved dailyDay and XP in the same progress snapshot.
+    // Use that marker to avoid adding lifetime XP twice when repairing a legacy league-only event.
+    const lifetimeAlreadyAwarded = Number(stats.dailyDay) === rewardDay;
+    const lifetimeXp = (Number(stats.xp) || 0) + (lifetimeAlreadyAwarded ? 0 : points);
+    const lastDay = Number(stats.lastDay) || 0;
+    const currentStreak = Number(stats.streak) || 0;
+    const nextStreak = lifetimeAlreadyAwarded
+      ? currentStreak
+      : streakNext(lastDay, today, currentStreak);
+    const nextStats = {
+      ...stats,
+      xp: lifetimeXp,
+      dailyDay: rewardDay,
+      streak: nextStreak,
+      lastDay: today
+    };
+
+    if (!leagueAlreadyAwarded) {
+      tx.update(member, {
+        weeklyXp: (Number(memberData.weeklyXp) || 0) + points,
+        eventIds: [...legacyEvents.slice(-99), String(eventId)],
+        updatedAt: serverTimestamp()
+      });
+    }
+    tx.set(rewardEvent, {
+      eventId: String(eventId),
+      type: 'daily-quiz',
+      day: rewardDay,
+      points,
+      weeklyXpAlreadyAwarded: leagueAlreadyAwarded,
+      createdAt: serverTimestamp()
+    });
+    tx.set(progress, {
+      ...progressData,
+      schemaVersion: Number(progressData.schemaVersion) || 1,
+      clientUpdatedAt: Date.now(),
+      updatedAt: serverTimestamp(),
+      progress: {
+        ...existingProgress,
+        stats: nextStats
+      }
+    });
+
+    return {
+      awarded: true,
+      lifetimeXp,
+      dailyDay: rewardDay,
+      streak: nextStreak,
+      lastDay: today,
+      recoveredLegacyLeagueReward: leagueAlreadyAwarded,
+      lifetimeAlreadyAwarded
+    };
+  });
 }
 
 export async function awardLeagueXp(amount, eventId) {
