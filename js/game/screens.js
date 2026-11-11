@@ -119,8 +119,8 @@ export function renderDaily() {
         // The durable event exists: reconcile this device's cache without awarding either score again.
         P.stats.xp = Math.max(Number(P.stats.xp) || 0, result.lifetimeXp);
         P.stats.dailyDay = result.dailyDay;
-        P.stats.streak = Math.max(Number(P.stats.streak) || 0, result.streak);
-        P.stats.lastDay = Math.max(Number(P.stats.lastDay) || 0, result.lastDay);
+        P.stats.streak = result.streak;
+        P.stats.lastDay = result.lastDay;
         save();
         updatePill();
         stage.innerHTML = '<div class="greward"><div class="gmedal">✅</div><h3>Daily quiz already recorded</h3><p>Your score has already been counted for today.</p></div>';
@@ -130,8 +130,8 @@ export function renderDaily() {
       // The transaction is the source of truth; never call addXp() here or lifetime XP doubles.
       P.stats.xp = Math.max(Number(P.stats.xp) || 0, result.lifetimeXp);
       P.stats.dailyDay = result.dailyDay;
-      P.stats.streak = Math.max(Number(P.stats.streak) || 0, result.streak);
-      P.stats.lastDay = Math.max(Number(P.stats.lastDay) || 0, result.lastDay);
+      P.stats.streak = result.streak;
+      P.stats.lastDay = result.lastDay;
       save();
       updatePill();
       checkMeta();
