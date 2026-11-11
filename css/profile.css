@@ -65,3 +65,27 @@
   .profile-trigger { gap: 5px; }
   .password-dialog form { padding: 20px; }
 }
+
+/* Visible, retryable feedback when signing out fails. */
+.logout-error {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1001;
+  display: grid;
+  gap: 10px;
+  width: min(300px, calc(100vw - 24px));
+  padding: 14px;
+  border: 1px solid var(--bad);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+.logout-error[hidden] { display: none !important; }
+.logout-error p {
+  margin: 0;
+  color: var(--bad);
+  font-size: .88rem;
+  line-height: 1.45;
+}
+.logout-error button { justify-self: start; }
