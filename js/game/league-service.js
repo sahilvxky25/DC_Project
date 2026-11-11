@@ -144,10 +144,15 @@ export async function claimDailyQuizReward(amount, eventId, day) {
       ? progressData.progress : {};
     const stats = existingProgress.stats && typeof existingProgress.stats === 'object'
       ? existingProgress.stats : {};
-    const lifetimeXp = (Number(stats.xp) || 0) + points;
+    // The previous implementation saved dailyDay and XP in the same progress snapshot.
+    // Use that marker to avoid adding lifetime XP twice when repairing a legacy league-only event.
+    const lifetimeAlreadyAwarded = Number(stats.dailyDay) === rewardDay;
+    const lifetimeXp = (Number(stats.xp) || 0) + (lifetimeAlreadyAwarded ? 0 : points);
     const lastDay = Number(stats.lastDay) || 0;
     const currentStreak = Number(stats.streak) || 0;
-    const nextStreak = streakNext(lastDay, today, currentStreak);
+    const nextStreak = lifetimeAlreadyAwarded
+      ? currentStreak
+      : streakNext(lastDay, today, currentStreak);
     const nextStats = {
       ...stats,
       xp: lifetimeXp,
@@ -188,7 +193,8 @@ export async function claimDailyQuizReward(amount, eventId, day) {
       dailyDay: rewardDay,
       streak: nextStreak,
       lastDay: today,
-      recoveredLegacyLeagueReward: leagueAlreadyAwarded
+      recoveredLegacyLeagueReward: leagueAlreadyAwarded,
+      lifetimeAlreadyAwarded
     };
   });
 }
