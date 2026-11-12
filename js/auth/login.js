@@ -447,8 +447,15 @@ async function performLogout() {
   showAppAuthLoading('Signing you out...');
 
   try {
-    // Flush this account's latest progress before the Firebase session is cleared.
-    await flushProgressSync();
+    // Do not clear the Firebase session when the final cloud flush failed. The latest
+    // snapshot is still cached locally; the learner can reconnect and retry without losing it.
+    const synced = await flushProgressSync();
+    if (!synced) {
+      logoutErrorMessage.textContent = 'Your progress is saved on this device, but cloud sync failed. Check your connection and retry logout.';
+      logoutError.hidden = false;
+      hideAppAuthLoading();
+      return;
+    }
     await signOut(auth);
 
     logoutError.hidden = true;
