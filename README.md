@@ -299,7 +299,7 @@ Before publishing a change, test the affected feature and the main application f
 12. With two devices signed into the same account, make different progress updates on each device and confirm both updates survive synchronization.
 13. While signed in, go offline, make progress, reconnect, and confirm the local and cloud snapshots merge without losing either device's visited markers or quiz attempts.
 14. Temporarily block browser storage or simulate a quota error; the application should remain usable in memory, while the local cache may be unavailable.
-15. Test offline behaviour; local changes should remain cached, and a failed cloud read must not trigger a blind overwrite.
+15. Simulate a Firestore write failure during logout; confirm sign-out is paused, local progress is retained, and the retry message is shown.
 
 ## Simulation limitations
 
