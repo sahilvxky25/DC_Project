@@ -57,7 +57,7 @@ BitSecure is an interactive, browser-based Data Communications and Computer Netw
 ### Accounts and progress
 - Firebase Authentication supports email/password sign-up and sign-in, email verification, password reset, password change, and sign-out.
 - Firestore synchronizes account-specific learning progress, achievements, run history, quiz statistics, notes, theme, and last visited screen.
-- A local account-specific cache helps preserve progress when cloud access is temporarily unavailable.
+- A local account-specific cache helps preserve progress when cloud access is temporarily unavailable. Firestore transactions merge the latest cloud snapshot with device progress, and reconnecting triggers a fresh cloud read before sync resumes.
 - Responsive navigation includes a collapsible desktop sidebar and a mobile navigation drawer.
 
 ## Daily quizzes and weekly leagues
@@ -296,7 +296,10 @@ Before publishing a change, test the affected feature and the main application f
 9. Sign in and confirm Firestore progress loads before the learning interface opens.
 10. Visit modules and finish a quiz; verify progress syncs and restores on another device.
 11. Sign out, sign in as a different user, and confirm the first user's progress is not shown or uploaded to the second account.
-12. Test offline behaviour; local changes should remain cached, and a failed cloud read must not trigger a blind overwrite.
+12. With two devices signed into the same account, make different progress updates on each device and confirm both updates survive synchronization.
+13. While signed in, go offline, make progress, reconnect, and confirm the local and cloud snapshots merge without losing either device's visited markers or quiz attempts.
+14. Temporarily block browser storage or simulate a quota error; the application should remain usable in memory, while the local cache may be unavailable.
+15. Test offline behaviour; local changes should remain cached, and a failed cloud read must not trigger a blind overwrite.
 
 ## Simulation limitations
 
@@ -327,4 +330,4 @@ The interface is now a game-style shell around the existing modules. Nothing in 
 - **Themes:** light = Sticker, dark = Game tiles. Both are token overrides in `css/game.css`, so every simulator is restyled automatically.
 - **Code:** `js/game/data.js` (zones, difficulty, Watch scenes, quizzes), `rules.js` (pure XP, medal, level and streak rules), `store.js` (saves into the existing progress object, so Firebase sync keeps working), `flow.js`, `screens.js`, `ui.js`.
 - **Add a quiz to a module:** add an entry to `META` in `js/game/data.js` (`z` zone, `d` difficulty, `e` emoji, `w` Watch scene, `q` five `question|correct|wrong|wrong` strings).
-- **Tests:** `node --test tests/rules.test.mjs`
+- **Tests:** `node --test tests/*.test.mjs` (includes pure progress-merge, offline recovery, account-cache isolation, quiz-history, notes, and browser-storage failure regression tests). GitHub Actions runs this suite on pushes and pull requests. Firestore transaction behaviour still needs an integration check against the Firebase Emulator or a dedicated test project.
