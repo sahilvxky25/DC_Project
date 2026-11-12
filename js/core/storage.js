@@ -80,15 +80,22 @@ export async function activateProgressForUser(uid) {
   if (!uid) return false;
   const token = ++activationToken;
   clearSyncTimer();
+  // Preserve in-memory edits when this is a reconnect/retry for the same account. This matters
+  // when localStorage is blocked or full and therefore could not persist the offline changes.
+  const inMemoryProgress = activeUid === uid ? normaliseProgress(P) : null;
   activeUid = uid;
   cloudReady = false;
 
   const localSnapshot = readSnapshot(accountStore(uid));
-  P = normaliseProgress(localSnapshot?.progress || fresh());
+  const cachedProgress = normaliseProgress(localSnapshot?.progress || fresh());
+  const localProgress = inMemoryProgress
+    ? mergeProgress(cachedProgress, inMemoryProgress, localSnapshot?.clientUpdatedAt || 0, Date.now())
+    : cachedProgress;
+  P = localProgress;
 
   try {
     const snapshot = await getDoc(cloudDoc(uid));
-    if (token !== activationToken || activeUid !== uid) return false;
+    if (!isCurrentActivation(activeUid, activationToken, uid, token)) return false;
 
     const cloudData = snapshot.exists() ? snapshot.data() : null;
     const cloudProgress = cloudData?.progress
@@ -98,9 +105,9 @@ export async function activateProgressForUser(uid) {
 
     if (cloudProgress) {
       P = mergeProgress(
-        localSnapshot?.progress || fresh(),
+        localProgress,
         cloudProgress,
-        localSnapshot?.clientUpdatedAt || 0,
+        inMemoryProgress ? Date.now() : (localSnapshot?.clientUpdatedAt || 0),
         cloudTime
       );
     }
@@ -112,7 +119,7 @@ export async function activateProgressForUser(uid) {
   } catch (error) {
     // Authentication still works offline. Keep local progress, but don't upload until a cloud read
     // succeeds; this prevents a failed read from overwriting data that already exists in Firestore.
-    if (token === activationToken && activeUid === uid) {
+    if (isCurrentActivation(activeUid, activationToken, uid, token)) {
       cloudReady = false;
       persistLocal(P, uid);
       console.warn('[BitSecure] Cloud progress could not be loaded; using this account’s local cache.', error);
