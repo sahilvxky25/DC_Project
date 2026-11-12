@@ -28,9 +28,6 @@ const logoutBtn = document.getElementById('logoutBtn');
 const profileMenu = document.getElementById('profileMenu');
 const profileBtn = document.getElementById('profileBtn');
 const profileDropdown = document.getElementById('profileDropdown');
-const logoutError = document.getElementById('logoutError');
-const logoutErrorMessage = document.getElementById('logoutErrorMessage');
-const retryLogoutBtn = document.getElementById('retryLogoutBtn');
 const profileName = document.getElementById('profileName');
 const profileEmail = document.getElementById('profileEmail');
 const profileAvatar = document.getElementById('profileAvatar');
@@ -439,39 +436,24 @@ changePasswordForm.addEventListener('submit', async event => {
   }
 });
 
-async function performLogout() {
+logoutBtn.addEventListener('click', async () => {
   logoutBtn.disabled = true;
-  retryLogoutBtn.disabled = true;
-  logoutError.hidden = true;
   closeProfileMenu();
   showAppAuthLoading('Signing you out...');
-
   try {
     // Flush this account's latest progress before the Firebase session is cleared.
     await flushProgressSync();
     await signOut(auth);
-
-    logoutError.hidden = true;
+    setMessage('You have been signed out.', 'success');
     hideAppAuthLoading();
     showLogin({ focus: true });
   } catch (error) {
     hideAppAuthLoading();
-
-    // Keep the signed-in application visible so the user can retry safely.
-    const message = error?.code
-      ? friendlyError(error)
-      : 'Your learning progress could not be synchronized. Check your connection and retry logout.';
-    logoutErrorMessage.textContent = message;
-    logoutError.hidden = false;
-    console.error('Logout failed:', error);
+    setMessage(friendlyError(error));
   } finally {
     logoutBtn.disabled = false;
-    retryLogoutBtn.disabled = false;
   }
-}
-
-logoutBtn.addEventListener('click', performLogout);
-retryLogoutBtn.addEventListener('click', performLogout);
+});
 
 // Remove the old client-only demo flags so they cannot unlock the application.
 sessionStorage.removeItem('bitsecure.demo-session');

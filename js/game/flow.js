@@ -6,72 +6,43 @@
 import { $, esc } from '../core/utils.js';
 import { DC } from '../core/state.js';
 import { GROUPS } from '../modules/registry.js';
-import { ZONES, META, MSQ_BANK } from './data.js';
+import { ZONES, META } from './data.js';
 import { levelFor, medalFor, quizBadges, quizXp } from './rules.js';
 import { MEDALS, addXp, checkMeta, grant, setMedal, visitXp, xp, BADGES, updatePill } from './store.js';
 import { boom, gl } from './ui.js';
-import { awardLeagueXp } from './league-service.js';
-import { weekId } from './leagues.js';
 
 const pos = (i, n) => 8 + (i * 84) / (n - 1);
 const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 
-/** Quiz runner shared by module quizzes and the daily challenge.
- * Legacy pipe-delimited strings remain MCQs; structured items can be MCQ or MSQ.
- * MSQ scoring is proportional: correct selections earn credit and wrong selections deduct credit.
- */
+/** Quiz runner shared by module quizzes and the daily challenge. `qs` = pipe strings, `labels` = tag per question. */
 export function runQuiz(stage, qs, labels, onDone) {
-  const items = qs.map(s => {
-    if (typeof s === 'string') { const p = s.split('|'); return { type: 'mcq', q: p[0], a: [p[1]], o: shuffle(p.slice(1)) }; }
-    return { type: s.type || (s.a.length > 1 ? 'msq' : 'mcq'), q: s.q, a: s.a, o: shuffle([...s.o]) };
-  });
+  const items = qs.map(s => { const p = s.split('|'); return { q: p[0], a: p[1], o: shuffle(p.slice(1)) }; });
   const next = $('#gnext');
-  let i = 0, points = 0;
+  let i = 0, right = 0;
   const t0 = Date.now();
   const show = () => {
-    const it = items[i], multi = it.type === 'msq';
+    const it = items[i];
     next.hidden = true;
     stage.innerHTML = `<div class="gdots">${items.map((_, j) => `<i class="${j < i ? 'on' : j === i ? 'cur' : ''}"></i>`).join('')}</div>
-      <span class="gchip">${labels[i]}</span><span class="gchip" style="margin-left:6px">${multi ? '☑ MSQ · Select all that apply' : '◉ MCQ · Select one answer'}</span>
-      <h3 class="gq">${esc(it.q)}</h3>
-      <div class="gopts">${it.o.map((o, j) => multi
-        ? `<label class="gopt" style="display:flex;align-items:center;gap:10px;text-align:left"><input type="checkbox" value="${j}" style="accent-color:var(--d,#2f8cff);width:18px;height:18px;flex:0 0 auto"> ${esc(o)}</label>`
-        : `<button class="gopt" type="button">${esc(o)}</button>`).join('')}</div>
-      ${multi ? '<button class="btn big" id="gsubmit" type="button" disabled>Submit answer</button>' : ''}
-      <p class="gfb" aria-live="polite"></p>`;
-    const finish = selected => {
-      const correct = it.a;
-      let earned = 0;
-      if (!multi) earned = selected[0] === correct[0] ? 1 : 0;
-      else {
-        const correctPicked = selected.filter(x => correct.includes(x)).length;
-        const wrongPicked = selected.filter(x => !correct.includes(x)).length;
-        earned = Math.max(0, (correctPicked / correct.length) - (wrongPicked / Math.max(1, it.o.length - correct.length)));
-      }
-      points += earned;
-      const controls = stage.querySelectorAll(multi ? 'input[type="checkbox"]' : '.gopt');
-      controls.forEach((el, j) => {
-        const value = multi ? it.o[Number(el.value)] : el.textContent;
-        const isCorrect = correct.includes(value);
-        if (multi) { el.disabled = true; el.closest('label').style.borderColor = isCorrect ? '#20a464' : (selected.includes(value) ? '#d9534f' : ''); }
-        else { el.disabled = true; if (isCorrect) el.classList.add('good'); else if (selected.includes(value)) el.classList.add('bad'); }
+      <span class="gchip">${labels[i]}</span><h3 class="gq">${esc(it.q)}</h3>
+      <div class="gopts">${it.o.map(o => `<button class="gopt" type="button">${esc(o)}</button>`).join('')}</div><p class="gfb" aria-live="polite"></p>`;
+    stage.querySelectorAll('.gopt').forEach(b => b.addEventListener('click', () => {
+      const ok = b.textContent === it.a;
+      if (ok) right++;
+      stage.querySelectorAll('.gopt').forEach(x => {
+        x.disabled = true;
+        if (x.textContent === it.a) x.classList.add('good');
+        else if (x === b) x.classList.add('bad');
       });
-      const fb = stage.querySelector('.gfb');
-      fb.textContent = earned === 1 ? '🎉 Correct!' : earned > 0 ? `Partially correct · ${Math.round(earned * 100)}% credit. Correct answers: ${correct.join(', ')}` : 'Not quite. Correct answers: ' + correct.join(', ');
+      stage.querySelector('.gfb').textContent = ok ? '🎉 Correct!' : 'Not quite. The answer is: ' + it.a;
       next.textContent = i < items.length - 1 ? 'Next question ▸' : 'Finish ▸';
       next.hidden = false;
-      next.onclick = () => (++i < items.length ? show() : onDone(points, (Date.now() - t0) / 1000));
-    };
-    if (multi) {
-      const checks = [...stage.querySelectorAll('input[type="checkbox"]')], submit = $('#gsubmit');
-      checks.forEach(c => c.addEventListener('change', () => { submit.disabled = !checks.some(x => x.checked); }));
-      submit.addEventListener('click', () => { submit.disabled = true; finish(checks.filter(x => x.checked).map(x => it.o[Number(x.value)])); });
-    } else {
-      stage.querySelectorAll('.gopt').forEach(b => b.addEventListener('click', () => finish([b.textContent])));
-    }
+      next.onclick = () => (++i < items.length ? show() : onDone(right, (Date.now() - t0) / 1000));
+    }));
   };
   show();
 }
+
 export const LEVEL_LABELS = ['Easy', 'Easy', 'Medium', 'Medium', 'Hard'];
 
 /** Applies the result of a finished module quiz to XP, medals and badges. Returns what to show. */
@@ -80,8 +51,6 @@ function applyResult(id, right, total, secs) {
   const before = levelFor(xp()).n;
   setMedal(id, m);
   addXp(gained);
-  // League points are awarded once per module per competition week; lifetime XP remains unchanged.
-  void awardLeagueXp(gained, 'module:' + weekId() + ':' + id).catch(error => console.warn('League score was not updated:', error));
   const fresh = quizBadges({ correct: right, total, secs, hour: new Date().getHours() }).filter(b => grant(b));
   fresh.push(...checkMeta());
   updatePill();
@@ -148,14 +117,12 @@ export function renderFlow(mod, root, freePlay) {
   let res = null;
   function quiz() {
     stage.className = 'gstage';
-    const mixed = shuffle([...meta.q, ...(MSQ_BANK[meta.z] || [])]);
-    const labels = mixed.map((item, index) => LEVEL_LABELS[Math.min(index, LEVEL_LABELS.length - 1)]);
-    runQuiz(stage, mixed, labels, (r, secs) => { res = applyResult(mod.id, r, mixed.length, secs); res.right = r; res.total = mixed.length; if (res.m > 0) boom(); go('reward'); });
+    runQuiz(stage, meta.q, LEVEL_LABELS, (r, secs) => { res = applyResult(mod.id, r, meta.q.length, secs); res.right = r; if (res.m > 0) boom(); go('reward'); });
   }
   function reward() {
     stage.className = 'gstage';
     const l = levelFor(xp());
-    stage.innerHTML = `<div class="greward"><div class="gmedal">${MEDALS[res.m]}</div><h3>${res.right.toFixed(1)}/${res.total} points · +${res.gained} XP</h3>
+    stage.innerHTML = `<div class="greward"><div class="gmedal">${MEDALS[res.m]}</div><h3>${res.right}/${meta.q.length} correct · +${res.gained} XP</h3>
       <p>${['No medal this time. Watch again and retry!', 'Bronze medal. Nice start!', 'Silver medal. Almost perfect!', 'Gold medal. Perfect score!'][res.m]}</p>
       ${res.levelUp ? `<p class="gup">🎉 Level up! You are now Lv ${l.n} · ${l.title}</p>` : ''}
       ${res.fresh.map(b => `<p class="gnew">${BADGES[b][1]} New badge: <b>${BADGES[b][0]}</b></p>`).join('')}

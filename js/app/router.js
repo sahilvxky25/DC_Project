@@ -34,7 +34,6 @@ import { $, esc } from '../core/utils.js';
 import { CORE, GROUPS, modById } from '../modules/registry.js';
 import { crumbs, setStage } from './navigation.js';
 import { renderDaily, renderHome, renderProfile, renderZone } from '../game/screens.js';
-import { renderLeague } from '../game/league-screen.js';
 import { renderFlow } from '../game/flow.js';
 import { ZONES } from '../game/data.js';
 import { checkMeta, updatePill, visitXp } from '../game/store.js';
@@ -92,59 +91,6 @@ export function route() {
     if (i === 1) labSplit();
     if (i === 2) labPrepare();
     if (i === 3) labRecv();
-  } else if (kind === 'about' || kind === 'support') {
-    currentKey = kind;
-    setStage('info-page');
-    const isAbout = kind === 'about';
-    crumbs([isAbout ? 'About Us' : 'Support Us']);
-    document.title = `${isAbout ? 'About Us' : 'Support Us'} · BitSecure`;
-    const page = $('#info-page');
-    page.innerHTML = isAbout
-      ? `
-        <div class="info-hero">
-          <span class="info-kicker">ABOUT BITSECURE</span>
-          <h1>Making learning <span>interactive.</span></h1>
-          <p class="info-lead">We believe complex concepts become easier to understand when you can explore them, experiment with them, and see how they work.</p>
-          <p>BitSecure began as an interactive Data Communications learning lab. Our goal is to go beyond static notes and turn abstract ideas into hands-on experiences that learners can understand at their own pace.</p>
-        </div>
-        <section class="info-section">
-          <div class="info-section-heading"><span class="info-kicker">OUR VISION</span><h2>One learning platform. Many courses. Endless possibilities.</h2></div>
-          <p>We want to build simulations and visual learning tools for <strong>many different courses and disciplines</strong> — not just Data Communications. From computer science and electronics to mathematics, physics, and other engineering subjects, our long-term vision is to help learners understand concepts by interacting with them.</p>
-          <div class="info-feature-grid">
-            <article class="info-feature"><span class="info-feature-icon">◎</span><h3>Learn by doing</h3><p>Explore concepts through interactive experiments instead of only reading about them.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">↗</span><h3>See the process</h3><p>Use visual steps, animations, and explanations to understand what happens behind the scenes.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">✦</span><h3>Keep it accessible</h3><p>Create practical learning experiences that students can access and revisit as they learn.</p></article>
-          </div>
-        </section>
-        <section class="info-section">
-          <div class="info-section-heading"><span class="info-kicker">THE DEVELOPERS</span><h2>Built by learners, for learners.</h2></div>
-          <p>We are building this project with a shared interest in making technical education more visual, practical, and approachable.</p>
-          <div class="developer-grid">
-            <article class="developer-card"><div class="developer-avatar">SP</div><div><h3>Sahil Patra</h3><p>Developer</p><a href="https://github.com/sahilvxky25" target="_blank" rel="noopener noreferrer">@sahilvxky25 ↗</a></div></article>
-            <article class="developer-card"><div class="developer-avatar">AA</div><div><h3>Aiyush Anand</h3><p>Developer</p><a href="https://github.com/AIYUSHH" target="_blank" rel="noopener noreferrer">@AIYUSHH ↗</a></div></article>
-            <article class="developer-card"><div class="developer-avatar">SR</div><div><h3>Somya Ranjan</h3><p>Developer</p><a href="https://github.com/Somya22005" target="_blank" rel="noopener noreferrer">@Somya22005 ↗</a></div></article>
-          </div>
-        </section>
-        <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>`
-      : `
-        <div class="info-hero support-hero">
-          <span class="info-kicker">SUPPORT THE MISSION</span>
-          <h1>Help us make learning <span>more hands-on.</span></h1>
-          <p class="info-lead">Every bit of encouragement helps us spend more time building useful, accessible simulations for learners.</p>
-          <p>Our long-term aim is to expand beyond Data Communications and create interactive learning experiences across different courses. Community support can help us move that vision forward.</p>
-        </div>
-        <section class="info-section">
-          <div class="info-section-heading"><span class="info-kicker">WHAT SUPPORT CAN ENABLE</span><h2>Help turn more ideas into simulations.</h2></div>
-          <div class="info-feature-grid">
-            <article class="info-feature"><span class="info-feature-icon">01</span><h3>More course simulations</h3><p>Explore new subjects and build interactive tools for more areas of study.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">02</span><h3>Better learning experiences</h3><p>Improve explanations, animations, accessibility, and usability.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">03</span><h3>Open learning resources</h3><p>Keep making practical resources that learners can explore at their own pace.</p></article>
-          </div>
-        </section>
-        <section class="patreon-panel">
-          <div class="patreon-mark" aria-hidden="true">P</div><div class="patreon-copy"><span class="coming-soon-pill">COMING SOON</span><h2>Support us on Patreon</h2><p>We are preparing our Patreon creator page. Once it is published, this section will link directly to it. There is no payment link available yet.</p><button class="btn" type="button" disabled aria-disabled="true">Patreon page coming soon</button></div>
-        </section>
-        <p class="info-back-link"><a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></p>`;
   } else if (kind === 'm' && modById(arg)) {
     const m = modById(arg);
     currentKey = m.id;
@@ -159,12 +105,6 @@ export function route() {
     crumbs(['Map', ZONES.find(z => z.id === arg).name]);
     document.title = 'BitSecure';
     renderZone(arg);
-  } else if (kind === 'league') {
-    currentKey = 'league';
-    setStage('dash');
-    crumbs(['Weekly competition']);
-    document.title = 'Weekly competition · BitSecure';
-    void renderLeague();
   } else if (kind === 'profile' || kind === 'daily') {
     currentKey = kind;
     setStage('dash');
