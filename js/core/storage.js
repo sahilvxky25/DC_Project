@@ -29,14 +29,22 @@ const cloudDoc = uid => doc(db, 'users', uid, 'progress', 'overview');
 export let P = fresh();
 
 function readSnapshot(key) {
-  return readProgressSnapshot(localStorage, key);
+  try {
+    return readProgressSnapshot(localStorage, key);
+  } catch {
+    return null;
+  }
 }
 
 function persistLocal(progress, uid, clientUpdatedAt = Date.now()) {
   const value = uid
     ? { schemaVersion: CLOUD_SCHEMA_VERSION, clientUpdatedAt, progress }
     : progress;
-  writeProgressSnapshot(localStorage, uid ? accountStore(uid) : STORE, value);
+  try {
+    writeProgressSnapshot(localStorage, uid ? accountStore(uid) : STORE, value);
+  } catch {
+    // Accessing the localStorage property itself can throw in restricted browser contexts.
+  }
 }
 
 let activeUid = null;
