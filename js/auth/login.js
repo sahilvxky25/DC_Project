@@ -480,10 +480,18 @@ async function performLogout() {
 logoutBtn.addEventListener('click', performLogout);
 retryLogoutBtn.addEventListener('click', performLogout);
 
-// Remove the old client-only demo flags so they cannot unlock the application.
-sessionStorage.removeItem('bitsecure.demo-session');
-localStorage.removeItem('bitsecure.demo-remembered');
-localStorage.removeItem('bitsecure.demo-accounts');
+// Remove old client-only demo flags without making restricted storage block authentication.
+try {
+  sessionStorage.removeItem('bitsecure.demo-session');
+} catch {
+  // Session storage may be unavailable in privacy-restricted browser contexts.
+}
+try {
+  localStorage.removeItem('bitsecure.demo-remembered');
+  localStorage.removeItem('bitsecure.demo-accounts');
+} catch {
+  // Account authentication and in-memory progress remain usable without local storage.
+}
 
 onAuthStateChanged(auth, async user => {
   if (user?.emailVerified) {
