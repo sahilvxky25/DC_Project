@@ -33,7 +33,6 @@ import { encodeRS1511, decodeRS1511 } from '../../simulations/reed-solomon.js';
 import { ERROR_PATTERNS, corruptBytes } from '../../simulations/error-injection.js';
 import { regMod } from '../registry.js';
 import { flag } from '../../app/progress.js';
-import { mountAlgorithmWorking } from '../../core/algorithm-working.js';
 
 /* Register "Error detection". The router calls mount(root) when the learner opens #/m/errors and calls the returned function (if any) when they leave. */
 regMod({
@@ -367,6 +366,5 @@ regMod({
       }
     };
     refresh();
-    mountAlgorithmWorking(root);
   },
 });

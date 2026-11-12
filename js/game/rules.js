@@ -8,7 +8,7 @@ export const TITLES = [[0, 'Newbie'], [300, 'Packet Pro'], [900, 'Network Wizard
 
 /** XP for a finished quiz: 10 per correct answer, +30 for finishing, +20 for a perfect score. */
 export function quizXp(correct, total) {
-  return Math.round(correct * 10 + 30 + (correct === total ? 20 : 0));
+  return correct * 10 + 30 + (correct === total ? 20 : 0);
 }
 
 /** Medal for a quiz score: 3 gold (perfect), 2 silver (one miss), 1 bronze (at least 40%), 0 none. */

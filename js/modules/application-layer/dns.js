@@ -340,64 +340,6 @@ regMod({
             const renderList = (title, items, formatter) => items && items.length
               ? '<details class="dns-live-details"><summary>' + escapeHtml(title) + ' <span class="dns-live-count">' + items.length + '</span></summary><div class="dns-live-details-body">' + items.map(formatter).join('') + '</div></details>'
               : '';
-
-            const geoCache = new Map();
-            const locatePublicIp = async ip => {
-              if(geoCache.has(ip))return geoCache.get(ip);
-              const task=(async()=>{
-                const response=await fetch('https://ipwho.is/'+encodeURIComponent(ip),{headers:{Accept:'application/json'}});
-                if(!response.ok)throw new Error('Geolocation lookup failed for '+ip);
-                const data=await response.json();
-                if(!data.success||!Number.isFinite(Number(data.latitude))||!Number.isFinite(Number(data.longitude)))return null;
-                return {ip,lat:Number(data.latitude),lon:Number(data.longitude),city:data.city,region:data.region,country:data.country,isp:data.connection?.isp,org:data.connection?.org};
-              })();
-              geoCache.set(ip,task);
-              try{const result=await task;geoCache.set(ip,result);return result;}catch(error){geoCache.delete(ip);throw error;}
-            };
-            const renderWorldMap = async (trace,host) => {
-              const mapHost=host.querySelector('#dns-world-map'),listHost=host.querySelector('#dns-world-map-list');
-              if(!mapHost||!listHost)return;
-              const candidates=[];
-              (trace.steps||[]).forEach((step,index)=>{
-                if(isPublicIp(step.server))candidates.push({ip:step.server,role:(labels[step.stage]||'DNS server')+' · query '+(index+1)});
-                (step.glue||[]).forEach(record=>{
-                  if(['A','AAAA'].includes(String(record.type).toUpperCase())&&isPublicIp(record.data))candidates.push({ip:record.data,role:'DNS referral glue · '+record.name});
-                });
-              });
-              (trace.answers||[]).forEach(record=>{
-                if(['A','AAAA'].includes(String(record.type).toUpperCase())&&isPublicIp(record.data))candidates.push({ip:record.data,role:'Final answer · '+record.name});
-              });
-              const unique=[...new Map(candidates.map(x=>[x.ip,x])).values()].slice(0,30);
-              if(!unique.length){
-                mapHost.innerHTML='<div class="dns-world-map-message">No public IP addresses were exposed in this DNS trace. Private, hidden and hostname-only entries are not assigned locations.</div>';
-                listHost.innerHTML='';return;
-              }
-              mapHost.innerHTML='<div class="dns-world-map-message">Looking up approximate locations for '+unique.length+' public IP address(es)…</div>';
-              listHost.innerHTML='';
-              const results=await Promise.all(unique.map(async item=>{try{return {...item,geo:await locatePublicIp(item.ip)};}catch(error){return {...item,geo:null,error:error.message};}}));
-              if(!mapHost.isConnected)return;
-              const located=results.filter(x=>x.geo&&Number.isFinite(x.geo.lat)&&Number.isFinite(x.geo.lon));
-              listHost.innerHTML=results.map(item=>'<div class="dns-world-map-row"><b>'+escapeHtml(item.ip)+'</b><span>'+escapeHtml(item.role)+'</span><small>'+(item.geo?[escapeHtml(item.geo.city),escapeHtml(item.geo.region),escapeHtml(item.geo.country)].filter(Boolean).join(', ')||'Approximate location unavailable':'Location unavailable'+(item.error?' · '+escapeHtml(item.error):''))+'</small></div>').join('');
-              if(!located.length){
-                mapHost.innerHTML='<div class="dns-world-map-message">Geolocation service did not return usable coordinates. The IP list is still shown below. Check the connection or try again later.</div>';
-                return;
-              }
-              const project=(lat,lon)=>({x:((lon+180)/360)*1000,y:((90-lat)/180)*500});
-              const dots=located.map((item,index)=>{
-                const p=project(item.geo.lat,item.geo.lon);
-                const title=escapeHtml(item.ip+' · '+[item.geo.city,item.geo.region,item.geo.country].filter(Boolean).join(', '));
-                return '<g class="dns-world-marker" tabindex="0" role="img" aria-label="'+title+'"><title>'+title+' · '+escapeHtml(item.role)+'</title><circle cx="'+p.x.toFixed(2)+'" cy="'+p.y.toFixed(2)+'" r="13" class="dns-world-marker-halo"/><circle cx="'+p.x.toFixed(2)+'" cy="'+p.y.toFixed(2)+'" r="5.5" class="dns-world-marker-dot"/><text x="'+(p.x+10).toFixed(2)+'" y="'+(p.y-10).toFixed(2)+'">'+(index+1)+'</text></g>';
-              }).join('');
-              const continents =
-                '<path d="M75 105 L105 65 170 48 218 70 250 108 232 142 208 154 196 194 165 218 145 190 120 175 105 142 82 132Z"/>'+
-                '<path d="M230 225 L260 238 276 278 267 325 248 378 229 420 212 386 215 340 197 300 207 260Z"/>'+
-                '<path d="M405 100 L440 72 492 66 522 85 555 78 587 98 610 123 596 153 563 163 546 194 520 190 502 164 473 160 450 135 421 137Z"/>'+
-                '<path d="M490 205 L525 187 566 198 586 235 578 280 555 329 529 367 505 339 492 294 474 250Z"/>'+
-                '<path d="M585 95 L642 62 714 68 760 94 824 85 892 112 927 151 901 184 850 179 824 208 778 194 749 225 710 203 676 183 640 168 608 143Z"/>'+
-                '<path d="M805 300 L850 281 892 295 916 324 900 354 864 367 830 348Z"/>'+
-                '<path d="M92 55 L130 36 174 43 191 59 162 75 117 73Z"/>';
-              mapHost.innerHTML='<svg class="dns-world-map-svg" viewBox="0 0 1000 500" role="img" aria-label="World map showing approximate geolocations of public IP addresses"><defs><pattern id="dns-map-grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" class="dns-world-gridline"/></pattern></defs><rect width="1000" height="500" class="dns-world-ocean"/><rect width="1000" height="500" fill="url(#dns-map-grid)"/><g class="dns-world-continents">'+continents+'</g><g>'+dots+'</g></svg><div class="dns-world-map-legend">'+located.length+' approximate location(s) plotted · '+results.length+' public IP(s) checked</div>';
-            };
             const run = async () => {
               const name=$('#live-dns-name',p).value.trim(), type=$('#live-dns-type',p).value;
               const status=$('#live-dns-status',p), output=$('#live-dns-output',p), button=$('#live-dns-run',p);
@@ -468,65 +410,13 @@ regMod({
                   return '<div class="dns-live-stage"><span class="dns-live-dot"></span><article class="dns-live-stage-card"><div class="dns-live-stage-head"><div><div class="dns-live-stage-title">'+String(i+1).padStart(2,'0')+' · '+escapeHtml(stage)+'</div><div class="dns-live-stage-server">'+escapeHtml(step.server)+'</div></div><span class="dns-live-badge">'+escapeHtml(step.elapsedMs)+' ms</span></div><div class="dns-live-badges"><span class="dns-live-badge">'+escapeHtml(step.rcode===0?'NOERROR':step.rcode)+'</span>'+(step.authoritative?'<span class="dns-live-badge">Authoritative answer</span>':'<span class="dns-live-badge">Referral / lookup</span>')+'</div><details class="dns-live-details"><summary>View query and response details</summary><div class="dns-live-details-body">'+detailItems.join('')+referralHtml+glueHtml+answerHtml+'</div></details></article></div>';
                 }).join('')+'</div></section>';
                 html+='<section class="dns-live-section"><h3>Final DNS records</h3>'+renderRecords(answers)+'</section>';
-                html+='<section class="dns-live-section"><h3>World map · IP locations</h3><p class="dns-live-meta">Approximate geolocation of public DNS servers, referral addresses and final A/AAAA answers observed in this trace. Private and unavailable IPs are not plotted.</p><div id="dns-world-map" class="dns-world-map"></div><div id="dns-world-map-list" class="dns-world-map-list"></div><p class="dns-live-meta">IP geolocation is approximate, not a physical server address. IPs are sent to ipwho.is for location lookup; map tiles are provided by OpenStreetMap.</p></section>';
                 html+='<section class="dns-live-section"><h3>Trace information</h3><div class="dns-live-meta">Method: '+escapeHtml(data.method)+' · Queried: '+escapeHtml(data.queriedAt)+'</div></section></div>';
                 output.innerHTML=html;status.textContent='Live DNS trace completed successfully.';
-                renderWorldMap(data,output);
               } catch(error) { output.innerHTML=vd('bad','Live DNS lookup failed.',escapeHtml(error.message)+' Check the hosted resolver deployment.');status.textContent='Lookup failed.'; }
               finally { button.disabled=false; }
             };
             $('#live-dns-run',p).onclick=run;
             $('#live-dns-name',p).onkeydown=e=>{if(e.key==='Enter')run();};
-          },
-        },
-        {
-          label: 'Traceroute map',
-          render(p) {
-            p.innerHTML = panel(
-              'Trace the actual route from your computer',
-              '<div class="controls"><div class="field grow"><label for="route-target">Destination hostname or IP</label><input id="route-target" value="google.com" spellcheck="false" autocomplete="off" placeholder="example.com"></div><div class="field"><label for="route-max-hops">Maximum hops</label><select id="route-max-hops"><option value="20">20</option></select></div></div><div class="btnrow"><button class="btn" id="route-run" type="button">Trace route</button><span class="hint" id="route-status" role="status">Requires the optional BitSecure Python helper running on this computer.</span></div><p class="hint">This runs the operating system traceroute from your computer. It may take up to 35 seconds. Some routers do not reply to traceroute probes.</p>',
-              'Unlike the DNS map, this visualizes packet-path hops reported by your own computer. It does not infer missing hops.'
-            )+'<div id="route-results"></div>';
-            const escRoute = value => String(value ?? '').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-            const isPublic = ip => {
-              try {
-                if(ip.includes(':'))return !/^(::1|::|fc|fd|fe80|ff)/i.test(ip);
-                const a=ip.split('.').map(Number);
-                if(a.length!==4||a.some(x=>!Number.isInteger(x)||x<0||x>255))return false;
-                const [x,y]=a;
-                return !(x===0||x===10||x===127||x>=224||(x===169&&y===254)||(x===172&&y>=16&&y<=31)||(x===192&&y===168)||(x===100&&y>=64&&y<=127));
-              } catch{return false;}
-            };
-            const run=$('#route-run',p),status=$('#route-status',p),results=$('#route-results',p);
-            run.onclick=async()=>{
-              const target=$('#route-target',p).value.trim();
-              if(!target){status.textContent='Enter a destination hostname or IP.';return;}
-              run.disabled=true;status.textContent='Running traceroute on this computer…';
-              results.innerHTML='<div class="dns-live-loading">Collecting route hops from your operating system…</div>';
-              try{
-                const response=await fetch('http://127.0.0.1:8765/api/traceroute?target='+encodeURIComponent(target),{headers:{Accept:'application/json'},cache:'no-store'});
-                const data=await response.json();
-                if(!response.ok||!data.ok)throw new Error(data.error||'The local helper could not trace this destination.');
-                const hops=Array.isArray(data.hops)?data.hops:[];
-                if(!hops.length)throw new Error('The operating system returned no traceroute hops.');
-                status.textContent='Received '+hops.length+' hops · '+(data.complete?'destination reached':'destination not confirmed');
-                const publicHops=hops.filter(h=>h.ip&&isPublic(h.ip));
-                const unique=[...new Map(publicHops.map(h=>[h.ip,h])).values()];
-                results.innerHTML='<section class="dns-live-section"><h3>Route map</h3><p class="dns-live-meta">Only responding public IP hops can be geolocated. Locations are approximate; private hops and timeouts remain in the hop list.</p><div id="route-map" class="dns-route-map"><svg viewBox="0 0 1000 500" role="img" aria-label="World map of traceroute hops"><rect width="1000" height="500" fill="#102039"/><g stroke="#526783" opacity=".45"><path d="M0 125H1000M0 250H1000M0 375H1000M200 0V500M400 0V500M600 0V500M800 0V500"/></g><image href="/assets/world-map.svg" x="0" y="0" width="1000" height="500" preserveAspectRatio="none"/><g id="route-map-lines"></g><g id="route-map-pins"></g></svg><div class="dns-route-map-caption">Geolocating responding public hops…</div></div><div class="dns-route-hop-list" id="route-hop-list"></div></section>';
-                const geo=await Promise.all(unique.map(async hop=>{try{const r=await fetch('https://ipwho.is/'+encodeURIComponent(hop.ip));const g=await r.json();return g.success&&Number.isFinite(Number(g.latitude))&&Number.isFinite(Number(g.longitude))?{ip:hop.ip,lat:Number(g.latitude),lon:Number(g.longitude),city:g.city,country:g.country}:null;}catch{return null;}}));
-                const located=geo.filter(Boolean);
-                const project=(lat,lon)=>({x:(lon+180)/360*1000,y:(90-lat)/180*500});
-                const points=located.map(g=>({...g,...project(g.lat,g.lon),hop:publicHops.find(h=>h.ip===g.ip)?.hop}));
-                const line=points.map(pt=>pt.x.toFixed(1)+','+pt.y.toFixed(1)).join(' ');
-                $('#route-map-lines',results).innerHTML=points.length>1?'<polyline points="'+line+'" fill="none" stroke="#38bdf8" stroke-width="3" stroke-dasharray="7 6"/>':'';
-                $('#route-map-pins',results).innerHTML=points.map((pt,i)=>{const place=[pt.city,pt.country].filter(Boolean).join(', ')||pt.ip;const label=escRoute(place);const lx=Math.max(8,Math.min(760,pt.x+13)),ly=Math.max(20,Math.min(475,pt.y-13));return '<g><title>Hop '+pt.hop+' · '+escRoute(pt.ip)+' · '+label+'</title><circle cx="'+pt.x+'" cy="'+pt.y+'" r="13" fill="#38bdf8" opacity=".22"/><circle cx="'+pt.x+'" cy="'+pt.y+'" r="5.5" fill="#38bdf8" stroke="#102039" stroke-width="2"/><text x="'+(pt.x+8)+'" y="'+(pt.y-8)+'" fill="white" font-size="12" font-weight="700" paint-order="stroke" stroke="#102039" stroke-width="3">'+pt.hop+'</text><text x="'+lx+'" y="'+ly+'" fill="#fff" font-size="13" font-weight="600" paint-order="stroke" stroke="#102039" stroke-width="3">'+label+'</text></g>';}).join('');
-                $('.dns-route-map-caption',results).textContent=located.length+' of '+unique.length+' unique public hop IPs geolocated. The line connects geolocated hops in observed route order; it is not the exact physical cable path.';
-                $('#route-hop-list',results).innerHTML=hops.map(h=>{const place=located.find(g=>g.ip===h.ip);const location=place?[place.city,place.region,place.country].filter(Boolean).join(', '):'';return '<div class="dns-route-hop"><b>Hop '+h.hop+'</b><code>'+escRoute(h.ip||'* * * (no reply)')+'</code><span>'+(h.rtt_ms===null?'—':escRoute(h.rtt_ms)+' ms')+'</span><small>'+escRoute(location||(h.ip&&!isPublic(h.ip)?'Private / non-public hop':h.ip?'Public IP · location unavailable':'Router did not respond'))+'</small></div>';}).join('');
-              }catch(error){
-                results.innerHTML='<div class="dns-live-section"><b>Traceroute unavailable</b><p>'+escRoute(error.message)+'</p><p class="dns-live-meta">Start network_agent.py in a terminal and keep it running. On Linux, install the traceroute utility if the helper requests it.</p></div>';
-                status.textContent='Traceroute failed.';
-              }finally{run.disabled=false;}
-            };
           },
         },
         {

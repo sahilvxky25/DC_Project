@@ -29,7 +29,6 @@ import { bitRow, hn, kb, panel, sel, statRow, tabset, tbl, vd } from '../../core
 import { $, fmtN, pickOne } from '../../core/utils.js';
 import { regMod } from '../registry.js';
 import { flag, stat } from '../../app/progress.js';
-import { mountSubnetWorking } from '../../core/algorithm-working.js';
 
 /* Register "Addressing and subnets". The router calls mount(root) when the learner opens #/m/subnets and calls the returned function (if any) when they leave. */
 regMod({
@@ -115,7 +114,6 @@ regMod({
             };
             $('#ci', p).oninput = $('#cp', p).oninput = $('#cj', p).oninput = f;
             f();
-            mountSubnetWorking(p);
           },
         },
         {
