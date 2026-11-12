@@ -91,3 +91,35 @@ export function mergeProgress(localValue, cloudValue, localTime = 0, cloudTime =
     last: newer.last || older.last || '',
   });
 }
+
+/** Read and write wrappers make browser-storage failures testable without a DOM. */
+export function readProgressSnapshot(storage, key) {
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && parsed.progress && typeof parsed.progress === 'object') {
+      return {
+        progress: normaliseProgress(parsed.progress),
+        clientUpdatedAt: Number(parsed.clientUpdatedAt) || 0,
+      };
+    }
+    return { progress: normaliseProgress(parsed), clientUpdatedAt: 0 };
+  } catch {
+    return null;
+  }
+}
+
+export function writeProgressSnapshot(storage, key, value) {
+  try {
+    storage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Prevent delayed work from an earlier account activation from mutating the current account. */
+export function isCurrentActivation(activeUid, activationToken, expectedUid, expectedToken) {
+  return activeUid === expectedUid && activationToken === expectedToken;
+}
