@@ -12,8 +12,9 @@ import {
   doc,
   getDoc,
   serverTimestamp,
-  setDoc
+  runTransaction
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
+import { fresh, normaliseProgress, mergeProgress } from './progress-merge.js';
 
 /** Legacy/guest localStorage key; kept for schema compatibility. */
 export const STORE = 'dcl.v2';
@@ -23,41 +24,9 @@ const CLOUD_DEBOUNCE_MS = 650;
 const accountStore = uid => `${STORE}.user.${uid}`;
 const cloudDoc = uid => doc(db, 'users', uid, 'progress', 'overview');
 
-/**
- * Builds a brand-new, empty progress object.
- * @returns {{visited:Object,flags:Object,ach:Object,runs:Array,stats:Object,notes:Object,tut:Object,theme:string,last:string}}
- */
-export const fresh = () => ({
-  visited: {},
-  flags: {},
-  ach: {},
-  runs: [],
-  stats: { subnetOk: 0, quizBest: 0, quizRuns: 0 },
-  notes: {},
-  tut: {},
-  theme: '',
-  last: '',
-});
 
 /** The shared live progress binding used by the rest of the application. */
 export let P = fresh();
-
-function normaliseProgress(value) {
-  const defaults = fresh();
-  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-  const result = Object.assign(defaults, source);
-  for (const key of ['visited', 'flags', 'ach', 'notes', 'tut']) {
-    result[key] = result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])
-      ? result[key]
-      : {};
-  }
-  result.runs = Array.isArray(result.runs) ? result.runs : [];
-  result.stats = Object.assign(fresh().stats,
-    result.stats && typeof result.stats === 'object' ? result.stats : {});
-  result.theme = typeof result.theme === 'string' ? result.theme : '';
-  result.last = typeof result.last === 'string' ? result.last : '';
-  return result;
-}
 
 function readSnapshot(key) {
   try {
@@ -92,67 +61,6 @@ function persistLocal(progress, uid, clientUpdatedAt = Date.now()) {
   } catch (error) {
     // The in-memory app must still work when browser storage is blocked or full.
   }
-}
-
-function mergeTimestampMaps(localMap, cloudMap) {
-  const merged = { ...cloudMap, ...localMap };
-  for (const key of Object.keys(merged)) {
-    const localValue = localMap?.[key];
-    const cloudValue = cloudMap?.[key];
-    if (typeof localValue === 'number' && typeof cloudValue === 'number') {
-      merged[key] = Math.max(localValue, cloudValue);
-    } else if (localValue === undefined) {
-      merged[key] = cloudValue;
-    } else if (cloudValue === undefined) {
-      merged[key] = localValue;
-    }
-  }
-  return merged;
-}
-
-/**
- * Merge snapshots conservatively: union visited markers/achievements/flags, preserve the higher
- * numeric stats and best scores, deduplicate run history, and take preference/note fields from the
- * newest snapshot. This avoids losing progress when two devices have been used offline.
- */
-function mergeProgress(localValue, cloudValue, localTime = 0, cloudTime = 0) {
-  const local = normaliseProgress(localValue);
-  const cloud = normaliseProgress(cloudValue);
-  const localIsNewer = localTime >= cloudTime;
-  const newer = localIsNewer ? local : cloud;
-  const older = localIsNewer ? cloud : local;
-
-  const runsByKey = new Map();
-  for (const run of [...(cloud.runs || []), ...(local.runs || [])]) {
-    if (!run || typeof run !== 'object') continue;
-    const key = run.ts != null ? String(run.ts) : JSON.stringify(run);
-    runsByKey.set(key, run);
-  }
-  const runs = [...runsByKey.values()]
-    .sort((a, b) => (Number(b.ts) || 0) - (Number(a.ts) || 0))
-    .slice(0, 12);
-
-  const stats = { ...cloud.stats, ...local.stats };
-  for (const key of new Set([...Object.keys(local.stats), ...Object.keys(cloud.stats)])) {
-    const a = local.stats[key];
-    const b = cloud.stats[key];
-    if (typeof a === 'number' && typeof b === 'number') stats[key] = Math.max(a, b);
-    else if (a === undefined) stats[key] = b;
-    else if (b === undefined) stats[key] = a;
-  }
-
-  return normaliseProgress({
-    ...newer,
-    visited: mergeTimestampMaps(local.visited, cloud.visited),
-    flags: mergeTimestampMaps(local.flags, cloud.flags),
-    ach: mergeTimestampMaps(local.ach, cloud.ach),
-    runs,
-    stats,
-    notes: { ...older.notes, ...newer.notes },
-    tut: { ...older.tut, ...newer.tut },
-    theme: newer.theme,
-    last: newer.last || older.last || '',
-  });
 }
 
 let activeUid = null;
@@ -254,13 +162,27 @@ export async function flushProgressSync() {
 
   const write = async () => {
     if (activeUid !== uid || activationToken !== token || !cloudReady) return false;
-    await setDoc(cloudDoc(uid), {
-      schemaVersion: CLOUD_SCHEMA_VERSION,
-      clientUpdatedAt,
-      updatedAt: serverTimestamp(),
-      progress,
+    const ref = cloudDoc(uid);
+    // A Firestore transaction re-reads the latest cloud snapshot on contention, then merges it
+    // with this device's changes. This prevents two devices from blindly replacing one another.
+    await runTransaction(db, async transaction => {
+      const snapshot = await transaction.get(ref);
+      if (activeUid !== uid || activationToken !== token || !cloudReady) return;
+      const cloudData = snapshot.exists() ? snapshot.data() : null;
+      const merged = mergeProgress(
+        progress,
+        cloudData?.progress || fresh(),
+        clientUpdatedAt,
+        Number(cloudData?.clientUpdatedAt) || 0
+      );
+      transaction.set(ref, {
+        schemaVersion: CLOUD_SCHEMA_VERSION,
+        clientUpdatedAt: Math.max(clientUpdatedAt, Number(cloudData?.clientUpdatedAt) || 0),
+        updatedAt: serverTimestamp(),
+        progress: merged,
+      });
     });
-    return true;
+    return activeUid === uid && activationToken === token;
   };
 
   const operation = writeQueue.catch(() => false).then(write);
@@ -271,6 +193,14 @@ export async function flushProgressSync() {
     console.warn('[BitSecure] Cloud progress could not be saved; it remains in this device’s local cache.', error);
     return false;
   }
+}
+
+// Recover automatically when a device reconnects. Always re-read cloud state before uploading.
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    const uid = activeUid;
+    if (uid) void activateProgressForUser(uid);
+  });
 }
 
 /**
