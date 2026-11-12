@@ -15,7 +15,7 @@ export const fresh = () => ({
   last: '',
 });
 
-function normaliseProgress(value) {
+export function normaliseProgress(value) {
   const defaults = fresh();
   const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
   const result = Object.assign(defaults, source);
@@ -52,7 +52,7 @@ function mergeTimestampMaps(localMap, cloudMap) {
  * numeric stats and best scores, deduplicate run history, and take preference/note fields from the
  * newest snapshot. This avoids losing progress when two devices have been used offline.
  */
-function mergeProgress(localValue, cloudValue, localTime = 0, cloudTime = 0) {
+export function mergeProgress(localValue, cloudValue, localTime = 0, cloudTime = 0) {
   const local = normaliseProgress(localValue);
   const cloud = normaliseProgress(cloudValue);
   const localIsNewer = localTime >= cloudTime;
