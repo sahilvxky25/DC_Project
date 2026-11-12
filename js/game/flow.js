@@ -67,6 +67,7 @@ export function renderFlow(mod, root, freePlay) {
   const nextMod = DC.mods.find(m => m.id === order[order.indexOf(mod.id) + 1]);
   const style = zone ? `--l:${zone.l};--d:${zone.d}` : '--l:#fff3c4;--d:#f2b705';
   let phase = hasFlow ? 'watch' : 'play', timer = 0, inner = null;
+  let hasWatched = false, hasPlayed = false, res = null;
 
   root.innerHTML = `<div class="gflow" style="${style}">
     <div class="gtop"><a class="gback" href="${back}">‹ ${zone ? zone.name : 'Toolbox'}</a>
@@ -85,9 +86,27 @@ export function renderFlow(mod, root, freePlay) {
 
   const pills = () => {
     const names = { watch: '👀 Watch', play: '🎮 Play', quiz: '❓ Quiz', reward: '🏅 Reward' };
-    $('#gsteps').innerHTML = hasFlow ? Object.keys(names).map(k => `<span class="gpill2 ${k === phase ? 'on' : ''}">${names[k]}</span>`).join('') : '';
+    const locked = { watch: false, play: false, quiz: !hasPlayed, reward: !res };
+    const done = { watch: hasWatched, play: hasPlayed, quiz: !!res, reward: false };
+    $('#gsteps').innerHTML = hasFlow ? Object.keys(names).map(k =>
+      `<button class="gpill2 ${k === phase ? 'on' : ''} ${done[k] ? 'done' : ''}" type="button" data-phase="${k}" ${locked[k] ? 'disabled aria-disabled="true" title="Complete the previous stage first"' : ''} ${k === phase ? 'aria-current="step"' : ''}>${names[k]}</button>`
+    ).join('') : '';
   };
-  const go = p => { clearTimeout(timer); if (inner) { try { inner(); } catch (e) { console.error(e); } inner = null; } phase = p; pills(); ({ watch, play, quiz, reward })[p](); window.scrollTo(0, 0); };
+  const go = p => {
+    if (!['watch', 'play', 'quiz', 'reward'].includes(p)) return;
+    if (p === 'quiz' && !hasPlayed) return;
+    if (p === 'reward' && !res) return;
+    clearTimeout(timer);
+    if (inner) { try { inner(); } catch (e) { console.error(e); } inner = null; }
+    phase = p;
+    pills();
+    ({ watch, play, quiz, reward })[p]();
+    window.scrollTo(0, 0);
+  };
+  $('#gsteps').addEventListener('click', event => {
+    const button = event.target.closest('button[data-phase]');
+    if (button && !button.disabled) go(button.dataset.phase);
+  });
   const setNext = (label, fn) => { next.textContent = label; next.hidden = false; next.onclick = fn; };
 
   function watch() {
@@ -98,7 +117,7 @@ export function renderFlow(mod, root, freePlay) {
     setNext('Skip ▸', () => go('play'));
     let k = 0;
     const tick = () => {
-      if (k >= w.s.length) { setNext('Play ▸', () => go('play')); return; }
+      if (k >= w.s.length) { hasWatched = true; pills(); setNext('Play ▸', () => go('play')); return; }
       const [to, msg, cap] = w.s[k++];
       const p = $('#gpkt'); if (!p) return;
       p.style.left = pos(to, n) + '%'; p.textContent = msg; $('#gcap').innerHTML = gl(cap);
@@ -107,6 +126,8 @@ export function renderFlow(mod, root, freePlay) {
     timer = setTimeout(tick, 600);
   }
   function play() {
+    hasPlayed = true;
+    pills();
     stage.className = 'gstage play';
     stage.innerHTML = '';
     try { inner = mod.mount(stage) || null; } catch (e) { console.error(e); stage.innerHTML = `<p class="gfb">This module failed to load: ${esc(e.message)}</p>`; }
@@ -114,7 +135,6 @@ export function renderFlow(mod, root, freePlay) {
     else if (!meta.q) { visitXp(mod.id); setNext(nextMod ? 'Next: ' + nextMod.title + ' ▸' : 'Done ▸', () => (location.hash = nextMod ? '#/m/' + nextMod.id : back)); }
     else setNext('Back to ' + zone.name + ' ▸', () => (location.hash = back));
   }
-  let res = null;
   function quiz() {
     stage.className = 'gstage';
     runQuiz(stage, meta.q, LEVEL_LABELS, (r, secs) => { res = applyResult(mod.id, r, meta.q.length, secs); res.right = r; if (res.m > 0) boom(); go('reward'); });

@@ -89,8 +89,12 @@ a.gcard:hover { transform: translateY(-3px); }
 .gtop { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; }
 .gtop h2 { margin: 0; flex: 1; font-size: 1.7rem; }
 .gsteps { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.gpill2 { padding: 0.2rem 0.9rem; border-radius: 99px; font-weight: 800; font-size: 0.85rem; opacity: 0.5; border: 2px solid currentColor; }
+.gpill2 { appearance: none; font: inherit; font-weight: 800; font-size: 0.85rem; padding: 0.35rem 0.9rem; border-radius: 99px; opacity: 0.72; border: 2px solid currentColor; background: transparent; color: var(--text); cursor: pointer; transition: opacity 0.15s, transform 0.15s, background 0.15s; }
+.gpill2:not(:disabled):hover { opacity: 1; transform: translateY(-2px); }
+.gpill2:focus-visible { outline: 3px solid var(--info); outline-offset: 3px; }
 .gpill2.on { opacity: 1; background: var(--accent); color: #fff; border-color: var(--accent); }
+.gpill2.done:not(.on) { opacity: 1; border-color: var(--ok); }
+.gpill2:disabled { cursor: not-allowed; opacity: 0.38; filter: grayscale(0.7); }
 .gstage { background: var(--surface); border: var(--gborder); border-radius: var(--radius); box-shadow: var(--gshadow); padding: 1.2rem; min-height: 320px; min-width: 0; }
 .gstage.play { padding: 1rem; min-height: 420px; }
 .gstage.play .panel { box-shadow: none; }
