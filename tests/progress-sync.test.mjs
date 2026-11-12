@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fresh, mergeProgress, normaliseProgress } from '../js/core/progress-merge.js';
+import { fresh, mergeProgress, normaliseProgress, readProgressSnapshot, writeProgressSnapshot, isCurrentActivation } from '../js/core/progress-merge.js';
 
 test('concurrent device updates preserve independent visited markers and achievements', () => {
   const deviceA = fresh();
@@ -106,4 +106,32 @@ test('merging is idempotent for unioned markers and stable run IDs', () => {
   const twice = mergeProgress(once, b, 11, 11);
   assert.deepEqual(twice.visited, once.visited);
   assert.deepEqual(twice.runs, once.runs);
+});
+
+test('blocked or full browser storage does not crash progress handling', () => {
+  const blocked = {
+    getItem() { throw new Error('storage blocked'); },
+    setItem() { throw new Error('quota exceeded'); },
+  };
+  assert.equal(readProgressSnapshot(blocked, 'account-a'), null);
+  assert.equal(writeProgressSnapshot(blocked, 'account-a', { progress: fresh() }), false);
+});
+
+test('account caches remain UID-scoped and never fall back to another user key', () => {
+  const values = new Map();
+  const storage = {
+    getItem(key) { return values.has(key) ? values.get(key) : null; },
+    setItem(key, value) { values.set(key, value); },
+  };
+  writeProgressSnapshot(storage, 'dcl.v2.user.A', { clientUpdatedAt: 1, progress: { visited: { tcp: 1 } } });
+  writeProgressSnapshot(storage, 'dcl.v2.user.B', { clientUpdatedAt: 2, progress: { visited: { dns: 1 } } });
+  assert.deepEqual(readProgressSnapshot(storage, 'dcl.v2.user.A').progress.visited, { tcp: 1 });
+  assert.deepEqual(readProgressSnapshot(storage, 'dcl.v2.user.B').progress.visited, { dns: 1 });
+  assert.equal(readProgressSnapshot(storage, 'dcl.v2.user.C'), null);
+});
+
+test('late asynchronous work from a previous account activation is rejected', () => {
+  assert.equal(isCurrentActivation('user-B', 2, 'user-A', 1), false);
+  assert.equal(isCurrentActivation('user-B', 2, 'user-B', 2), true);
+  assert.equal(isCurrentActivation('user-B', 3, 'user-B', 2), false);
 });
