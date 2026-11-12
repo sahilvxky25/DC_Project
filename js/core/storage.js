@@ -14,7 +14,7 @@ import {
   serverTimestamp,
   runTransaction
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
-import { fresh, normaliseProgress, mergeProgress } from './progress-merge.js';
+import { fresh, normaliseProgress, mergeProgress, readProgressSnapshot, writeProgressSnapshot, isCurrentActivation } from './progress-merge.js';
 
 /** Legacy/guest localStorage key; kept for schema compatibility. */
 export const STORE = 'dcl.v2';
@@ -29,38 +29,14 @@ const cloudDoc = uid => doc(db, 'users', uid, 'progress', 'overview');
 export let P = fresh();
 
 function readSnapshot(key) {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    // Account keys use an envelope so merge decisions can compare snapshot times.
-    if (parsed && parsed.progress && typeof parsed.progress === 'object') {
-      return {
-        progress: normaliseProgress(parsed.progress),
-        clientUpdatedAt: Number(parsed.clientUpdatedAt) || 0,
-      };
-    }
-    // Accept an older raw P object in a UID-specific key, if one exists.
-    return { progress: normaliseProgress(parsed), clientUpdatedAt: 0 };
-  } catch (error) {
-    return null;
-  }
+  return readProgressSnapshot(localStorage, key);
 }
 
 function persistLocal(progress, uid, clientUpdatedAt = Date.now()) {
-  try {
-    if (uid) {
-      localStorage.setItem(accountStore(uid), JSON.stringify({
-        schemaVersion: CLOUD_SCHEMA_VERSION,
-        clientUpdatedAt,
-        progress,
-      }));
-    } else {
-      localStorage.setItem(STORE, JSON.stringify(progress));
-    }
-  } catch (error) {
-    // The in-memory app must still work when browser storage is blocked or full.
-  }
+  const value = uid
+    ? { schemaVersion: CLOUD_SCHEMA_VERSION, clientUpdatedAt, progress }
+    : progress;
+  writeProgressSnapshot(localStorage, uid ? accountStore(uid) : STORE, value);
 }
 
 let activeUid = null;
@@ -81,7 +57,7 @@ function scheduleCloudSync() {
   const token = activationToken;
   syncTimer = setTimeout(() => {
     syncTimer = null;
-    if (activeUid !== uid || activationToken !== token || !cloudReady) return;
+    if (!isCurrentActivation(activeUid, activationToken, uid, token) || !cloudReady) return;
     void flushProgressSync();
   }, CLOUD_DEBOUNCE_MS);
 }
@@ -182,7 +158,7 @@ export async function flushProgressSync() {
         progress: merged,
       });
     });
-    return activeUid === uid && activationToken === token;
+    return isCurrentActivation(activeUid, activationToken, uid, token);
   };
 
   const operation = writeQueue.catch(() => false).then(write);
