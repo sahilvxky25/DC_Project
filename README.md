@@ -328,3 +328,8 @@ The interface is now a game-style shell around the existing modules. Nothing in 
 - **Code:** `js/game/data.js` (zones, difficulty, Watch scenes, quizzes), `rules.js` (pure XP, medal, level and streak rules), `store.js` (saves into the existing progress object, so Firebase sync keeps working), `flow.js`, `screens.js`, `ui.js`.
 - **Add a quiz to a module:** add an entry to `META` in `js/game/data.js` (`z` zone, `d` difficulty, `e` emoji, `w` Watch scene, `q` five `question|correct|wrong|wrong` strings).
 - **Tests:** `node --test tests/rules.test.mjs`
+
+
+## Cookie and storage preferences
+
+BitSecure includes a first-visit consent panel with **Accept All**, **Reject Optional**, and **Customize Preferences** actions. Essential browser storage remains enabled for core functionality. The optional analytics preference is recorded separately under `bitsecure.cookieConsent.v1`; no analytics or marketing tracker is loaded by this component. Users can reopen the preferences from **Cookie Settings** in the site footer. Update the consent categories and privacy disclosures if optional storage or third-party integrations are added in the future.
