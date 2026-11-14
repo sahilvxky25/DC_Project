@@ -307,7 +307,11 @@ Before publishing a change, test the affected feature and the main application f
 
 ## Contributing
 
-Keep protocol logic separate from DOM rendering where practical, reuse shared helpers and design tokens, and avoid duplicating shared state. Keep changes focused and test the affected module as well as navigation before committing.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, project conventions, testing expectations, and pull request guidelines.
+
+## Security
+
+If you discover a security vulnerability, please report it privately and do not disclose it in a public issue or pull request. See [SECURITY.md](SECURITY.md) for the responsible disclosure process.
 
 ## Glossary
 
