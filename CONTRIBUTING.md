@@ -1,5 +1,7 @@
 # Contributing to BitSecure
 
+Please read our [Code of Conduct](CODE_OF_CONDUCT.md) before participating. By taking part in this project, you agree to uphold a respectful, inclusive, and collaborative community.
+
 Thank you for your interest in improving BitSecure! Contributions that improve the learning experience, correctness of networking concepts, accessibility, documentation, and reliability are welcome.
 
 ## Before you start
