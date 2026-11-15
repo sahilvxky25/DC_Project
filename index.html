@@ -407,10 +407,7 @@
           </div>
         </form>
       </dialog>
-    </div>
-    <div class="toasts" id="toasts" aria-live="polite"></div>
-
-    <!-- Chat assistant launcher: frontend placeholder only; no backend is connected yet. -->
+    <!-- Chat assistant launcher: only rendered inside the authenticated app shell. -->
     <aside class="chatbot-widget" aria-label="BitSecure assistant">
       <section class="chatbot-panel" id="chatbotPanel" aria-label="Chat assistant" aria-live="polite" hidden>
         <header class="chatbot-panel-header">
@@ -432,6 +429,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>
       </button>
     </aside>
+    </div>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+
 
     <section class="cookie-banner" id="cookieBanner" role="region" aria-labelledby="cookieBannerTitle" aria-describedby="cookieBannerDescription" hidden>
       <div class="cookie-banner-copy">
