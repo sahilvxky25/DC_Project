@@ -39,6 +39,7 @@
     <link rel="stylesheet" href="css/firewall.css" />
     <link rel="stylesheet" href="css/game.css" />
     <link rel="stylesheet" href="css/cookie-consent.css" />
+    <link rel="stylesheet" href="css/chatbot.css" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -409,6 +410,29 @@
     </div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
 
+    <!-- Chat assistant launcher: frontend placeholder only; no backend is connected yet. -->
+    <aside class="chatbot-widget" aria-label="BitSecure assistant">
+      <section class="chatbot-panel" id="chatbotPanel" aria-label="Chat assistant" aria-live="polite" hidden>
+        <header class="chatbot-panel-header">
+          <span class="chatbot-mark" aria-hidden="true">✦</span>
+          <div class="chatbot-heading">
+            <strong>BitSecure Assistant</strong>
+            <span>Your Data Communications companion</span>
+          </div>
+          <button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button>
+        </header>
+        <div class="chatbot-panel-body">
+          <p class="chatbot-welcome">Hello! How can I help you learn today?</p>
+          <p class="chatbot-description">The AI assistant is coming soon. It will help answer Data Communications questions and guide you around the BitSecure website.</p>
+          <span class="chatbot-coming-soon">Chat functionality coming soon</span>
+        </div>
+        <footer class="chatbot-panel-footer">This is a visual preview. No messages are sent or stored.</footer>
+      </section>
+      <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-label="Open BitSecure assistant" aria-controls="chatbotPanel" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>
+      </button>
+    </aside>
+
     <section class="cookie-banner" id="cookieBanner" role="region" aria-labelledby="cookieBannerTitle" aria-describedby="cookieBannerDescription" hidden>
       <div class="cookie-banner-copy">
         <div class="cookie-banner-eyebrow"><span aria-hidden="true">🍪</span> YOUR PRIVACY</div>
@@ -450,5 +474,6 @@
     <!-- One entry point. type="module" turns on import/export; it must be served over http:// (see README). -->
     <script type="module" src="./js/app.js"></script>
     <script type="module" src="./js/auth/login.js"></script>
+    <script type="module" src="./js/chatbot/widget.js"></script>
   </body>
 </html>
