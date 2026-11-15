@@ -337,3 +337,10 @@ The interface is now a game-style shell around the existing modules. Nothing in 
 ## Cookie and storage preferences
 
 BitSecure includes a first-visit consent panel with **Accept All**, **Reject Optional**, and **Customize Preferences** actions. Essential browser storage remains enabled for core functionality. The optional analytics preference is recorded separately under `bitsecure.cookieConsent.v1`; no analytics or marketing tracker is loaded by this component. Users can reopen the preferences from **Cookie Settings** in the site footer. Update the consent categories and privacy disclosures if optional storage or third-party integrations are added in the future.
+
+
+## AI Tutor (development branch)
+
+The `feature/python-ai-chatbot` branch contains the initial public BitSecure AI Tutor integration: a visitor-accessible chat widget, a FastAPI backend, Gemini integration, curated networking and BitSecure Markdown knowledge, keyword-based retrieval, tests, and Azure Container Apps deployment instructions.
+
+See [AI_CHATBOT_IMPLEMENTATION.md](AI_CHATBOT_IMPLEMENTATION.md) and [backend/README.md](backend/README.md) for local setup, API configuration, deployment steps, and current limitations. The widget remains unconfigured until the deployed API origin is added to the `bitsecure-ai-api` meta tag in `index.html`. Do not commit Gemini API keys or other deployment secrets.
