@@ -121,6 +121,15 @@ function renderProfile(user) {
   profileBtn.setAttribute('aria-label', `User Profile: ${name}`);
 }
 
+// Google verifies the email through the provider. Accept that provider verification
+// even if Firebase's top-level emailVerified flag has not synchronized yet.
+function isVerifiedForBitSecure(user) {
+  return Boolean(user && (
+    user.emailVerified ||
+    user.providerData?.some(provider => provider.providerId === 'google.com')
+  ));
+}
+
 function showApp(user = auth.currentUser) {
   hideAuthLoading();
   // Keep a durable signal in case the application module finishes loading after this module.
@@ -502,7 +511,7 @@ localStorage.removeItem('bitsecure.demo-remembered');
 localStorage.removeItem('bitsecure.demo-accounts');
 
 onAuthStateChanged(auth, async user => {
-  if (user?.emailVerified) {
+  if (isVerifiedForBitSecure(user)) {
     // Keep the loader visible while the account's cloud/local progress is restored.
     showAuthLoading('Restoring your learning progress...');
     try {
@@ -514,7 +523,7 @@ onAuthStateChanged(auth, async user => {
 
     // Auth events can overlap while a slow Firestore request is in flight. Do not display stale
     // progress if the user signed out or changed accounts before this restore finished.
-    if (auth.currentUser?.uid !== user.uid || !auth.currentUser?.emailVerified) return;
+    if (auth.currentUser?.uid !== user.uid || !isVerifiedForBitSecure(auth.currentUser)) return;
     showApp(user);
     return;
   }
