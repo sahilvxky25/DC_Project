@@ -40,6 +40,7 @@
     <link rel="stylesheet" href="css/game.css" />
     <link rel="stylesheet" href="css/cookie-consent.css" />
     <link rel="stylesheet" href="css/chatbot.css" />
+    <link rel="stylesheet" href="css/info-pages.css" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
@@ -127,6 +128,7 @@
       <div class="main">
         <header class="topbar">
           <a class="gbrand" id="gbrand" href="#/" aria-label="BitSecure home">⚡ BitSecure</a>
+          <nav class="topbar-info-links" aria-label="Project information"><a href="#/about">About Us</a><a href="#/support">Support Us</a></nav>
           <div class="link" id="link">
             <span class="led" aria-hidden="true"></span><span id="ls">Link is up</span>
             <button class="btn ghost sm" id="lb" aria-pressed="false">Take link down</button>
@@ -378,7 +380,12 @@
           <!-- ============ Dynamic views ============ -->
           <section class="stage" id="dash"></section>
           <section class="stage" id="mview"></section>
+          <section class="stage" id="info-page"></section>
         </main>
+        <footer class="site-foot">
+          <span>BitSecure · Interactive learning through simulation</span>
+          <span class="info-footer-links"><a href="#/about">About Us</a><a href="#/support">Support Us</a><a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">GitHub ↗</a></span>
+        </footer>
         <footer class="site-foot">
           Data Comms Lab · every simulator runs locally in your browser
           <button class="cookie-settings-link" id="cookieSettingsFooter" type="button">Cookie Settings</button>
