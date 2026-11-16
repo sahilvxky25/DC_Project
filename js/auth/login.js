@@ -161,7 +161,7 @@ function setMode(mode) {
   signInTab.setAttribute('aria-selected', String(!signingUp));
   signUpTab.setAttribute('aria-selected', String(signingUp));
   nameField.hidden = !signingUp;
-  googleSignInOption.hidden = signingUp;
+  // Google can be used both to create a new account and to sign in.
   nameInput.required = signingUp;
   passwordInput.autocomplete = signingUp ? 'new-password' : 'current-password';
   passwordInput.placeholder = signingUp ? 'At least 8 characters' : 'Your password';
