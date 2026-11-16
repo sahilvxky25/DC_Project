@@ -55,7 +55,7 @@ BitSecure is an interactive, browser-based Data Communications and Computer Netw
 - Explore the guided learning journey, tutorials, challenges, quizzes, glossary, achievements, and progress indicators.
 
 ### Accounts and progress
-- Firebase Authentication supports email/password sign-up and sign-in, email verification, password reset, password change, and sign-out.
+- Firebase Authentication supports Google sign-in and email/password sign-up/sign-in, email verification, password reset, password change (for password-based accounts), and sign-out.
 - Firestore synchronizes account-specific learning progress, achievements, run history, quiz statistics, notes, theme, and last visited screen.
 - A local account-specific cache helps preserve progress when cloud access is temporarily unavailable.
 - Responsive navigation includes a collapsible desktop sidebar and a mobile navigation drawer.
@@ -159,10 +159,11 @@ You can also use VS Code Live Server or `npx serve`.
 
 1. Create or select a project in the [Firebase console](https://console.firebase.google.com/).
 2. Register a Firebase Web app and copy its web-app configuration.
-3. In **Authentication → Sign-in method**, enable **Email/Password**.
+3. In **Authentication → Sign-in method**, enable **Email/Password** and **Google**. Select a support email when enabling Google.
 4. In **Authentication → Settings → Authorized domains**, add the hostnames used for local and deployed versions. Do not include URL paths.
 5. Update the configuration in `js/auth/firebase-client.js`.
-6. Run the site over HTTP(S) and test sign-up, email verification, sign-in, password reset, password change, and sign-out.
+6. Run the site over HTTP(S) and test Google sign-in, email/password sign-up, email verification, password reset, password change for password-based accounts, and sign-out.
+7. For Google sign-in, verify that the deployed hostname is listed under **Authentication → Settings → Authorized domains**. Google sign-in uses Firebase's redirect flow, which is suitable for mobile browsers.
 
 ### 2. Configure Cloud Firestore progress
 
@@ -274,6 +275,8 @@ Then:
 | “does not provide an export named …” | Confirm that the export exists and the import name/path matches. |
 | Sign-in says the domain is unauthorized | Add the hostname in Firebase Authentication → Settings → Authorized domains. |
 | Email/password sign-in is unavailable | Enable Email/Password in Firebase Authentication → Sign-in method. |
+| Google sign-in is unavailable | Enable Google in Firebase Authentication → Sign-in method, set a support email, and authorize the deployed hostname. |
+| Google redirect returns an authorization error | Check Firebase Authorized domains and the Google provider configuration in the Firebase console. |
 | Authentication configuration error | Check `js/auth/firebase-client.js` against the Firebase Web app configuration. |
 | Firestore `permission-denied` | Verify that the user is signed in and the rules allow access only to that user's UID path. |
 | Progress differs between devices | Confirm both devices use the same Firebase project and account, then inspect `users/{uid}/progress/overview`. |
