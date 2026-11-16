@@ -225,8 +225,9 @@ async function handleGoogleSignIn() {
   setMessage('');
   showAuthLoading(authMode === 'signup' ? 'Creating your account with Google...' : 'Connecting to Google...');
   try {
-    // Use local persistence for Google sessions so they behave like "Remember me".
-    await setPersistence(auth, browserLocalPersistence);
+    // Respect the same Remember me choice used by email/password sign-in.
+    const persistence = rememberMe.checked ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistence);
     await signInWithRedirect(auth, googleProvider);
     // Firebase redirects away from this page; onAuthStateChanged restores the user on return.
   } catch (error) {
