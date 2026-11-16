@@ -6,12 +6,15 @@ import {
   browserSessionPersistence,
   createUserWithEmailAndPassword,
   EmailAuthProvider,
+  GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
   sendEmailVerification,
   sendPasswordResetEmail,
   reauthenticateWithCredential,
   setPersistence,
   signInWithEmailAndPassword,
+  signInWithRedirect,
   signOut,
   updateProfile,
   updatePassword
@@ -20,6 +23,8 @@ import {
 const loginScreen = document.getElementById('login-screen');
 const appScreen = document.querySelector('.app');
 const loginForm = document.getElementById('login-form');
+const googleSignInButton = document.getElementById('google-signin');
+const googleSignInOption = document.getElementById('google-signin-option');
 const emailInput = document.getElementById('login-email');
 const passwordInput = document.getElementById('login-password');
 const errorBox = document.getElementById('login-error');
@@ -111,6 +116,8 @@ function renderProfile(user) {
   profileName.textContent = name;
   profileEmail.textContent = user.email || '';
   profileAvatar.textContent = name.charAt(0).toUpperCase();
+  // Google-only accounts do not have an email/password credential to change here.
+  changePasswordBtn.hidden = !user.providerData.some(provider => provider.providerId === 'password');
   profileBtn.setAttribute('aria-label', `User Profile: ${name}`);
 }
 
@@ -145,6 +152,7 @@ function setMode(mode) {
   signInTab.setAttribute('aria-selected', String(!signingUp));
   signUpTab.setAttribute('aria-selected', String(signingUp));
   nameField.hidden = !signingUp;
+  googleSignInOption.hidden = signingUp;
   nameInput.required = signingUp;
   passwordInput.autocomplete = signingUp ? 'new-password' : 'current-password';
   passwordInput.placeholder = signingUp ? 'At least 8 characters' : 'Your password';
@@ -190,7 +198,10 @@ function friendlyError(error) {
     'auth/user-disabled': 'This account has been disabled. Contact the site administrator.',
     'auth/too-many-requests': 'Too many attempts. Please wait a while and try again.',
     'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
-    'auth/operation-not-allowed': 'Email/password sign-in is not enabled. Enable it in Firebase Authentication settings.',
+    'auth/operation-not-allowed': 'This sign-in method is not enabled. Enable it in Firebase Authentication settings.',
+    'auth/account-exists-with-different-credential': 'An account already exists with this email using another sign-in method. Sign in with that method first, then link Google from account settings.',
+    'auth/popup-blocked': 'The Google sign-in window was blocked. Allow pop-ups or try again.',
+    'auth/cancelled-popup-request': 'The Google sign-in request was cancelled. Please try again.',
     'auth/unauthorized-domain': 'This website domain is not authorized in Firebase. Add it under Authentication settings → Authorized domains.',
     'auth/invalid-api-key': 'Firebase configuration is invalid. Check the web app configuration.'
   };
@@ -203,6 +214,36 @@ function validEmail(email) {
 
 signInTab.addEventListener('click', () => setMode('signin'));
 signUpTab.addEventListener('click', () => setMode('signup'));
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+googleSignInButton.addEventListener('click', async () => {
+  if (authMode !== 'signin') return;
+  googleSignInButton.disabled = true;
+  setMessage('');
+  showAuthLoading('Connecting to Google...');
+  try {
+    const persistence = rememberMe.checked
+      ? browserLocalPersistence
+      : browserSessionPersistence;
+    await setPersistence(auth, persistence);
+    // Redirect is more reliable than popups on mobile browsers.
+    await signInWithRedirect(auth, googleProvider);
+  } catch (error) {
+    hideAuthLoading();
+    googleSignInButton.disabled = false;
+    setMessage(friendlyError(error));
+  }
+});
+
+// A redirect returns to this page; surface provider errors while the auth observer
+// remains the single source of truth for restoring progress and opening the app.
+getRedirectResult(auth).catch(error => {
+  hideAuthLoading();
+  googleSignInButton.disabled = false;
+  setMessage(friendlyError(error));
+});
 
 loginForm.addEventListener('submit', async event => {
   event.preventDefault();
