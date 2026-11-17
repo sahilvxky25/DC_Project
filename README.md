@@ -337,3 +337,8 @@ The interface is now a game-style shell around the existing modules. Nothing in 
 ## Cookie and storage preferences
 
 BitSecure includes a first-visit consent panel with **Accept All**, **Reject Optional**, and **Customize Preferences** actions. Essential browser storage remains enabled for core functionality. The optional analytics preference is recorded separately under `bitsecure.cookieConsent.v1`; no analytics or marketing tracker is loaded by this component. Users can reopen the preferences from **Cookie Settings** in the site footer. Update the consent categories and privacy disclosures if optional storage or third-party integrations are added in the future.
+
+
+## Privacy policy
+
+The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
