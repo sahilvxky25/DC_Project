@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.*
+!.env.example
+service-account*.json
+*.log
+# Python virtual environment
+.venv/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# Test and tooling cache
+.pytest_cache/
+.mypy_cache/

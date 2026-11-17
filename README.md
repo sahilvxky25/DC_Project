@@ -307,7 +307,11 @@ Before publishing a change, test the affected feature and the main application f
 
 ## Contributing
 
-Keep protocol logic separate from DOM rendering where practical, reuse shared helpers and design tokens, and avoid duplicating shared state. Keep changes focused and test the affected module as well as navigation before committing.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, project conventions, testing expectations, and pull request guidelines.
+
+## Security
+
+If you discover a security vulnerability, please report it privately and do not disclose it in a public issue or pull request. See [SECURITY.md](SECURITY.md) for the responsible disclosure process.
 
 ## Glossary
 
@@ -328,3 +332,25 @@ The interface is now a game-style shell around the existing modules. Nothing in 
 - **Code:** `js/game/data.js` (zones, difficulty, Watch scenes, quizzes), `rules.js` (pure XP, medal, level and streak rules), `store.js` (saves into the existing progress object, so Firebase sync keeps working), `flow.js`, `screens.js`, `ui.js`.
 - **Add a quiz to a module:** add an entry to `META` in `js/game/data.js` (`z` zone, `d` difficulty, `e` emoji, `w` Watch scene, `q` five `question|correct|wrong|wrong` strings).
 - **Tests:** `node --test tests/rules.test.mjs`
+
+
+## Cookie and storage preferences
+
+BitSecure includes a first-visit consent panel with **Accept All**, **Reject Optional**, and **Customize Preferences** actions. Essential browser storage remains enabled for core functionality. The optional analytics preference is recorded separately under `bitsecure.cookieConsent.v1`; no analytics or marketing tracker is loaded by this component. Users can reopen the preferences from **Cookie Settings** in the site footer. Update the consent categories and privacy disclosures if optional storage or third-party integrations are added in the future.
+
+
+## Privacy policy
+
+The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
+
+
+## FastAPI backend and BitSecure AI assistant
+
+The optional Python backend provides an authenticated adaptive-quiz API and the floating BitSecure assistant.
+
+- `POST /api/assistant/chat` answers Data Communications, Computer Networks and BitSecure project questions. After Firebase ID-token verification, it reads the signed-in user's own Firestore learning progress to personalize progress-related answers.
+- `POST /api/quiz/start`, `POST /api/quiz/submit` and `GET /api/quiz/profile` provide the adaptive quiz API.
+- Groq is used for text generation. The default model is `openai/gpt-oss-120b`.
+- Firebase Admin credentials and the Groq API key stay in the backend environment; do not commit them or expose them to browser code.
+
+See [backend/README.md](backend/README.md) for local setup and deployment guidance. The frontend API origin is configured in `js/config.js`. It is intentionally blank by default: set it to your deployed FastAPI HTTPS origin before enabling the assistant on the public Vercel site. For local development, set it to `http://127.0.0.1:4320`.

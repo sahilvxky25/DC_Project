@@ -4,6 +4,8 @@ import { activateProgressForUser, deactivateProgressUser, flushProgressSync } fr
 import {
   browserLocalPersistence,
   browserSessionPersistence,
+  GoogleAuthProvider,
+  getRedirectResult,
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   onAuthStateChanged,
@@ -12,6 +14,7 @@ import {
   reauthenticateWithCredential,
   setPersistence,
   signInWithEmailAndPassword,
+  signInWithRedirect,
   signOut,
   updateProfile,
   updatePassword
@@ -46,6 +49,7 @@ const nameField = document.getElementById('name-field');
 const nameInput = document.getElementById('login-name');
 const intro = document.getElementById('login-intro');
 const submitBtn = document.getElementById('login-submit');
+const googleSignInBtn = document.getElementById('google-signin-btn');
 const rememberMe = document.getElementById('remember-me');
 const forgotPasswordLink = document.getElementById('forgot-password');
 const verificationPanel = document.getElementById('verification-panel');
@@ -111,6 +115,8 @@ function renderProfile(user) {
   profileName.textContent = name;
   profileEmail.textContent = user.email || '';
   profileAvatar.textContent = name.charAt(0).toUpperCase();
+  // Google-only accounts manage their password with Google, not BitSecure.
+  changePasswordBtn.hidden = !user.providerData.some(provider => provider.providerId === 'password');
   profileBtn.setAttribute('aria-label', `User Profile: ${name}`);
 }
 
@@ -156,6 +162,7 @@ function setMode(mode) {
   submitBtn.innerHTML = signingUp
     ? 'Create Account <span aria-hidden="true">→</span>'
     : 'Sign In <span aria-hidden="true">→</span>';
+  googleSignInBtn.querySelector('span').textContent = signingUp ? 'Sign up with Google' : 'Continue with Google';
   setMessage('');
 }
 
@@ -196,6 +203,49 @@ function friendlyError(error) {
   };
   return messages[error?.code] || 'Authentication failed. Please try again.';
 }
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+function friendlyGoogleError(error) {
+  const messages = {
+    'auth/account-exists-with-different-credential': 'An account already exists with this email using another sign-in method. Sign in with that method first; do not create a second account.',
+    'auth/credential-already-in-use': 'This Google account is already linked to another BitSecure account.',
+    'auth/operation-not-allowed': 'Google sign-in is not enabled. Enable the Google provider in Firebase Authentication settings.',
+    'auth/unauthorized-domain': 'This website domain is not authorized in Firebase. Add it under Authentication → Settings → Authorized domains.',
+    'auth/network-request-failed': 'Network error. Check your internet connection and try again.',
+    'auth/popup-blocked': 'Your browser blocked the sign-in window. Allow redirects/pop-ups and try again.',
+    'auth/too-many-requests': 'Too many attempts. Please wait a while and try again.'
+  };
+  return messages[error?.code] || friendlyError(error);
+}
+
+async function handleGoogleSignIn() {
+  googleSignInBtn.disabled = true;
+  setMessage('');
+  showAuthLoading(authMode === 'signup' ? 'Creating your account with Google...' : 'Connecting to Google...');
+  try {
+    // Respect the same Remember me choice used by email/password sign-in.
+    const persistence = rememberMe.checked ? browserLocalPersistence : browserSessionPersistence;
+    await setPersistence(auth, persistence);
+    await signInWithRedirect(auth, googleProvider);
+    // Firebase redirects away from this page; onAuthStateChanged restores the user on return.
+  } catch (error) {
+    hideAuthLoading();
+    setMessage(friendlyGoogleError(error));
+    googleSignInBtn.disabled = false;
+  }
+}
+
+googleSignInBtn.addEventListener('click', handleGoogleSignIn);
+
+// A successful redirect is completed by the existing auth-state listener below.
+// This also surfaces provider/configuration errors when Google sends the user back.
+getRedirectResult(auth).catch(error => {
+  hideAuthLoading();
+  setMessage(friendlyGoogleError(error));
+  googleSignInBtn.disabled = false;
+});
 
 function validEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -364,6 +414,7 @@ document.querySelectorAll('.password-visibility-btn[data-password-target]').forE
 });
 
 changePasswordBtn.addEventListener('click', () => {
+  if (changePasswordBtn.hidden) return;
   closeProfileMenu();
   changePasswordForm.reset();
   resetPasswordVisibility();

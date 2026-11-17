@@ -32,6 +32,7 @@ import { route } from './app/router.js';
 import { applyTheme } from './app/theme.js';
 import { labInit } from './lab/lab-init.js';
 import { initModuleSearch } from './app/search.js';
+import { initCookieConsent } from './app/cookie-consent.js';
 import './modules/link-layer/framing.js';
 import './modules/link-layer/error-detection.js';
 import './modules/link-layer/line-coding.js';
@@ -72,6 +73,7 @@ import { GROUPS } from './modules/registry.js';
  * One-time start-up: theme, navigation, core-lab controls, global handlers and the first route().
  */
 let hasBooted = false;
+initCookieConsent();
 function boot() {
   if (hasBooted) return;
   hasBooted = true;

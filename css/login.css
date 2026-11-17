@@ -169,3 +169,52 @@
 .verification-lead, .verification-help, .verification-resend-note { margin: 0; color: var(--muted); line-height: 1.6; font-size: .9rem; }
 .verification-address { margin: -5px 0 0; padding: 11px 12px; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--bg2); color: var(--text); font-weight: 700; }
 .verification-resend-note { font-size: .8rem; }
+
+
+/* Google provider button shared by the Sign In and Sign Up modes. */
+.google-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 2px 0;
+  color: var(--muted);
+  font: 600 .72rem var(--mono);
+  letter-spacing: .08em;
+}
+.google-auth-divider::before,
+.google-auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.google-auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 1px solid var(--line2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: 600 .92rem var(--sans);
+  cursor: pointer;
+  transition: border-color .16s ease, background-color .16s ease, transform .16s ease;
+}
+.google-auth-btn:hover {
+  border-color: var(--accent);
+  background: var(--bg2);
+}
+.google-auth-btn:active { transform: translateY(1px); }
+.google-auth-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.google-auth-btn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+.google-auth-logo { width: 20px; height: 20px; flex: 0 0 20px; }

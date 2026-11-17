@@ -181,3 +181,15 @@ Before treating the current `main` branch as fully verified, run the current app
 7. Firefox, Safari, keyboard-only navigation, screen-reader behaviour, and a physical mobile device.
 
 No claim is made here that these newer workflows have passed those tests. Record actual browser, environment, test date, and outcome when the checks are performed.
+
+## 11. Repository security and contribution documentation (14 November 2026)
+
+The documentation branch `docs/security-and-contributing` adds repository-level guidance alongside the existing application documentation:
+
+- **`SECURITY.md`** describes how to report vulnerabilities privately through GitHub's private vulnerability reporting feature, what evidence to include, responsible testing boundaries, and coordinated disclosure expectations. It explicitly directs reporters away from public issues and pull requests for vulnerability details.
+- **`CONTRIBUTING.md`** documents local setup, branch and commit conventions, project architecture conventions, testing expectations, secret handling, and pull request requirements. It points security reports to the private process in `SECURITY.md`.
+- **`README.md`** now links to both policy documents in dedicated Security and Contributing sections.
+
+These additions are documentation-only. They do not add an in-app security reporting form, enable GitHub private vulnerability reporting in repository settings, or change application runtime behaviour. The private reporting option must be enabled and available in the repository's GitHub Security settings for that route to work; otherwise, reporters are directed to contact the maintainer privately.
+
+No application tests were run for these documentation changes. Review the two policy files whenever repository ownership, supported versions, reporting channels, or contribution workflows change.
