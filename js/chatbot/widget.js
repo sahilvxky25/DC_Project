@@ -44,6 +44,19 @@ if (launcher && panel && closeButton && messages && form && input && sendButton)
     if (event.key === 'Escape' && !panel.hidden) setOpen(false);
   });
 
+  // Enter sends the message; Shift+Enter keeps the textarea multiline.
+  input.addEventListener('keydown', event => {
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey &&
+      !event.isComposing &&
+      !busy
+    ) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
   form.addEventListener('submit', async event => {
     event.preventDefault();
     const message = input.value.trim();
@@ -74,7 +87,7 @@ if (launcher && panel && closeButton && messages && form && input && sendButton)
       }
 
       const token = await getIdToken(user);
-      const apiBase = window.BITSECURE_API_URL.replace(/\/+$/, '');
+      const apiBase = window.BITSECURE_API_URL.replace(/\\/+$/, '');
       const response = await fetch(apiBase + '/api/assistant/chat', {
         method: 'POST',
         headers: {
