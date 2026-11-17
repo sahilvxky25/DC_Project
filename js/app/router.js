@@ -91,6 +91,48 @@ export function route() {
     if (i === 1) labSplit();
     if (i === 2) labPrepare();
     if (i === 3) labRecv();
+  } else if (kind === 'privacy') {
+    currentKey = 'privacy';
+    setStage('info-page');
+    crumbs(['Privacy Policy']);
+    document.title = 'Privacy Policy · BitSecure';
+    const page = $('#info-page');
+    page.innerHTML = `
+      <div class="info-hero">
+        <span class="info-kicker">YOUR DATA &amp; YOUR CHOICES</span>
+        <h1>Privacy <span>Policy.</span></h1>
+        <p class="info-lead">How BitSecure handles account information, learning progress, browser storage, and third-party services.</p>
+        <p><strong>Effective date: 17 November 2026</strong></p>
+      </div>
+      <section class="info-section">
+        <h2>Information we process</h2>
+        <p>Depending on how you use BitSecure, this may include your email address and Firebase user identifier; learning progress such as completed modules, quiz results, achievements, challenge activity and last-visited module; interface preferences; and browser-stored cache and consent preferences.</p>
+      </section>
+      <section class="info-section">
+        <h2>Why we use it</h2>
+        <p>We use this information to authenticate accounts, save and restore learning progress across devices, remember preferences, operate platform features, maintain security, and respond to support requests. Avoid entering passwords or other sensitive personal information into learning activities.</p>
+      </section>
+      <section class="info-section">
+        <h2>Services we use</h2>
+        <p>Firebase Authentication supports sign-in and Firestore stores account-related learning progress. Google provides the Google sign-in flow, and Google Fonts supplies website typography. These providers may process technical information needed to deliver their services and have their own privacy terms.</p>
+      </section>
+      <section class="info-section">
+        <h2>Cookies and browser storage</h2>
+        <p>Essential browser storage supports core functionality, session-related state, preferences and cached learning progress. Your optional analytics choice is saved under <code>bitsecure.cookieConsent.v1</code>. The current consent component does not load an analytics or marketing tracker. You can reopen your choices using Cookie Settings in the footer. Clearing browser storage may remove local cache and preferences.</p>
+      </section>
+      <section class="info-section">
+        <h2>Sharing, retention and security</h2>
+        <p>We do not sell personal information. Information is processed by the service providers above where needed to operate BitSecure, or disclosed when required by law or to protect users and the platform. Account progress may remain in Firestore while associated with your account; browser data remains until cleared. No fixed retention period or absolute security guarantee is made.</p>
+      </section>
+      <section class="info-section">
+        <h2>Your choices and deletion requests</h2>
+        <p>You can manage optional analytics preferences and clear browser storage. The current website does not provide a verified self-service account/data deletion workflow. For access, correction or deletion requests, contact the maintainers through the <a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">BitSecure GitHub repository</a>. Do not post passwords, verification codes or sensitive personal information in a public issue. A dedicated privacy email should be added before launch.</p>
+      </section>
+      <section class="info-section">
+        <h2>Children's privacy and policy updates</h2>
+        <p>BitSecure is an educational project and is not designed to knowingly collect children's personal information unlawfully. This policy may change as features and service providers change; the effective date above identifies its latest revision.</p>
+      </section>
+      <section class="info-cta"><div><span class="info-kicker">QUESTIONS?</span><h2>We're happy to hear from you.</h2><p>Contact the project maintainers through the repository, without sharing sensitive account details publicly.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Project repository ↗</a></section>`;
   } else if (kind === 'about' || kind === 'support') {
     currentKey = kind;
     setStage('info-page');
