@@ -436,11 +436,18 @@
           <button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button>
         </header>
         <div class="chatbot-panel-body">
-          <p class="chatbot-welcome">Hello! How can I help you learn today?</p>
-          <p class="chatbot-description">The AI assistant is coming soon. It will help answer Data Communications questions and guide you around the BitSecure website.</p>
-          <span class="chatbot-coming-soon">Chat functionality coming soon</span>
+          <div class="chatbot-messages" id="chatbotMessages" role="log" aria-live="polite" aria-relevant="additions">
+            <div class="chatbot-message assistant">Hi! Ask me about Data Communications, Computer Networks, the BitSecure project, or your learning progress.</div>
+          </div>
         </div>
-        <footer class="chatbot-panel-footer">This is a visual preview. No messages are sent or stored.</footer>
+        <footer class="chatbot-panel-footer">
+          <p class="chatbot-status" id="chatbotStatus" role="status" aria-live="polite"></p>
+          <form class="chatbot-form" id="chatbotForm">
+            <textarea id="chatbotInput" rows="2" maxlength="2000" placeholder="Ask a networking or BitSecure question…" required aria-label="Your message"></textarea>
+            <button id="chatbotSend" type="submit">Send</button>
+          </form>
+          <p class="chatbot-note">Personalized answers use your signed-in BitSecure progress.</p>
+        </footer>
       </section>
       <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-label="Open BitSecure assistant" aria-controls="chatbotPanel" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>

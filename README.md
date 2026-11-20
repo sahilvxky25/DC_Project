@@ -342,3 +342,15 @@ BitSecure includes a first-visit consent panel with **Accept All**, **Reject Opt
 ## Privacy policy
 
 The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
+
+
+## FastAPI backend and BitSecure AI assistant
+
+The optional Python backend provides an authenticated adaptive-quiz API and the floating BitSecure assistant.
+
+- `POST /api/assistant/chat` answers Data Communications, Computer Networks and BitSecure project questions. After Firebase ID-token verification, it reads the signed-in user's own Firestore learning progress to personalize progress-related answers.
+- `POST /api/quiz/start`, `POST /api/quiz/submit` and `GET /api/quiz/profile` provide the adaptive quiz API.
+- Groq is used for text generation. The default model is `openai/gpt-oss-120b`.
+- Firebase Admin credentials and the Groq API key stay in the backend environment; do not commit them or expose them to browser code.
+
+See [backend/README.md](backend/README.md) for local setup and deployment guidance. The frontend API origin is configured in `js/config.js`. It is intentionally blank by default: set it to your deployed FastAPI HTTPS origin before enabling the assistant on the public Vercel site. For local development, set it to `http://127.0.0.1:4320`.
