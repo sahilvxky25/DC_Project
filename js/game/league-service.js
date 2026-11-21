@@ -6,7 +6,7 @@
  */
 import { auth, db } from '../auth/firebase-client.js';
 import {
-  collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where
+  collection, doc, getDoc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, updateDoc, where
 } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js';
 import { LEAGUES, LEAGUE_SIZE, nextLeague, rankMembers, weekId } from './leagues.js';
 import { dayNum, streakNext } from './rules.js';
@@ -247,4 +247,33 @@ export async function getLeagueDecorations() {
   const user = requireUser();
   const snap = await getDoc(profileRef(user.uid));
   return snap.exists() ? (snap.data().decorations || []) : [];
+}
+
+
+/**
+ * Refresh the signed-in learner's name in their existing weekly leaderboard record.
+ * The Firebase Authentication display name remains the source of truth.
+ */
+export async function syncLeagueDisplayName(displayName, expectedUid) {
+  const user = requireUser();
+  if (expectedUid && user.uid !== expectedUid) return false;
+
+  const name = String(displayName || '').trim().slice(0, 32);
+  if (!name) return false;
+
+  const profileSnap = await getDoc(profileRef(user.uid));
+  if (!profileSnap.exists()) return false;
+
+  const profile = profileSnap.data();
+  if (!profile.weekId || !profile.batchId) return false;
+
+  const ref = memberRef(profile.weekId, profile.batchId, user.uid);
+  const memberSnap = await getDoc(ref);
+  if (!memberSnap.exists()) return false;
+
+  await updateDoc(ref, {
+    name,
+    updatedAt: serverTimestamp()
+  });
+  return true;
 }
