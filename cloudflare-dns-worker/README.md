@@ -29,6 +29,17 @@ If you prefer deploying from a development machine, install Node.js and run:
 
 This is an owner/developer deployment step only. It is not required for learners using the website.
 
+## Razorpay Standard Checkout API
+
+This same Worker also exposes two payment routes for the BitSecure Support Us page:
+
+- `POST /api/create-order` with JSON `{"amount": 9900}` (amount in paise) creates an INR Razorpay order. The minimum is 100 paise.
+- `POST /api/verify-payment` with `razorpay_order_id`, `razorpay_payment_id`, and `razorpay_signature` verifies the HMAC-SHA256 signature.
+
+Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` as Worker secrets (not plain-text config). Set `ALLOWED_ORIGIN` as a Worker variable to the exact website origin. For local development, copy `.dev.vars.example` to `.dev.vars`; never commit the local file. Use Test Mode credentials first. Deployment steps and frontend configuration are documented in the repository README.
+
+The signature endpoint verifies the response signature only. Before using payment state for accounting, donor totals, or receipts, reconcile payment capture status through a signed webhook or Razorpay's server API.
+
 ## Important notes
 
 - The existing simulated DNS lookup, cache clock, recursive/iterative teaching mode, message-byte explorer and record-type guide remain available.
