@@ -1,0 +1,5 @@
+# Copy this file to .dev.vars for local Wrangler development.
+# Use Razorpay TEST MODE credentials here. Never commit .dev.vars.
+RAZORPAY_KEY_ID=rzp_test_replace_with_your_key_id
+RAZORPAY_KEY_SECRET=replace_with_your_test_key_secret
+ALLOWED_ORIGIN=http://localhost:8000
