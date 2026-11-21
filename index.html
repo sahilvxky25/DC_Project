@@ -160,6 +160,7 @@
                 <strong id="profileName">User</strong>
                 <span id="profileEmail"></span>
               </div>
+              <button class="profile-menu-item" id="editUsernameBtn" type="button">Edit Username</button>
               <button class="profile-menu-item" id="changePasswordBtn" type="button">Change Password</button>
               <button class="profile-menu-item danger" id="logoutBtn" type="button">Log out</button>
             </div>
@@ -421,6 +422,20 @@
           <div class="password-actions">
             <button class="btn ghost" id="cancelPasswordChange" type="button">Cancel</button>
             <button class="btn" id="passwordChangeSubmit" type="submit">Update Password</button>
+          </div>
+        </form>
+      </dialog>
+      <dialog class="password-dialog profile-edit-dialog" id="editUsernameDialog" aria-labelledby="editUsernameDialogTitle">
+        <form id="editUsernameForm">
+          <h2 id="editUsernameDialogTitle">Edit Username</h2>
+          <p class="profile-edit-help">This name appears on your BitSecure profile and weekly leaderboard. It does not change your email address or sign-in details.</p>
+          <label for="editUsernameInput">New Username
+            <input id="editUsernameInput" type="text" autocomplete="name" minlength="2" maxlength="32" required />
+          </label>
+          <p class="password-message" id="usernameChangeMessage" role="status" aria-live="polite"></p>
+          <div class="password-actions">
+            <button class="btn ghost" id="cancelUsernameChange" type="button">Cancel</button>
+            <button class="btn" id="usernameChangeSubmit" type="submit">Save Username</button>
           </div>
         </form>
       </dialog>
