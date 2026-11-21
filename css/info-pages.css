@@ -199,3 +199,73 @@
 .support-payment-status { min-height: 1.25rem; margin: .7rem 0 0; font-size: .84rem; line-height: 1.5; }
 .support-payment-error { color: #dc745d; }
 .support-payment-success { color: #29986a; font-weight: 700; }
+
+
+/* Support Us: direct UPI is available; other payment methods are announced as coming soon. */
+.support-upi-card { text-align: left; }
+.support-upi-qr-wrap {
+  display: grid;
+  place-items: center;
+  width: min(100%, 280px);
+  margin: 1.1rem auto;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+}
+.support-upi-qr {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+.support-upi-payee {
+  display: grid;
+  gap: .3rem;
+  text-align: center;
+}
+.support-upi-caption {
+  color: var(--muted);
+  font: 700 .66rem var(--mono);
+  letter-spacing: .12em;
+}
+.support-upi-payee strong { font-size: 1rem; }
+.support-upi-id {
+  color: var(--muted);
+  font: 600 .9rem var(--mono);
+  user-select: all;
+}
+.support-upi-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .65rem;
+  margin-top: 1rem;
+}
+.support-upi-actions .btn {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: .35rem;
+  min-width: 0;
+  text-align: center;
+}
+.support-coming-soon {
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.support-coming-soon p {
+  margin: .55rem 0 0;
+  color: var(--muted);
+  font-size: .83rem;
+  line-height: 1.6;
+}
+.support-payment-status { min-height: 1.25rem; margin: .7rem 0 0; font-size: .82rem; line-height: 1.5; }
+.support-payment-success { color: #29986a; font-weight: 700; }
+.support-payment-error { color: #dc745d; }
+.support-upi-open[aria-disabled="true"] { opacity: .55; pointer-events: none; }
+@media (max-width: 420px) {
+  .support-upi-actions { grid-template-columns: 1fr; }
+}
