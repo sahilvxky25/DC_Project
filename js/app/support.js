@@ -3,7 +3,7 @@ const UPI_ID = '8598032563@slc';
 const PAYEE_NAME = 'Mr Sahil Kumar Patra';
 
 function showMessage(target, message, kind = 'error') {
-  target.className = kind === 'success' ? 'support-payment-success' : 'support-payment-error';
+  target.className = kind === 'success' ? 'support-payment-status support-payment-success' : 'support-payment-status support-payment-error';
   target.textContent = message;
 }
 
@@ -85,7 +85,6 @@ export function renderSupportPage(root) {
   const upiLink = root.querySelector('#support-upi-open');
   const copyButton = root.querySelector('#support-copy-upi');
   let selectedAmount = 99;
-  let disposed = false;
 
   function updateUpiLink() {
     const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
@@ -143,9 +142,5 @@ export function renderSupportPage(root) {
   });
 
   updateUpiLink();
-  return () => {
-    disposed = true;
-    if (!disposed) return;
-    root.replaceChildren();
-  };
+  return () => root.replaceChildren();
 }
