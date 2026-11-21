@@ -188,3 +188,14 @@
   .support-giving-layout { grid-template-columns: 1fr; }
   .support-thanks-panel { align-items: flex-start; flex-direction: column; }
 }
+
+
+.support-amount-options { display: flex; flex-wrap: wrap; gap: .55rem; margin: .75rem 0; }
+.support-amount-option { padding: .58rem .9rem; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); font: 700 .9rem var(--sans); cursor: pointer; }
+.support-amount-option:hover, .support-amount-option.is-selected { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.support-custom-label { display: block; margin: .85rem 0 .35rem; font-size: .85rem; font-weight: 700; }
+.support-custom-input { width: min(100%, 260px); padding: .7rem .8rem; border: 1px solid var(--line2); border-radius: 10px; color: var(--text); background: var(--surface); font: inherit; }
+.support-checkout-button { width: 100%; justify-content: center; }
+.support-payment-status { min-height: 1.25rem; margin: .7rem 0 0; font-size: .84rem; line-height: 1.5; }
+.support-payment-error { color: #dc745d; }
+.support-payment-success { color: #29986a; font-weight: 700; }
