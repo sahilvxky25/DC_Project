@@ -190,18 +190,28 @@ async function verifyRazorpayPayment(request, env, headers) {
   }
 }
 export default {
-  async fetch(request) {
-    const url=new URL(request.url);
-    if(request.method==="OPTIONS")return new Response(null,{headers:cors});
-    if(url.pathname==="/health")return Response.json({ok:true,service:"DC_Project live iterative DNS resolver"}, {headers:cors});
-    if(url.pathname!=="/trace")return Response.json({error:"Use /trace?name=example.com&type=A"},{status:404,headers:cors});
-    const name=validName(url.searchParams.get("name")),type=(url.searchParams.get("type")||"A").toUpperCase();
-    if(!name||!TYPES[type])return Response.json({error:"Enter a valid public domain and a supported record type."},{status:400,headers:cors});
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const cors = corsHeaders(request, env || {});
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (url.pathname === "/api/create-order") {
+      if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
+      return createRazorpayOrder(request, env || {}, cors);
+    }
+    if (url.pathname === "/api/verify-payment") {
+      if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
+      return verifyRazorpayPayment(request, env || {}, cors);
+    }
+    if (url.pathname === "/health") return Response.json({ ok: true, service: "DC_Project DNS and Razorpay API" }, { headers: cors });
+    if (url.pathname !== "/trace") return Response.json({ error: "Use /trace?name=example.com&type=A or POST /api/create-order" }, { status: 404, headers: cors });
+    const name = validName(url.searchParams.get("name"));
+    const type = (url.searchParams.get("type") || "A").toUpperCase();
+    if (!name || !TYPES[type]) return Response.json({ error: "Enter a valid public domain and a supported record type." }, { status: 400, headers: cors });
     try {
-      const result=await traceLookup(name,type);
-      return Response.json(result,{headers:{...cors,"Cache-Control":"no-store"}});
-    } catch(error) {
-      return Response.json({error:error?.message||"DNS lookup failed",hint:"The hosting provider or destination DNS server may block outbound TCP port 53."},{status:502,headers:cors});
+      const result = await traceLookup(name, type);
+      return Response.json(result, { headers: { ...cors, "Cache-Control": "no-store" } });
+    } catch (error) {
+      return Response.json({ error: error?.message || "DNS lookup failed", hint: "The hosting provider or destination DNS server may block outbound TCP port 53." }, { status: 502, headers: cors });
     }
   }
 };
