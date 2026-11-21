@@ -3,12 +3,9 @@ import { RAZORPAY_API_BASE_URL } from './support-config.js';
 const RAZORPAY_CHECKOUT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 const AMOUNTS = [49, 99, 199];
 
-function showMessage(slot, message, kind = 'error') {
-  const node = document.createElement('p');
-  node.className = kind === 'success' ? 'support-payment-success' : 'support-payment-error';
-  node.setAttribute(kind === 'success' ? 'role' : 'role', kind === 'success' ? 'status' : 'alert');
-  node.textContent = message;
-  slot.replaceChildren(node);
+function showMessage(target, message, kind = 'error') {
+  target.className = kind === 'success' ? 'support-payment-success' : 'support-payment-error';
+  target.textContent = message;
 }
 
 function loadCheckoutScript() {
@@ -126,7 +123,7 @@ export function renderSupportPage(root) {
   async function startCheckout() {
     const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
     if (!Number.isSafeInteger(rupees) || rupees < 1 || rupees > 100000) {
-      showMessage(slot, 'Enter a whole-rupee amount between ₹1 and ₹1,00,000.');
+      showMessage(status, 'Enter a whole-rupee amount between ₹1 and ₹1,00,000.');
       return;
     }
     if (!RAZORPAY_API_BASE_URL || !/^https:\/\//.test(RAZORPAY_API_BASE_URL)) {
