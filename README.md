@@ -344,35 +344,10 @@ BitSecure includes a first-visit consent panel with **Accept All**, **Reject Opt
 The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
 
 
-## Support Us payments — Razorpay Standard Checkout
+## Support Us
 
-The Support Us page uses **Razorpay Standard Checkout** with a server-created order and server-side HMAC-SHA256 signature verification. The existing Cloudflare Worker in `cloudflare-dns-worker/` hosts the payment API; no separate Node/Python backend or database is required.
+The Support Us page currently accepts **direct UPI contributions**. The QR code is stored at `assets/sahil-upi-qr.svg`, and the displayed UPI ID is `8598032563@slc` (payee: Mr Sahil Kumar Patra). Contributors can scan the QR code, copy the UPI ID, or open a compatible UPI app with a selected amount.
 
-### Configure locally
+Card payments and other payment options are marked **Coming Soon** in the interface. Razorpay checkout has been temporarily removed from the frontend; the existing Cloudflare Worker Razorpay API routes are retained for possible future reactivation and are not called by the current Support Us page.
 
-1. Create/activate your Razorpay account and use **Test Mode** credentials first.
-2. In `cloudflare-dns-worker/`, copy `.dev.vars.example` to `.dev.vars` and set your test `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and the exact frontend origin in `ALLOWED_ORIGIN`. Do not commit `.dev.vars`.
-3. In `js/app/support-config.js`, set `RAZORPAY_API_BASE_URL` to your deployed Worker URL (for example, `https://dc-project-live-dns.<your-subdomain>.workers.dev`). Do not include a trailing path.
-4. Start the Worker locally with `cd cloudflare-dns-worker && npx wrangler dev`; configure the frontend URL to `http://127.0.0.1:8787` while testing locally.
-5. Run the static site with `python3 -m http.server 8000`, open `http://localhost:8000`, visit **Support Us**, choose an amount and complete a Razorpay test payment.
-
-### Deploy the Worker
-
-From `cloudflare-dns-worker/`, set secrets without placing them in source control:
-
-```bash
-npx wrangler secret put RAZORPAY_KEY_ID
-npx wrangler secret put RAZORPAY_KEY_SECRET
-```
-
-Enter the corresponding values when prompted. Set `ALLOWED_ORIGIN` as a Worker variable to the exact deployed site origin (for example, `https://your-site.example`), then deploy with `npx wrangler deploy`. Keep the Worker URL in `js/app/support-config.js`.
-
-### Security and verification notes
-
-- The browser receives only the public Key ID returned by `POST /api/create-order`; the Key Secret exists only in Cloudflare Worker secrets.
-- `POST /api/create-order` validates integer paise amounts (minimum 100), creates an INR order with Razorpay, and returns the order ID, amount, currency, and public Key ID.
-- `POST /api/verify-payment` validates all three checkout response fields and compares the HMAC-SHA256 signature in constant-time style. A mismatch returns HTTP 400 and is never reported as verified.
-- The app does not create a database table or persist a donor ledger. A valid signature confirms the checkout response signature; it is not a substitute for checking that the payment is captured/settled in the Razorpay Dashboard. Add a signed webhook and server-side payment-status reconciliation before displaying verified donation totals or issuing receipts.
-- Use separate Test and Live credentials. Only switch to Live after account activation and a successful end-to-end test. Never put the Key Secret in frontend code, `.env` files served by the static host, Git, or browser storage.
-
-Razorpay guide: [Standard Checkout integration steps](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/).
+**Payment-status note:** Direct UPI payments are made outside BitSecure. The site does not automatically receive or verify UPI payment confirmations, so it must not display a payment as successful or issue a verified receipt based only on a user statement or screenshot. Confirm the transaction in the receiving UPI/bank account independently.
