@@ -344,6 +344,10 @@ BitSecure includes a first-visit consent panel with **Accept All**, **Reject Opt
 The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
 
 
+## Direct UPI support
+
+The Support Us page also displays a UPI QR code and the UPI ID `8598032563@slc`. The QR contains no fixed amount, so contributors should enter the amount selected on the page when scanning it. The **Open UPI app** link builds a UPI intent with the selected amount where the device/browser supports UPI links. Direct UPI payments happen outside Razorpay and are not automatically verified or recorded by the website; retain the UPI transaction reference and reconcile payments manually.
+
 ## Support Us payments — Razorpay Standard Checkout
 
 The Support Us page uses **Razorpay Standard Checkout** with a server-created order and server-side HMAC-SHA256 signature verification. The existing Cloudflare Worker in `cloudflare-dns-worker/` hosts the payment API; no separate Node/Python backend or database is required.
