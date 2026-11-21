@@ -81,6 +81,25 @@ export function renderSupportPage(root) {
       </aside>
     </section>
 
+    <section class="support-upi-section" aria-labelledby="support-upi-title">
+      <div class="support-upi-copy">
+        <span class="info-kicker">DIRECT UPI PAYMENT</span>
+        <h2 id="support-upi-title">Prefer paying with your UPI app?</h2>
+        <p>Scan this QR code with any supported UPI app. Enter the contribution amount you selected above before confirming the payment.</p>
+        <div class="support-upi-id-row">
+          <div><span class="support-upi-label">UPI ID</span><strong id="support-upi-id">8598032563@slc</strong></div>
+          <button class="btn support-upi-copy-button" id="support-upi-copy" type="button">Copy UPI ID</button>
+        </div>
+        <a class="btn support-upi-open-button" id="support-upi-open" href="upi://pay?pa=8598032563%40slc&amp;pn=Mr%20Sahil%20Kumar%20Patra&amp;cu=INR&amp;tn=BitSecure%20project%20support">Open UPI app <span aria-hidden="true">↗</span></a>
+        <p class="support-upi-status" id="support-upi-status" role="status" aria-live="polite"></p>
+        <p class="support-upi-note">Direct UPI payments are made to the UPI ID above, outside Razorpay. They are not automatically verified or recorded by BitSecure. Keep your UPI transaction reference for your records.</p>
+      </div>
+      <figure class="support-upi-qr-card">
+        <img src="assets/support-upi-qr.svg" alt="UPI QR code for 8598032563@slc" width="270" height="270" loading="lazy">
+        <figcaption><strong>Mr Sahil Kumar Patra</strong><span>Scan to pay using UPI</span></figcaption>
+      </figure>
+    </section>
+
     <section class="support-thanks-panel"><div><span class="info-kicker">THANK YOU</span><h2>Support is more than a payment.</h2><p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></section>
     <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible.</p>
   `;
@@ -92,6 +111,35 @@ export function renderSupportPage(root) {
   const customLabel = root.querySelector('.support-custom-label');
   let selectedAmount = 99;
   let disposed = false;
+  const upiOpenButton = root.querySelector('#support-upi-open');
+  const upiStatus = root.querySelector('#support-upi-status');
+  const upiId = '8598032563@slc';
+
+  function updateUpiLink() {
+    const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
+    const params = new URLSearchParams({
+      pa: upiId,
+      pn: 'Mr Sahil Kumar Patra',
+      cu: 'INR',
+      tn: 'BitSecure project support'
+    });
+    if (Number.isSafeInteger(rupees) && rupees >= 1 && rupees <= 100000) params.set('am', String(rupees));
+    upiOpenButton.href = 'upi://pay?' + params.toString();
+  }
+
+  updateUpiLink();
+  root.querySelector('#support-upi-copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(upiId);
+      upiStatus.textContent = 'UPI ID copied. Open your UPI app and enter the selected amount.';
+    } catch {
+      upiStatus.textContent = 'Copy is unavailable in this browser. Select and copy: ' + upiId;
+    }
+  });
+  upiOpenButton.addEventListener('click', () => {
+    upiStatus.textContent = 'If no UPI app opens, scan the QR code or copy the UPI ID instead.';
+  });
+  customInput.addEventListener('input', updateUpiLink);
 
   root.querySelectorAll('[data-amount]').forEach(button => {
     button.addEventListener('click', () => {
@@ -106,6 +154,8 @@ export function renderSupportPage(root) {
       customLabel.hidden = !custom;
       if (custom) customInput.focus();
       status.textContent = '';
+      upiStatus.textContent = '';
+      updateUpiLink();
     });
   });
 
