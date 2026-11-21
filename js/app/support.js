@@ -1,11 +1,34 @@
-import { RAZORPAY_PAYMENT_BUTTON_ID } from './support-config.js';
+import { RAZORPAY_API_BASE_URL } from './support-config.js';
 
-const RAZORPAY_BUTTON_ID_PATTERN = /^pl_[A-Za-z0-9]+$/;
+const RAZORPAY_CHECKOUT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
+const AMOUNTS = [49, 99, 199];
 
-/**
- * Render the Support Us page. Razorpay hosts the payment UI; BitSecure does not
- * collect or store payment credentials. Returns a cleanup function for routing.
- */
+function showMessage(slot, message, kind = 'error') {
+  const node = document.createElement('p');
+  node.className = kind === 'success' ? 'support-payment-success' : 'support-payment-error';
+  node.setAttribute(kind === 'success' ? 'role' : 'role', kind === 'success' ? 'status' : 'alert');
+  node.textContent = message;
+  slot.replaceChildren(node);
+}
+
+function loadCheckoutScript() {
+  if (window.Razorpay) return Promise.resolve();
+  if (window.__bitsecureRazorpayScript) return window.__bitsecureRazorpayScript;
+  window.__bitsecureRazorpayScript = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = RAZORPAY_CHECKOUT_URL;
+    script.async = true;
+    script.onload = () => window.Razorpay ? resolve() : reject(new Error('Razorpay Checkout did not initialize.'));
+    script.onerror = () => reject(new Error('Could not load Razorpay Checkout. Check your connection and try again.'));
+    document.head.append(script);
+  }).catch(error => {
+    window.__bitsecureRazorpayScript = null;
+    throw error;
+  });
+  return window.__bitsecureRazorpayScript;
+}
+
+/** Render the Support Us page and return its router cleanup function. */
 export function renderSupportPage(root) {
   root.innerHTML = `
     <div class="info-hero support-hero">
@@ -23,21 +46,9 @@ export function renderSupportPage(root) {
         <p>Contributions go towards the work involved in keeping the project useful, reliable, and growing.</p>
       </div>
       <div class="support-impact-grid">
-        <article class="support-impact-card">
-          <span class="support-impact-icon" aria-hidden="true">⌁</span>
-          <h3>Hosting &amp; infrastructure</h3>
-          <p>Help cover the services and resources needed to keep BitSecure available.</p>
-        </article>
-        <article class="support-impact-card">
-          <span class="support-impact-icon" aria-hidden="true">▦</span>
-          <h3>New simulations</h3>
-          <p>Make room to design and build interactive tools for more technical subjects.</p>
-        </article>
-        <article class="support-impact-card">
-          <span class="support-impact-icon" aria-hidden="true">✧</span>
-          <h3>Better learning experiences</h3>
-          <p>Improve explanations, accessibility, animations, and existing learning modules.</p>
-        </article>
+        <article class="support-impact-card"><span class="support-impact-icon" aria-hidden="true">⌁</span><h3>Hosting &amp; infrastructure</h3><p>Help cover the services and resources needed to keep BitSecure available.</p></article>
+        <article class="support-impact-card"><span class="support-impact-icon" aria-hidden="true">▦</span><h3>New simulations</h3><p>Make room to design and build interactive tools for more technical subjects.</p></article>
+        <article class="support-impact-card"><span class="support-impact-icon" aria-hidden="true">✧</span><h3>Better learning experiences</h3><p>Improve explanations, accessibility, animations, and existing learning modules.</p></article>
       </div>
     </section>
 
@@ -46,11 +57,14 @@ export function renderSupportPage(root) {
         <span class="info-kicker">ONE-TIME PROJECT SUPPORT</span>
         <h2 id="support-giving-title">Choose an amount that feels right.</h2>
         <p>There is no subscription or expectation to contribute. Even a small one-time contribution can help us keep improving the project.</p>
-        <div class="support-amount-label">Suggested contribution amounts</div>
-        <div class="support-amount-chips" aria-label="Suggested contribution amounts">
-          <span>₹49</span><span>₹99</span><span>₹199</span><span>Custom amount</span>
+        <div class="support-amount-label">Contribution amount (INR)</div>
+        <div class="support-amount-options" role="group" aria-label="Choose a contribution amount">
+          ${AMOUNTS.map((amount, index) => `<button class="support-amount-option${index === 1 ? ' is-selected' : ''}" type="button" data-amount="${amount}" aria-pressed="${index === 1}">₹${amount}</button>`).join('')}
+          <button class="support-amount-option" type="button" data-amount="custom" aria-pressed="false">Custom</button>
         </div>
-        <p class="support-amount-help">These are suggestions only. The available amount options are configured in the secure Razorpay checkout.</p>
+        <label class="support-custom-label" for="support-custom-amount" hidden>Custom amount (₹)</label>
+        <input class="support-custom-input" id="support-custom-amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Enter amount in ₹" hidden>
+        <p class="support-amount-help">Minimum contribution is ₹1. You can choose a suggested amount or enter a custom whole-rupee amount.</p>
         <div class="support-trust-points">
           <div><span aria-hidden="true">✓</span><span>One-time, voluntary support</span></div>
           <div><span aria-hidden="true">✓</span><span>Payment details handled by Razorpay</span></div>
@@ -59,61 +73,130 @@ export function renderSupportPage(root) {
       </div>
 
       <aside class="support-payment-card" aria-labelledby="support-payment-title">
-        <div class="support-payment-card-top">
-          <span class="support-payment-lock" aria-hidden="true">⌑</span>
-          <span class="support-payment-provider">SECURE CHECKOUT · RAZORPAY</span>
-        </div>
+        <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">⌑</span><span class="support-payment-provider">SECURE CHECKOUT · RAZORPAY</span></div>
         <h3 id="support-payment-title">Support BitSecure</h3>
-        <p>Continue to Razorpay to choose your contribution amount and complete payment using the methods available for your checkout.</p>
+        <p>Your payment opens in Razorpay's secure checkout. BitSecure never receives your card details, UPI PIN, or banking password.</p>
         <div class="support-payment-slot" id="support-payment-slot" aria-live="polite">
-          <div class="support-payment-unavailable" role="status">
-            <strong>Online contributions are being set up.</strong>
-            <span>Please check back soon. No payment will be collected from this page yet.</span>
-          </div>
+          <button class="btn support-checkout-button" id="support-pay-button" type="button">Continue to secure payment <span aria-hidden="true">→</span></button>
+          <p class="support-payment-status" id="support-payment-status" role="status"></p>
         </div>
-        <p class="support-payment-footnote">Your payment is processed on Razorpay's hosted checkout. BitSecure does not ask for or store your card details, UPI PIN, or banking password.</p>
+        <p class="support-payment-footnote">Test mode is used until you configure live credentials in your Cloudflare Worker. A verified signature confirms the checkout response; reconcile captured payments in the Razorpay Dashboard.</p>
       </aside>
     </section>
 
-    <section class="support-thanks-panel">
-      <div>
-        <span class="info-kicker">THANK YOU</span>
-        <h2>Support is more than a payment.</h2>
-        <p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p>
-      </div>
-      <a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a>
-    </section>
-
+    <section class="support-thanks-panel"><div><span class="info-kicker">THANK YOU</span><h2>Support is more than a payment.</h2><p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></section>
     <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible.</p>
   `;
 
   const slot = root.querySelector('#support-payment-slot');
-  const buttonId = String(RAZORPAY_PAYMENT_BUTTON_ID || '').trim();
-  let paymentScript = null;
+  const payButton = root.querySelector('#support-pay-button');
+  const status = root.querySelector('#support-payment-status');
+  const customInput = root.querySelector('#support-custom-amount');
+  const customLabel = root.querySelector('.support-custom-label');
+  let selectedAmount = 99;
+  let disposed = false;
 
-  if (RAZORPAY_BUTTON_ID_PATTERN.test(buttonId)) {
-    const form = document.createElement('form');
-    form.className = 'support-razorpay-form';
-    form.setAttribute('aria-label', 'Razorpay secure contribution checkout');
+  root.querySelectorAll('[data-amount]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedAmount = button.dataset.amount === 'custom' ? 'custom' : Number(button.dataset.amount);
+      root.querySelectorAll('[data-amount]').forEach(option => {
+        const active = option === button;
+        option.classList.toggle('is-selected', active);
+        option.setAttribute('aria-pressed', String(active));
+      });
+      const custom = selectedAmount === 'custom';
+      customInput.hidden = !custom;
+      customLabel.hidden = !custom;
+      if (custom) customInput.focus();
+      status.textContent = '';
+    });
+  });
 
-    paymentScript = document.createElement('script');
-    paymentScript.src = 'https://checkout.razorpay.com/v1/payment-button.js';
-    paymentScript.setAttribute('data-payment_button_id', buttonId);
-    paymentScript.addEventListener('error', () => {
-      slot.innerHTML = `
-        <div class="support-payment-error" role="alert">
-          <strong>Checkout could not be loaded.</strong>
-          <span>Please refresh the page or try again later.</span>
-        </div>
-      `;
-    }, { once: true });
-
-    form.append(paymentScript);
-    slot.replaceChildren(form);
+  async function postJson(path, payload) {
+    const response = await fetch(`${RAZORPAY_API_BASE_URL.replace(/\/$/, '')}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || 'Payment service request failed.');
+    return data;
   }
 
+  async function startCheckout() {
+    const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
+    if (!Number.isSafeInteger(rupees) || rupees < 1 || rupees > 100000) {
+      showMessage(slot, 'Enter a whole-rupee amount between ₹1 and ₹1,00,000.');
+      return;
+    }
+    if (!RAZORPAY_API_BASE_URL || !/^https:\/\//.test(RAZORPAY_API_BASE_URL)) {
+      showMessage(slot, 'Checkout is not configured yet. Set the Cloudflare Worker URL in js/app/support-config.js.');
+      return;
+    }
+
+    payButton.disabled = true;
+    payButton.textContent = 'Preparing secure checkout…';
+    status.textContent = 'Creating your payment order.';
+    try {
+      const order = await postJson('/api/create-order', { amount: rupees * 100 });
+      await loadCheckoutScript();
+      if (disposed) return;
+      const checkout = new window.Razorpay({
+        key: order.key_id,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'BitSecure',
+        description: 'Voluntary project support',
+        order_id: order.order_id,
+        theme: { color: '#6d7cff' },
+        modal: {
+          ondismiss: () => {
+            if (!disposed) status.textContent = 'Checkout was closed. No payment confirmation was received.';
+          }
+        },
+        handler: async response => {
+          if (disposed) return;
+          status.textContent = 'Verifying payment signature…';
+          payButton.disabled = true;
+          try {
+            const verification = await postJson('/api/verify-payment', {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            if (verification.verified) showMessage(slot, 'Thank you! Razorpay payment signature verified successfully.', 'success');
+            else throw new Error('Payment could not be verified. Please contact support before retrying.');
+          } catch (error) {
+            showMessage(slot, error.message || 'Payment verification failed. Do not retry until you check your Razorpay transaction status.');
+          } finally {
+            if (!disposed) {
+              payButton.disabled = false;
+              payButton.textContent = 'Continue to secure payment →';
+            }
+          }
+        }
+      });
+      checkout.on('payment.failed', event => {
+        if (!disposed) {
+          const description = event?.error?.description || 'The payment failed or was declined.';
+          showMessage(slot, description + ' You can try again or use another payment method.');
+        }
+      });
+      checkout.open();
+      status.textContent = '';
+    } catch (error) {
+      if (!disposed) showMessage(slot, error.message || 'Unable to start Razorpay checkout.');
+    } finally {
+      if (!disposed) {
+        payButton.disabled = false;
+        payButton.textContent = 'Continue to secure payment →';
+      }
+    }
+  }
+
+  payButton.addEventListener('click', startCheckout);
   return () => {
-    if (paymentScript) paymentScript.remove();
+    disposed = true;
     root.replaceChildren();
   };
 }
