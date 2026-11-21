@@ -35,6 +35,13 @@ const profileName = document.getElementById('profileName');
 const profileEmail = document.getElementById('profileEmail');
 const profileAvatar = document.getElementById('profileAvatar');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
+const editUsernameBtn = document.getElementById('editUsernameBtn');
+const editUsernameDialog = document.getElementById('editUsernameDialog');
+const editUsernameForm = document.getElementById('editUsernameForm');
+const editUsernameInput = document.getElementById('editUsernameInput');
+const usernameChangeMessage = document.getElementById('usernameChangeMessage');
+const usernameChangeSubmit = document.getElementById('usernameChangeSubmit');
+const cancelUsernameChange = document.getElementById('cancelUsernameChange');
 const changePasswordDialog = document.getElementById('changePasswordDialog');
 const changePasswordForm = document.getElementById('changePasswordForm');
 const currentPasswordInput = document.getElementById('currentPassword');
@@ -413,6 +420,31 @@ document.querySelectorAll('.password-visibility-btn[data-password-target]').forE
   });
 });
 
+editUsernameBtn.addEventListener('click', () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  closeProfileMenu();
+  editUsernameForm.reset();
+  editUsernameInput.value = user.displayName?.trim() || user.email?.split('@')[0] || '';
+  usernameChangeMessage.textContent = '';
+  usernameChangeMessage.classList.remove('is-success');
+  editUsernameDialog.showModal();
+  editUsernameInput.focus();
+});
+
+cancelUsernameChange.addEventListener('click', () => {
+  editUsernameDialog.close();
+  editUsernameForm.reset();
+  usernameChangeMessage.textContent = '';
+  usernameChangeMessage.classList.remove('is-success');
+});
+
+function setUsernameMessage(message, success = false) {
+  usernameChangeMessage.textContent = message;
+  usernameChangeMessage.classList.toggle('is-success', success);
+}
+
 changePasswordBtn.addEventListener('click', () => {
   if (changePasswordBtn.hidden) return;
   closeProfileMenu();
@@ -484,6 +516,60 @@ changePasswordForm.addEventListener('submit', async event => {
   } finally {
     passwordChangeSubmit.disabled = false;
     hidePasswordAuthLoading();
+  }
+});
+
+editUsernameForm.addEventListener('submit', async event => {
+  event.preventDefault();
+
+  const user = auth.currentUser;
+  if (!user || !user.emailVerified) {
+    setUsernameMessage('Your session is unavailable. Please sign in again.');
+    return;
+  }
+
+  const newUsername = editUsernameInput.value.trim().replace(/\s+/gu, ' ');
+  const usernameLength = Array.from(newUsername).length;
+  if (usernameLength < 2 || usernameLength > 32) {
+    setUsernameMessage('Enter a username between 2 and 32 characters.');
+    editUsernameInput.focus();
+    return;
+  }
+
+  if (newUsername === (user.displayName || '').trim()) {
+    setUsernameMessage('That is already your current username.', true);
+    return;
+  }
+
+  usernameChangeSubmit.disabled = true;
+  editUsernameDialog.setAttribute('aria-busy', 'true');
+  setUsernameMessage('Saving your username...');
+  try {
+    await updateProfile(user, { displayName: newUsername });
+    renderProfile(user);
+
+    // Keep the signed-in user's existing weekly leaderboard entry in sync as well.
+    // A league-sync failure must not undo a successfully saved Firebase Auth profile.
+    try {
+      const { syncLeagueDisplayName } = await import('../game/league-service.js');
+      await syncLeagueDisplayName(newUsername, user.uid);
+    } catch (error) {
+      console.warn('Username saved, but the weekly leaderboard name could not be refreshed:', error);
+    }
+
+    editUsernameInput.value = newUsername;
+    setUsernameMessage('Your username has been updated successfully.', true);
+  } catch (error) {
+    const messages = {
+      'auth/network-request-failed': 'Network error. Check your connection and try again.',
+      'auth/user-token-expired': 'Your session has expired. Please sign in again.',
+      'auth/invalid-user-token': 'Your session is no longer valid. Please sign in again.',
+      'auth/user-not-found': 'Your account could not be found. Please sign in again.'
+    };
+    setUsernameMessage(messages[error?.code] || 'Unable to update your username. Please try again.');
+  } finally {
+    usernameChangeSubmit.disabled = false;
+    editUsernameDialog.removeAttribute('aria-busy');
   }
 });
 
