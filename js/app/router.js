@@ -172,7 +172,7 @@ export function route() {
             
           </div>
         </section>
-        <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>``;
+        <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>`;
   } else if (kind === 'm' && modById(arg)) {
     const m = modById(arg);
     currentKey = m.id;
