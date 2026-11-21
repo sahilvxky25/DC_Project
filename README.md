@@ -342,3 +342,24 @@ BitSecure includes a first-visit consent panel with **Accept All**, **Reject Opt
 ## Privacy policy
 
 The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
+
+
+## Support Us payments
+
+The Support Us page can embed a **Razorpay Payment Button** without adding a custom payment backend. The payment UI is hosted by Razorpay; BitSecure only embeds the public Payment Button ID.
+
+### Configure the checkout
+
+1. Create and verify a Razorpay account. Complete the account activation/KYC steps and confirm that your intended voluntary project-support collection is allowed under Razorpay's current terms.
+2. In the Razorpay Dashboard, open **Payment Button** and create a **Donations** button.
+3. Configure the amount field to allow the contribution choices you intend to accept. Make the amount field optional/customisable if that is what you want supporters to use.
+4. Test the button in Razorpay Test Mode first. Razorpay Test and Live buttons are separate.
+5. Copy the generated embed code and take only the value of **data-payment_button_id** (the public **pl_...** identifier).
+6. Paste that value into **RAZORPAY_PAYMENT_BUTTON_ID** in **js/app/support-config.js**.
+7. Deploy the site and complete a test transaction. Replace the test button ID with the Live Mode button ID only after the account is activated and the checkout is ready.
+
+The configuration file must contain only the public Payment Button ID. **Never place a Razorpay API key secret, webhook secret, or other private credential in frontend JavaScript.** No payment secret or Firebase/Firestore write is needed for this hosted-button integration.
+
+If the Payment Button ID is empty or invalid, the page deliberately displays an unavailable message instead of a fake or non-working payment button. Razorpay processes the checkout and transaction records in its dashboard; this frontend does not independently verify payments, maintain a donor ledger, or record contributions in Firestore. Add a trusted server-side webhook integration before showing verified contribution totals or supporter rankings.
+
+Razorpay's current embed documentation: [Payment Button embed code](https://razorpay.com/docs/payments/payment-button/), [Donations Button](https://razorpay.com/docs/payments/payment-button/donations/).

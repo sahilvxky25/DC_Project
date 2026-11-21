@@ -41,6 +41,7 @@ import { checkAch } from './progress.js';
 import { labSplit } from '../lab/packet-stage.js';
 import { labRecv } from '../lab/receiver-stage.js';
 import { labPrepare } from '../lab/transmission-stage.js';
+import { renderSupportPage } from './support.js';
 
 /**
  * DOM ids of the four core-lab screens, indexed by the number in #/lab/<n>.
@@ -101,12 +102,12 @@ export function route() {
       <div class="info-hero">
         <span class="info-kicker">YOUR DATA &amp; YOUR CHOICES</span>
         <h1>Privacy <span>Policy.</span></h1>
-        <p class="info-lead">How BitSecure handles account information, learning progress, browser storage, and third-party services.</p>
-        <p><strong>Effective date: 17 November 2026</strong></p>
+        <p class="info-lead">How BitSecure handles account information, learning progress, browser storage, payments, and third-party services.</p>
+        <p><strong>Effective date: 21 November 2026</strong></p>
       </div>
       <section class="info-section">
         <h2>Information we process</h2>
-        <p>Depending on how you use BitSecure, this may include your email address and Firebase user identifier; learning progress such as completed modules, quiz results, achievements, challenge activity and last-visited module; interface preferences; and browser-stored cache and consent preferences.</p>
+        <p>Depending on how you use BitSecure, this may include your email address and Firebase user identifier; learning progress such as completed modules, quiz results, achievements, challenge activity and last-visited module; interface preferences; browser-stored cache and consent preferences; and, if you contribute, information processed by Razorpay to complete the hosted payment.</p>
       </section>
       <section class="info-section">
         <h2>Why we use it</h2>
@@ -114,7 +115,7 @@ export function route() {
       </section>
       <section class="info-section">
         <h2>Services we use</h2>
-        <p>Firebase Authentication supports sign-in and Firestore stores account-related learning progress. Google provides the Google sign-in flow, and Google Fonts supplies website typography. These providers may process technical information needed to deliver their services and have their own privacy terms.</p>
+        <p>Firebase Authentication supports sign-in and Firestore stores account-related learning progress. Google provides the Google sign-in flow, and Google Fonts supplies website typography. When Support Us payments are enabled, Razorpay hosts checkout and processes the payment and transaction information needed to complete a contribution. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. These providers have their own privacy terms.</p>
       </section>
       <section class="info-section">
         <h2>Cookies and browser storage</h2>
@@ -133,15 +134,19 @@ export function route() {
         <p>BitSecure is an educational project and is not designed to knowingly collect children's personal information unlawfully. This policy may change as features and service providers change; the effective date above identifies its latest revision.</p>
       </section>
       <section class="info-cta"><div><span class="info-kicker">QUESTIONS?</span><h2>We're happy to hear from you.</h2><p>Contact the project maintainers through the repository, without sharing sensitive account details publicly.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Project repository ↗</a></section>`;
-  } else if (kind === 'about' || kind === 'support') {
-    currentKey = kind;
+  } else if (kind === 'support') {
+    currentKey = 'support';
     setStage('info-page');
-    const isAbout = kind === 'about';
-    crumbs([isAbout ? 'About Us' : 'Support Us']);
-    document.title = `${isAbout ? 'About Us' : 'Support Us'} · BitSecure`;
+    crumbs(['Support Us']);
+    document.title = 'Support Us · BitSecure';
+    cleanup = renderSupportPage($('#info-page'));
+  } else if (kind === 'about') {
+    currentKey = 'about';
+    setStage('info-page');
+    crumbs(['About Us']);
+    document.title = 'About Us · BitSecure';
     const page = $('#info-page');
-    page.innerHTML = isAbout
-      ? `
+    page.innerHTML = `
         <div class="info-hero">
           <span class="info-kicker">ABOUT BITSECURE</span>
           <h1>Making learning <span>interactive.</span></h1>
@@ -167,26 +172,7 @@ export function route() {
             
           </div>
         </section>
-        <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>`
-      : `
-        <div class="info-hero support-hero">
-          <span class="info-kicker">SUPPORT THE MISSION</span>
-          <h1>Help us make learning <span>more hands-on.</span></h1>
-          <p class="info-lead">Every bit of encouragement helps us spend more time building useful, accessible simulations for learners.</p>
-          <p>Our long-term aim is to expand beyond Data Communications and create interactive learning experiences across different courses. Community support can help us move that vision forward.</p>
-        </div>
-        <section class="info-section">
-          <div class="info-section-heading"><span class="info-kicker">WHAT SUPPORT CAN ENABLE</span><h2>Help turn more ideas into simulations.</h2></div>
-          <div class="info-feature-grid">
-            <article class="info-feature"><span class="info-feature-icon">01</span><h3>More course simulations</h3><p>Explore new subjects and build interactive tools for more areas of study.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">02</span><h3>Better learning experiences</h3><p>Improve explanations, animations, accessibility, and usability.</p></article>
-            <article class="info-feature"><span class="info-feature-icon">03</span><h3>Open learning resources</h3><p>Keep making practical resources that learners can explore at their own pace.</p></article>
-          </div>
-        </section>
-        <section class="patreon-panel">
-          <div class="patreon-mark" aria-hidden="true">P</div><div class="patreon-copy"><span class="coming-soon-pill">COMING SOON</span><h2>Support us on Patreon</h2><p>We are preparing our Patreon creator page. Once it is published, this section will link directly to it. There is no payment link available yet.</p><button class="btn" type="button" disabled aria-disabled="true">Patreon page coming soon</button></div>
-        </section>
-        <p class="info-back-link"><a href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></p>`;
+        <section class="info-cta"><div><span class="info-kicker">EXPLORE THE PROJECT</span><h2>Learn, experiment, and build with us.</h2><p>Explore the source code, follow development, or share ideas for future simulations.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></section>``;
   } else if (kind === 'm' && modById(arg)) {
     const m = modById(arg);
     currentKey = m.id;

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Effective date: 17 November 2026**
+**Effective date: 21 November 2026**
 
 BitSecure is an interactive learning platform for Data Communications and computer networking. This policy explains what information the website may process, why it is used, and the choices available to you.
 
@@ -11,6 +11,7 @@ Depending on how you use BitSecure, the platform may process:
 - **Account information:** email address, Firebase user identifier, and authentication-related account details. If you choose Google sign-in, Google and Firebase process the information needed to authenticate you.
 - **Learning progress:** completed modules, quiz results, achievements, challenge activity, learning streaks, overall progress, and last-visited module where these features are used.
 - **Preferences and local data:** theme and other interface preferences, plus locally cached learning data stored by your browser.
+- **Payment information:** If you choose to contribute, the hosted Razorpay checkout processes the details needed to complete the transaction. BitSecure's frontend does not ask for or store card numbers, UPI PINs, or banking passwords.
 - **Cookie preferences:** your optional analytics preference, stored under the browser key `bitsecure.cookieConsent.v1`.
 
 Do not enter passwords, payment details, or other sensitive personal information into learning activities or free-text fields.
@@ -21,7 +22,7 @@ Information is used to authenticate your account, save and restore learning prog
 
 ## 3. Firebase and other service providers
 
-BitSecure uses Firebase Authentication for account sign-in and Firestore for account-related learning progress. Google sign-in is provided through Google's authentication service. The website also loads fonts from Google Fonts. These providers may process technical information such as IP address, browser/device information, and authentication or service requests as part of delivering their services. Their processing is also governed by their own privacy terms and policies.
+BitSecure uses Firebase Authentication for account sign-in and Firestore for account-related learning progress. Google sign-in is provided through Google's authentication service. The website also loads fonts from Google Fonts. When the Support Us payment option is enabled, Razorpay provides the hosted payment checkout and processes the payment method, donor details, transaction information, and related technical data needed to complete the contribution. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. Each provider's processing is also governed by its own privacy terms and policies.
 
 ## 4. Cookies, local storage, and analytics
 
