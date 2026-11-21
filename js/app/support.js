@@ -1,28 +1,10 @@
-import { RAZORPAY_API_BASE_URL } from './support-config.js';
-
-const RAZORPAY_CHECKOUT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
 const AMOUNTS = [49, 99, 199];
+const UPI_ID = '8598032563@slc';
+const PAYEE_NAME = 'Mr Sahil Kumar Patra';
 
 function showMessage(target, message, kind = 'error') {
   target.className = kind === 'success' ? 'support-payment-success' : 'support-payment-error';
   target.textContent = message;
-}
-
-function loadCheckoutScript() {
-  if (window.Razorpay) return Promise.resolve();
-  if (window.__bitsecureRazorpayScript) return window.__bitsecureRazorpayScript;
-  window.__bitsecureRazorpayScript = new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = RAZORPAY_CHECKOUT_URL;
-    script.async = true;
-    script.onload = () => window.Razorpay ? resolve() : reject(new Error('Razorpay Checkout did not initialize.'));
-    script.onerror = () => reject(new Error('Could not load Razorpay Checkout. Check your connection and try again.'));
-    document.head.append(script);
-  }).catch(error => {
-    window.__bitsecureRazorpayScript = null;
-    throw error;
-  });
-  return window.__bitsecureRazorpayScript;
 }
 
 /** Render the Support Us page and return its router cleanup function. */
@@ -49,7 +31,7 @@ export function renderSupportPage(root) {
       </div>
     </section>
 
-    <section class="support-giving-layout" aria-labelledby="support-giving-title">
+    <section class="support-giving-layout support-upi-layout" aria-labelledby="support-giving-title">
       <div class="support-giving-copy">
         <span class="info-kicker">ONE-TIME PROJECT SUPPORT</span>
         <h2 id="support-giving-title">Choose an amount that feels right.</h2>
@@ -61,37 +43,64 @@ export function renderSupportPage(root) {
         </div>
         <label class="support-custom-label" for="support-custom-amount" hidden>Custom amount (₹)</label>
         <input class="support-custom-input" id="support-custom-amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Enter amount in ₹" hidden>
-        <p class="support-amount-help">Minimum contribution is ₹1. You can choose a suggested amount or enter a custom whole-rupee amount.</p>
+        <p class="support-amount-help">Minimum contribution is ₹1. Choose a suggested amount or enter a custom whole-rupee amount. You can also scan the QR code and enter an amount in your UPI app.</p>
         <div class="support-trust-points">
           <div><span aria-hidden="true">✓</span><span>One-time, voluntary support</span></div>
-          <div><span aria-hidden="true">✓</span><span>Payment details handled by Razorpay</span></div>
+          <div><span aria-hidden="true">✓</span><span>Pay directly using UPI</span></div>
           <div><span aria-hidden="true">✓</span><span>No BitSecure account required to contribute</span></div>
         </div>
       </div>
 
-      <aside class="support-payment-card" aria-labelledby="support-payment-title">
-        <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">⌑</span><span class="support-payment-provider">SECURE CHECKOUT · RAZORPAY</span></div>
+      <aside class="support-payment-card support-upi-card" aria-labelledby="support-payment-title">
+        <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">↗</span><span class="support-payment-provider">DIRECT UPI PAYMENT</span></div>
         <h3 id="support-payment-title">Support BitSecure</h3>
-        <p>Your payment opens in Razorpay's secure checkout. BitSecure never receives your card details, UPI PIN, or banking password.</p>
-        <div class="support-payment-slot" id="support-payment-slot" aria-live="polite">
-          <button class="btn support-checkout-button" id="support-pay-button" type="button">Continue to secure payment <span aria-hidden="true">→</span></button>
-          <p class="support-payment-status" id="support-payment-status" role="status"></p>
+        <p>Scan this QR code with any UPI app to make a one-time contribution.</p>
+        <div class="support-upi-qr-wrap">
+          <img class="support-upi-qr" src="assets/sahil-upi-qr.svg" alt="UPI QR code for 8598032563@slc" width="240" height="240">
         </div>
-        <p class="support-payment-footnote">Test mode is used until you configure live credentials in your Cloudflare Worker. A verified signature confirms the checkout response; reconcile captured payments in the Razorpay Dashboard.</p>
+        <div class="support-upi-payee">
+          <span class="support-upi-caption">PAY TO</span>
+          <strong>${PAYEE_NAME}</strong>
+          <span class="support-upi-id" id="support-upi-id">${UPI_ID}</span>
+        </div>
+        <div class="support-upi-actions">
+          <button class="btn support-copy-upi" id="support-copy-upi" type="button">Copy UPI ID</button>
+          <a class="btn support-upi-open" id="support-upi-open" href="upi://pay?pa=8598032563%40slc&amp;pn=Mr%20Sahil%20Kumar%20Patra&amp;cu=INR&amp;am=99&amp;tn=BitSecure%20project%20support">Open UPI app <span aria-hidden="true">↗</span></a>
+        </div>
+        <p class="support-payment-status" id="support-upi-status" role="status" aria-live="polite"></p>
+        <div class="support-coming-soon">
+          <span class="coming-soon-pill">COMING SOON</span>
+          <p>Card payments and other payment options will be available soon. For now, you can contribute using UPI.</p>
+        </div>
       </aside>
     </section>
 
     <section class="support-thanks-panel"><div><span class="info-kicker">THANK YOU</span><h2>Support is more than a payment.</h2><p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></section>
-    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible.</p>
+    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. UPI payments are made directly to the UPI ID shown above; BitSecure does not automatically receive payment confirmation.</p>
   `;
 
-  const slot = root.querySelector('#support-payment-slot');
-  const payButton = root.querySelector('#support-pay-button');
-  const status = root.querySelector('#support-payment-status');
   const customInput = root.querySelector('#support-custom-amount');
   const customLabel = root.querySelector('.support-custom-label');
+  const status = root.querySelector('#support-upi-status');
+  const upiLink = root.querySelector('#support-upi-open');
+  const copyButton = root.querySelector('#support-copy-upi');
   let selectedAmount = 99;
   let disposed = false;
+
+  function updateUpiLink() {
+    const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
+    const valid = Number.isSafeInteger(rupees) && rupees >= 1 && rupees <= 100000;
+    const params = new URLSearchParams({
+      pa: UPI_ID,
+      pn: PAYEE_NAME,
+      cu: 'INR',
+      tn: 'BitSecure project support'
+    });
+    if (valid) params.set('am', String(rupees));
+    upiLink.href = `upi://pay?${params.toString()}`;
+    upiLink.setAttribute('aria-disabled', String(!valid));
+    return valid;
+  }
 
   root.querySelectorAll('[data-amount]').forEach(button => {
     button.addEventListener('click', () => {
@@ -106,94 +115,37 @@ export function renderSupportPage(root) {
       customLabel.hidden = !custom;
       if (custom) customInput.focus();
       status.textContent = '';
+      updateUpiLink();
     });
   });
 
-  async function postJson(path, payload) {
-    const response = await fetch(`${RAZORPAY_API_BASE_URL.replace(/\/$/, '')}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || 'Payment service request failed.');
-    return data;
-  }
+  customInput.addEventListener('input', () => {
+    status.textContent = '';
+    updateUpiLink();
+  });
 
-  async function startCheckout() {
-    const rupees = selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
-    if (!Number.isSafeInteger(rupees) || rupees < 1 || rupees > 100000) {
+  copyButton.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(UPI_ID);
+      showMessage(status, 'UPI ID copied. Open your UPI app and enter the contribution amount.', 'success');
+    } catch {
+      showMessage(status, `Copy is unavailable in this browser. UPI ID: ${UPI_ID}`);
+    }
+  });
+
+  upiLink.addEventListener('click', event => {
+    if (!updateUpiLink()) {
+      event.preventDefault();
       showMessage(status, 'Enter a whole-rupee amount between ₹1 and ₹1,00,000.');
       return;
     }
-    if (!RAZORPAY_API_BASE_URL || !/^https:\/\//.test(RAZORPAY_API_BASE_URL)) {
-      showMessage(slot, 'Checkout is not configured yet. Set the Cloudflare Worker URL in js/app/support-config.js.');
-      return;
-    }
+    status.textContent = 'Opening your UPI app. If nothing happens, scan the QR code or copy the UPI ID.';
+  });
 
-    payButton.disabled = true;
-    payButton.textContent = 'Preparing secure checkout…';
-    status.textContent = 'Creating your payment order.';
-    try {
-      const order = await postJson('/api/create-order', { amount: rupees * 100 });
-      await loadCheckoutScript();
-      if (disposed) return;
-      const checkout = new window.Razorpay({
-        key: order.key_id,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'BitSecure',
-        description: 'Voluntary project support',
-        order_id: order.order_id,
-        theme: { color: '#6d7cff' },
-        modal: {
-          ondismiss: () => {
-            if (!disposed) status.textContent = 'Checkout was closed. No payment confirmation was received.';
-          }
-        },
-        handler: async response => {
-          if (disposed) return;
-          status.textContent = 'Verifying payment signature…';
-          payButton.disabled = true;
-          try {
-            const verification = await postJson('/api/verify-payment', {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature
-            });
-            if (verification.verified) showMessage(slot, 'Thank you! Razorpay payment signature verified successfully.', 'success');
-            else throw new Error('Payment could not be verified. Please contact support before retrying.');
-          } catch (error) {
-            showMessage(slot, error.message || 'Payment verification failed. Do not retry until you check your Razorpay transaction status.');
-          } finally {
-            if (!disposed) {
-              payButton.disabled = false;
-              payButton.textContent = 'Continue to secure payment →';
-            }
-          }
-        }
-      });
-      checkout.on('payment.failed', event => {
-        if (!disposed) {
-          const description = event?.error?.description || 'The payment failed or was declined.';
-          showMessage(slot, description + ' You can try again or use another payment method.');
-        }
-      });
-      checkout.open();
-      status.textContent = '';
-    } catch (error) {
-      if (!disposed) showMessage(slot, error.message || 'Unable to start Razorpay checkout.');
-    } finally {
-      if (!disposed) {
-        payButton.disabled = false;
-        payButton.textContent = 'Continue to secure payment →';
-      }
-    }
-  }
-
-  payButton.addEventListener('click', startCheckout);
+  updateUpiLink();
   return () => {
     disposed = true;
+    if (!disposed) return;
     root.replaceChildren();
   };
 }
