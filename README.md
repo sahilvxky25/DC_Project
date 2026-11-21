@@ -344,22 +344,35 @@ BitSecure includes a first-visit consent panel with **Accept All**, **Reject Opt
 The in-app Privacy Policy is available from the site footer at `#/privacy`. The policy describes account and learning-progress data, Firebase/Google services, browser storage, cookie preferences, and privacy-request limitations. Keep the policy synchronized with actual data practices whenever features or integrations change. Before public launch, add a monitored privacy contact email and implement/verify the account and data deletion process described to users.
 
 
-## Support Us payments
+## Support Us payments — Razorpay Standard Checkout
 
-The Support Us page can embed a **Razorpay Payment Button** without adding a custom payment backend. The payment UI is hosted by Razorpay; BitSecure only embeds the public Payment Button ID.
+The Support Us page uses **Razorpay Standard Checkout** with a server-created order and server-side HMAC-SHA256 signature verification. The existing Cloudflare Worker in `cloudflare-dns-worker/` hosts the payment API; no separate Node/Python backend or database is required.
 
-### Configure the checkout
+### Configure locally
 
-1. Create and verify a Razorpay account. Complete the account activation/KYC steps and confirm that your intended voluntary project-support collection is allowed under Razorpay's current terms.
-2. In the Razorpay Dashboard, open **Payment Button** and create a **Donations** button.
-3. Configure the amount field to allow the contribution choices you intend to accept. Make the amount field optional/customisable if that is what you want supporters to use.
-4. Test the button in Razorpay Test Mode first. Razorpay Test and Live buttons are separate.
-5. Copy the generated embed code and take only the value of **data-payment_button_id** (the public **pl_...** identifier).
-6. Paste that value into **RAZORPAY_PAYMENT_BUTTON_ID** in **js/app/support-config.js**.
-7. Deploy the site and complete a test transaction. Replace the test button ID with the Live Mode button ID only after the account is activated and the checkout is ready.
+1. Create/activate your Razorpay account and use **Test Mode** credentials first.
+2. In `cloudflare-dns-worker/`, copy `.dev.vars.example` to `.dev.vars` and set your test `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, and the exact frontend origin in `ALLOWED_ORIGIN`. Do not commit `.dev.vars`.
+3. In `js/app/support-config.js`, set `RAZORPAY_API_BASE_URL` to your deployed Worker URL (for example, `https://dc-project-live-dns.<your-subdomain>.workers.dev`). Do not include a trailing path.
+4. Start the Worker locally with `cd cloudflare-dns-worker && npx wrangler dev`; configure the frontend URL to `http://127.0.0.1:8787` while testing locally.
+5. Run the static site with `python3 -m http.server 8000`, open `http://localhost:8000`, visit **Support Us**, choose an amount and complete a Razorpay test payment.
 
-The configuration file must contain only the public Payment Button ID. **Never place a Razorpay API key secret, webhook secret, or other private credential in frontend JavaScript.** No payment secret or Firebase/Firestore write is needed for this hosted-button integration.
+### Deploy the Worker
 
-If the Payment Button ID is empty or invalid, the page deliberately displays an unavailable message instead of a fake or non-working payment button. Razorpay processes the checkout and transaction records in its dashboard; this frontend does not independently verify payments, maintain a donor ledger, or record contributions in Firestore. Add a trusted server-side webhook integration before showing verified contribution totals or supporter rankings.
+From `cloudflare-dns-worker/`, set secrets without placing them in source control:
 
-Razorpay's current embed documentation: [Payment Button embed code](https://razorpay.com/docs/payments/payment-button/), [Donations Button](https://razorpay.com/docs/payments/payment-button/donations/).
+```bash
+npx wrangler secret put RAZORPAY_KEY_ID
+npx wrangler secret put RAZORPAY_KEY_SECRET
+```
+
+Enter the corresponding values when prompted. Set `ALLOWED_ORIGIN` as a Worker variable to the exact deployed site origin (for example, `https://your-site.example`), then deploy with `npx wrangler deploy`. Keep the Worker URL in `js/app/support-config.js`.
+
+### Security and verification notes
+
+- The browser receives only the public Key ID returned by `POST /api/create-order`; the Key Secret exists only in Cloudflare Worker secrets.
+- `POST /api/create-order` validates integer paise amounts (minimum 100), creates an INR order with Razorpay, and returns the order ID, amount, currency, and public Key ID.
+- `POST /api/verify-payment` validates all three checkout response fields and compares the HMAC-SHA256 signature in constant-time style. A mismatch returns HTTP 400 and is never reported as verified.
+- The app does not create a database table or persist a donor ledger. A valid signature confirms the checkout response signature; it is not a substitute for checking that the payment is captured/settled in the Razorpay Dashboard. Add a signed webhook and server-side payment-status reconciliation before displaying verified donation totals or issuing receipts.
+- Use separate Test and Live credentials. Only switch to Live after account activation and a successful end-to-end test. Never put the Key Secret in frontend code, `.env` files served by the static host, Git, or browser storage.
+
+Razorpay guide: [Standard Checkout integration steps](https://razorpay.com/docs/payments/payment-gateway/web-integration/standard/integration-steps/).
