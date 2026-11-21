@@ -65,3 +65,13 @@
   .profile-trigger { gap: 5px; }
   .password-dialog form { padding: 20px; }
 }
+
+/* Display-name editor reuses the established profile dialog layout. */
+.profile-edit-dialog .profile-edit-help {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+.profile-edit-dialog[aria-busy="true"] { cursor: progress; }
+.profile-edit-dialog button:disabled { opacity: .65; cursor: wait; }
