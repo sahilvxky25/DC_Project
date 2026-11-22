@@ -4,6 +4,7 @@
  * Tools (journey, glossary, ...) and free play skip straight to Play with no quiz and no XP.
  */
 import { $, esc } from '../core/utils.js';
+import { isBookmarked, toggleBookmark } from '../core/bookmarks.js';
 import { DC } from '../core/state.js';
 import { GROUPS } from '../modules/registry.js';
 import { ZONES, META } from './data.js';
@@ -72,7 +73,7 @@ export function renderFlow(mod, root, freePlay) {
   root.innerHTML = `<div class="gflow" style="${style}">
     <div class="gtop"><a class="gback" href="${back}">‹ ${zone ? zone.name : 'Toolbox'}</a>
       <h2><span class="ge">${meta.e}</span> ${mod.title}</h2>
-      <span class="gchip">${meta.q ? meta.d : 'Free play'}</span></div>
+      <span class="gchip">${meta.q ? meta.d : 'Free play'}</span><button class="btn ghost sm" id="moduleBookmark" type="button" aria-pressed="${isBookmarked(mod.id)}">${isBookmarked(mod.id) ? '★ Bookmarked' : '☆ Bookmark'}</button></div>
     <div class="gsteps" id="gsteps"></div>
     <div class="gstage" id="gstage"></div>
     <div class="gbar"><button class="btn big" id="gnext" type="button" hidden></button></div>
@@ -83,6 +84,12 @@ export function renderFlow(mod, root, freePlay) {
         ${nextMod ? `<a class="btn ghost sm" href="#/m/${nextMod.id}">Up next: ${nextMod.title} →</a>` : `<a class="btn ghost sm" href="${back}">Back to ${zone ? zone.name : 'toolbox'} →</a>`}</div>
     </div></div>`;
   const stage = $('#gstage'), next = $('#gnext');
+  const bookmarkButton = $('#moduleBookmark');
+  bookmarkButton?.addEventListener('click', () => {
+    const saved = toggleBookmark(mod.id);
+    bookmarkButton.textContent = saved ? '★ Bookmarked' : '☆ Bookmark';
+    bookmarkButton.setAttribute('aria-pressed', String(saved));
+  });
 
   const pills = () => {
     const names = { watch: '👀 Watch', play: '🎮 Play', quiz: '❓ Quiz', reward: '🏅 Reward' };
