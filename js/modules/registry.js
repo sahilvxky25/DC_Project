@@ -46,11 +46,29 @@ export const CORE = [
 ];
 
 /**
+ * Approximate learner-facing completion times, in minutes. These include reading and trying the
+ * interactive controls, not just the time needed to skim the explanation.
+ */
+const MODULE_DURATIONS = {
+  framing: 10, errors: 10, 'line-coding': 10, modulation: 10, 'channel-capacity': 10,
+  'mux-switching': 10, 'stop-and-wait': 10, window: 15,
+  subnets: 15, 'ip-headers': 10, routing: 15, 'topology-builder': 20, 'wifi-simulator': 15,
+  'tcp-udp': 10, handshake: 10, congestion: 15, sockets: 15, 'network-performance': 15,
+  dns: 15, 'http-tls': 15,
+  encapsulation: 15, encryption: 15, 'key-exchange': 15, rsa: 15, signatures: 15,
+  'packet-capture': 15, troubleshooting: 20, firewall: 20,
+  'protocol-comparison': 10, journey: 10, tutorials: 10, challenges: 15, glossary: 5,
+};
+
+/** Estimated durations for the four end-to-end core-lab stages, in minutes. */
+export const CORE_DURATIONS = [5, 10, 15, 10];
+
+/**
  * Registers a learning module.
  *
  * @param {{id:string, group:string, title:string, desc:string, obj?:string[], mount:(root:Element)=>(void|Function)}} m
  */
-export const regMod = m => DC.mods.push(m);
+export const regMod = m => DC.mods.push({ ...m, duration: m.duration || MODULE_DURATIONS[m.id] || (m.group === 'adv' ? 15 : m.group === 'learn' ? 10 : 10) });
 
 /**
  * Finds a registered module by id, or undefined.
