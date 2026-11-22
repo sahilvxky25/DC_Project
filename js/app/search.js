@@ -284,6 +284,7 @@ export function initModuleSearch() {
   input.addEventListener('input', () => render(input.value));
   input.addEventListener('focus', () => {
     if (input.value.trim()) render(input.value);
+    else showRecentSearches();
   });
   input.addEventListener('keydown', event => {
     if (event.key === 'ArrowDown' && !panel.hidden) {
