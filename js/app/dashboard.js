@@ -237,8 +237,8 @@ export function renderBookmarks() {
 export function renderRecentlyViewed() {
   const root = $('#dash');
   const cards = [
-    ...CORE.map((c, i) => ({ k: 'lab' + i, href: '#/lab/' + i, t: c[0], d: c[1], g: 'Core lab' })),
-    ...DC.mods.map(m => ({ k: m.id, href: '#/m/' + m.id, t: m.title, d: m.desc, g: GROUPS.find(x => x.id === m.group)?.name || 'Learning' })),
+    ...CORE.map((c, i) => ({ k: 'lab' + i, href: '#/lab/' + i, t: c[0], d: c[1], g: 'Core lab', duration: CORE_DURATIONS[i] })),
+    ...DC.mods.map(m => ({ k: m.id, href: '#/m/' + m.id, t: m.title, d: m.desc, g: GROUPS.find(x => x.id === m.group)?.name || 'Learning', duration: m.duration })),
   ];
   const recent = getRecentlyViewed().map(item => {
     const card = cards.find(c => c.k === item.id);
