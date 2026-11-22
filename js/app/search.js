@@ -156,6 +156,7 @@ export function initModuleSearch() {
     panel.hidden = true;
     panel.replaceChildren();
     input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
     activeIndex = -1;
     currentResults = [];
     if (clear) input.value = '';
@@ -163,6 +164,7 @@ export function initModuleSearch() {
 
   const render = query => {
     panel.replaceChildren();
+    input.removeAttribute('aria-activedescendant');
     activeIndex = -1;
     if (!normalize(query)) {
       panel.hidden = true;
@@ -184,6 +186,7 @@ export function initModuleSearch() {
         link.className = 'module-search-result';
         link.href = '#/m/' + encodeURIComponent(mod.id);
         link.setAttribute('role', 'option');
+        link.id = `moduleSearchResult-${index}`;
         link.dataset.index = String(index);
 
         const text = document.createElement('span');
@@ -215,6 +218,7 @@ export function initModuleSearch() {
       item.classList.toggle('is-active', i === activeIndex);
       item.setAttribute('aria-selected', String(i === activeIndex));
     });
+    input.setAttribute('aria-activedescendant', items[activeIndex].id);
     items[activeIndex].scrollIntoView({ block: 'nearest' });
   };
 
