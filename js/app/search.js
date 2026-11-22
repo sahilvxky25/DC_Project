@@ -7,6 +7,7 @@
  */
 import { DC } from '../core/state.js';
 import { GROUPS } from '../modules/registry.js';
+import { clearRecentSearches, getRecentSearches, recordSearch } from '../core/recent-searches.js';
 
 const SEARCH_TERMS = {
   handshake: ['tcp handshake', 'three-way handshake', 'syn', 'syn-ack', 'ack', 'connection establishment', 'connection setup', 'three way connection', 'tcp connection'],
@@ -162,6 +163,61 @@ export function initModuleSearch() {
     if (clear) input.value = '';
   };
 
+  const showRecentSearches = () => {
+    const searches = getRecentSearches();
+    panel.replaceChildren();
+    input.removeAttribute('aria-activedescendant');
+    activeIndex = -1;
+    currentResults = [];
+
+    const heading = document.createElement('div');
+    heading.className = 'module-search-history-heading';
+    const label = document.createElement('strong');
+    label.textContent = 'Recently searched';
+    heading.append(label);
+
+    if (searches.length) {
+      const clearButton = document.createElement('button');
+      clearButton.type = 'button';
+      clearButton.className = 'module-search-history-clear';
+      clearButton.textContent = 'Clear history';
+      clearButton.addEventListener('click', event => {
+        event.stopPropagation();
+        clearRecentSearches();
+        showRecentSearches();
+      });
+      heading.append(clearButton);
+    }
+    panel.append(heading);
+
+    if (!searches.length) {
+      const empty = document.createElement('p');
+      empty.className = 'module-search-empty';
+      empty.textContent = 'Your last five searches will appear here.';
+      panel.append(empty);
+    } else {
+      searches.forEach(query => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'module-search-history-item';
+        button.innerHTML = '<span aria-hidden="true">↶</span>';
+        const text = document.createElement('span');
+        text.textContent = query;
+        button.append(text);
+        button.addEventListener('click', () => {
+          input.value = query;
+          recordSearch(query);
+          render(query);
+          input.focus();
+        });
+        panel.append(button);
+      });
+    }
+
+    panel.hidden = false;
+    input.setAttribute('aria-expanded', 'true');
+  };
+
   const render = query => {
     panel.replaceChildren();
     input.removeAttribute('aria-activedescendant');
@@ -201,7 +257,10 @@ export function initModuleSearch() {
         meta.className = 'module-search-result-group';
         meta.textContent = group?.name || 'Learning module';
         link.append(text, meta);
-        link.addEventListener('click', () => close());
+        link.addEventListener('click', () => {
+          recordSearch(query);
+          close();
+        });
         panel.append(link);
       });
     }
