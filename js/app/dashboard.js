@@ -25,6 +25,7 @@ import { $, $$, esc } from '../core/utils.js';
 import { CORE, GROUPS, modById } from '../modules/registry.js';
 import { refreshNav } from './navigation.js';
 import { ACH, allKeys } from './progress.js';
+import { bookmarkedIds, toggleBookmark } from '../core/bookmarks.js';
 
 /**
  * Headline and text for the "last experiment" dashboard card.
@@ -152,6 +153,8 @@ export function renderDash() {
       ${exps.length ? `<ul class="exp">${exps.map(e => `<li><a href="${e[2]}">${e[0]}</a></li>`).join('')}</ul>` : '<p class="hint">You have tried every suggested experiment. Nice work.</p>'}
       <div class="search-row">${icon('search')}<input id="dgq" type="search" placeholder="Look up a term: ACK, CRC, TTL, MSS" aria-label="Look up a glossary term"></div></div>
   </div>
+  <div class="panel" id="bookmarks-panel"><h3>★ Bookmarked modules</h3><p class="hint">Your saved lessons are kept with your account and available when you sign in on another device.</p>
+    <div class="bookmark-list">\${bookmarkedIds().map(id => { const c = cards.find(x => x.k === id); return c ? \`<div class="bookmark-item"><a href="\${c.href}">\${esc(c.t)}</a><button class="btn ghost sm" type="button" data-remove-bookmark="\${esc(id)}" aria-label="Remove bookmark for \${esc(c.t)}">Remove</button></div>\` : ''; }).join('') || '<p class="hint" id="empty-bookmarks">No bookmarks yet. Open a learning module and select ☆ Bookmark.</p>'}</div></div>
   <div class="panel"><h3>All modules</h3>
     <div class="filters" id="dflt"><input id="dsq" type="search" placeholder="Filter modules" aria-label="Filter modules"><button class="chipbtn on" data-g="all">All</button><button class="chipbtn" data-g="core">Core lab</button>${GROUPS.map(g => `<button class="chipbtn" data-g="${g.id}">${g.name.replace(' layer', '')}</button>`).join('')}</div>
     <div class="dgrid" id="dgrid">${cards.map(c => `<a class="mc" href="${c.href}" data-g="${c.g}" data-s="${esc((c.t + ' ' + c.d).toLowerCase())}"><span class="mc-top">${icon(c.ic)}${P.visited[c.k] ? `<span class="pill live">${icon('check')} visited</span>` : '<span class="pill">new</span>'}</span><h3>${c.t}</h3><p>${c.d}</p></a>`).join('')}</div></div>
@@ -177,6 +180,12 @@ export function renderDash() {
       DC.glossQ = e.target.value.trim();
       location.hash = '#/m/glossary';
     }
+  };
+  $('#bookmarks-panel').onclick = e => {
+    const button = e.target.closest('[data-remove-bookmark]');
+    if (!button) return;
+    toggleBookmark(button.dataset.removeBookmark);
+    renderDash();
   };
   $('#resetP').onclick = () => {
     if (confirm('Reset all progress, achievements and notes?')) {
