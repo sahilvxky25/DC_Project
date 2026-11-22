@@ -16,3 +16,6 @@
 .recent-item-meta { display:flex; align-items:center; gap:.8rem; flex-wrap:wrap; justify-content:flex-end; }
 .recent-empty { text-align:center; padding:2rem; }
 @media(max-width:560px) { .recent-item, .recent-page-item { align-items:flex-start; flex-direction:column; } .recent-item time { text-align:left; } .recent-item-meta { justify-content:flex-start; } }
+
+.recent-page-item .recent-item-duration { color:var(--muted); font-size:.82rem; white-space:nowrap; }
+@media(max-width:560px) { .recent-page-item .recent-item-duration { white-space:normal; } }
