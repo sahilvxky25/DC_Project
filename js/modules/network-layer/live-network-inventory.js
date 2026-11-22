@@ -110,13 +110,13 @@ regMod({
             <div class="lni-section-title"><div><small>THIS DEVICE</small><h3>Local IP addresses</h3></div><span class="lni-tag">HOST CONFIGURATION</span></div>
             <div id="lni-device-ips" class="lni-ip-grid"></div>
           </section>
-          <nav class="lni-tabs" aria-label="Network inventory sections">
-            <button type="button" data-tab="overview" class="active">Overview</button>
-            <button type="button" data-tab="interfaces">Interfaces <b id="lni-count-i">0</b></button>
-            <button type="button" data-tab="routes">Routes <b id="lni-count-r">0</b></button>
-            <button type="button" data-tab="neighbours">Neighbours <b id="lni-count-n">0</b></button>
+          <nav class="lni-tabs" role="tablist" aria-label="Network inventory sections">
+            <button type="button" role="tab" id="lni-tab-overview" aria-controls="lni-view-overview" aria-selected="true" data-tab="overview" class="active">Overview</button>
+            <button type="button" role="tab" id="lni-tab-interfaces" aria-controls="lni-view-interfaces" aria-selected="false" tabindex="-1" data-tab="interfaces">Interfaces <b id="lni-count-i">0</b></button>
+            <button type="button" role="tab" id="lni-tab-routes" aria-controls="lni-view-routes" aria-selected="false" tabindex="-1" data-tab="routes">Routes <b id="lni-count-r">0</b></button>
+            <button type="button" role="tab" id="lni-tab-neighbours" aria-controls="lni-view-neighbours" aria-selected="false" tabindex="-1" data-tab="neighbours">Neighbours <b id="lni-count-n">0</b></button>
           </nav>
-          <section class="lni-view" id="lni-view-overview">
+          <section class="lni-view" id="lni-view-overview" role="tabpanel" aria-labelledby="lni-tab-overview">
             <div class="lni-overview-grid">
               <section class="panel"><div class="lni-section-title"><div><small>ADAPTERS</small><h3>Network interfaces</h3></div></div><div id="lni-interface-cards"></div></section>
               <section class="panel"><div class="lni-section-title"><div><small>DEFAULT NEXT HOP</small><h3>Gateway</h3></div></div><div id="lni-gateway"></div>
@@ -124,9 +124,9 @@ regMod({
             </div>
             <section class="panel"><div class="lni-section-title"><div><small>LOCAL LINK OBSERVATIONS</small><h3>Neighbour overview</h3><p>Only entries already cached by this device.</p></div><button class="btn ghost sm" type="button" data-open="neighbours">View all</button></div><div id="lni-neighbour-preview" class="lni-neighbour-preview"></div></section>
           </section>
-          <section class="lni-view" id="lni-view-interfaces" hidden><div class="lni-section-title"><div><small>ADAPTER DETAILS</small><h3>Choose an interface</h3></div></div><div class="lni-interface-explorer"><div id="lni-interface-list" class="lni-interface-list"></div><div id="lni-interface-detail" class="panel"></div></div></section>
-          <section class="lni-view" id="lni-view-routes" hidden><div class="lni-section-title"><div><small>PATH SELECTION</small><h3>Default routes</h3><p>Used when no more-specific route matches.</p></div></div><div id="lni-route-list"></div></section>
-          <section class="lni-view" id="lni-view-neighbours" hidden><div class="lni-section-title"><div><small>ARP / NDP CACHE</small><h3>Neighbour cache</h3><label class="lni-filter"><input id="lni-filter" type="search" placeholder="Filter IP, MAC, interface…" aria-label="Filter neighbours"></label></div></div><div id="lni-neighbour-list" class="lni-neighbour-list"></div><p class="lni-note">A cache entry is not proof that a device is online now. This list is not a complete inventory and does not represent a physical topology.</p></section>
+          <section class="lni-view" id="lni-view-interfaces" role="tabpanel" aria-labelledby="lni-tab-interfaces" hidden><div class="lni-section-title"><div><small>ADAPTER DETAILS</small><h3>Choose an interface</h3></div></div><div class="lni-interface-explorer"><div id="lni-interface-list" class="lni-interface-list"></div><div id="lni-interface-detail" class="panel"></div></div></section>
+          <section class="lni-view" id="lni-view-routes" role="tabpanel" aria-labelledby="lni-tab-routes" hidden><div class="lni-section-title"><div><small>PATH SELECTION</small><h3>Default routes</h3><p>Used when no more-specific route matches.</p></div></div><div id="lni-route-list"></div></section>
+          <section class="lni-view" id="lni-view-neighbours" role="tabpanel" aria-labelledby="lni-tab-neighbours" hidden><div class="lni-section-title"><div><small>ARP / NDP CACHE</small><h3>Neighbour cache</h3><label class="lni-filter"><input id="lni-filter" type="search" placeholder="Filter IP, MAC, interface…" aria-label="Filter neighbours"></label></div></div><div id="lni-neighbour-list" class="lni-neighbour-list"></div><p class="lni-note">A cache entry is not proof that a device is online now. This list is not a complete inventory and does not represent a physical topology.</p></section>
         </div>
         <footer class="lni-footer">BITSECURE • READ-ONLY OS INSPECTION • NO ACTIVE SCANNING</footer>
       </section>`;
@@ -134,7 +134,7 @@ regMod({
     const el=s=>$(s,root);
     const status=(message,kind='')=>{el('#lni-status').className='lni-status '+kind;el('#lni-status-text').textContent=message;};
     const tableEmpty=msg=>'<p class="lni-empty">'+safe(msg)+'</p>';
-    const setTab=tab=>{activeTab=tab;root.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));root.querySelectorAll('.lni-view').forEach(v=>v.hidden=v.id!=='lni-view-'+tab);};
+    const setTab=tab=>{activeTab=tab;root.querySelectorAll('[data-tab]').forEach(b=>{const selected=b.dataset.tab===tab;b.classList.toggle('active',selected);b.setAttribute('aria-selected',String(selected));b.tabIndex=selected?0:-1;});root.querySelectorAll('.lni-view').forEach(v=>v.hidden=v.id!=='lni-view-'+tab);};
     const copyValue=async(value,button)=>{try{if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(value);}else{throw new Error('Clipboard unavailable');}button.textContent='Copied ✓';}catch{const field=document.createElement('textarea');field.value=value;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';root.appendChild(field);field.select();let copied=false;try{copied=document.execCommand('copy');}catch{}field.remove();button.textContent=copied?'Copied ✓':'Select and copy the command';if(!copied){const code=button.parentElement?.querySelector('code');if(code)code.textContent=value;}}};
     function renderBrowserStatus(){
       const online=navigator.onLine;
@@ -216,7 +216,19 @@ regMod({
       el('#lni-consent').hidden = false;
       el('#lni-allow').focus();
     }
-    const closeConsent=()=>{el('#lni-consent').hidden=true;};
+    const closeConsent=(restoreFocus=false)=>{el('#lni-consent').hidden=true;if(restoreFocus)el('#lni-connect-agent').focus();};
+    const handleKeydown=event=>{
+      if(event.key==='Escape'&&!el('#lni-consent').hidden){event.preventDefault();closeConsent(true);return;}
+      const tab=event.target.closest?.('[data-tab]');
+      if(!tab||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+      event.preventDefault();
+      const tabs=[...root.querySelectorAll('[data-tab]')];
+      const index=tabs.indexOf(tab);
+      const nextIndex=event.key==='Home'?0:event.key==='End'?tabs.length-1:(index+(event.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;
+      setTab(tabs[nextIndex].dataset.tab);
+      tabs[nextIndex].focus();
+    };
+    root.addEventListener('keydown',handleKeydown);
     el('#lni-allow').addEventListener('click',()=>{
       try{localStorage.setItem(consentKey,'granted');}catch{}
       closeConsent();
@@ -234,6 +246,6 @@ regMod({
     el('#lni-copy').addEventListener('click',e=>copyValue(/Windows/i.test(navigator.userAgent)?'py network_agent.py':'python3 network_agent.py',e.currentTarget));
     el('#lni-auto').addEventListener('click',e=>{if(e.currentTarget.disabled)return;if(autoTimer){stopAutoRefresh();e.currentTarget.disabled=false;}else{autoTimer=setInterval(()=>{if(!document.hidden&&!demoMode)refresh();},10000);e.currentTarget.textContent='Auto refresh: 10s';e.currentTarget.setAttribute('aria-pressed','true');}});
     el('#lni-filter').addEventListener('input',e=>{neighbourQuery=e.target.value;renderNeighbours();});
-    return()=>{controller?.abort();if(autoTimer)clearInterval(autoTimer);window.removeEventListener('online',renderBrowserStatus);window.removeEventListener('offline',renderBrowserStatus);browserConnection?.removeEventListener?.('change',renderBrowserStatus);};
+    return()=>{controller?.abort();if(autoTimer)clearInterval(autoTimer);root.removeEventListener('keydown',handleKeydown);window.removeEventListener('online',renderBrowserStatus);window.removeEventListener('offline',renderBrowserStatus);browserConnection?.removeEventListener?.('change',renderBrowserStatus);};
   }
 });
