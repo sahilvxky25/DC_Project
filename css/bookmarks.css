@@ -19,3 +19,14 @@
 .bookmark-page-card small { color: var(--muted); }
 .bookmark-card-actions { justify-content: flex-start; }
 .bookmark-empty { text-align: center; padding: 2rem; }
+
+/* Keep the Bookmarks destination visible in the primary header on every screen size. */
+.topbar-info-links { display: flex; align-items: center; gap: 0.45rem; flex: none; }
+.topbar-info-links a { color: var(--text); text-decoration: none; font-size: 0.82rem; font-weight: 700; white-space: nowrap; padding: 0.35rem 0.55rem; border-radius: 9px; }
+.topbar-info-links a:hover { background: var(--surface2); color: var(--accent); }
+.topbar-info-links .topbar-bookmarks-link { background: var(--accent); color: var(--accent-ink); border: var(--gborder); box-shadow: var(--gshadow); padding: 0.4rem 0.75rem; }
+.topbar-info-links .topbar-bookmarks-link:hover { background: var(--accent); color: var(--accent-ink); filter: brightness(1.06); }
+@media (max-width: 760px) {
+  .topbar-info-links { order: 3; width: 100%; justify-content: flex-start; }
+  .topbar-info-links a { font-size: 0.78rem; }
+}
