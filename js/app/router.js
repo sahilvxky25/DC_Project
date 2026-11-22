@@ -194,6 +194,12 @@ export function route() {
     crumbs(['Map', ZONES.find(z => z.id === arg).name]);
     document.title = 'BitSecure';
     renderZone(arg);
+  } else if (kind === 'bookmarks') {
+    currentKey = 'bookmarks';
+    setStage('dash');
+    crumbs(['Bookmarked Modules']);
+    document.title = 'Bookmarked Modules · BitSecure';
+    renderBookmarks();
   } else if (kind === 'profile' || kind === 'daily') {
     currentKey = kind;
     setStage('dash');
