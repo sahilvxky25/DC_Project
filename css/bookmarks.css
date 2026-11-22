@@ -30,3 +30,7 @@
   .topbar-info-links { order: 3; width: 100%; justify-content: flex-start; }
   .topbar-info-links a { font-size: 0.78rem; }
 }
+
+/* Keep Recently Viewed beside Bookmarks in the primary navigation. */
+.topbar-info-links .topbar-recent-link { background: var(--surface2); color: var(--text); border: 1px solid var(--line); padding: 0.4rem 0.75rem; }
+.topbar-info-links .topbar-recent-link:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
