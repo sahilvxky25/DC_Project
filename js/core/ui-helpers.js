@@ -172,12 +172,15 @@ export function tabset(root, defs, start = 0) {
     if (b) select(+b.dataset.i);
   });
   bar.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
-      const n = (cur + (e.key === 'ArrowRight' ? 1 : -1) + defs.length) % defs.length;
-      select(n);
-      $$('.tab', bar)[n].focus();
-      e.preventDefault();
-    }
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
+    const n = e.key === 'Home'
+      ? 0
+      : e.key === 'End'
+        ? defs.length - 1
+        : (cur + (e.key === 'ArrowRight' ? 1 : -1) + defs.length) % defs.length;
+    select(n);
+    $$('.tab', bar)[n].focus();
+    e.preventDefault();
   });
   select(start);
   return {
