@@ -73,7 +73,7 @@ export function renderFlow(mod, root, freePlay) {
   root.innerHTML = `<div class="gflow" style="${style}">
     <div class="gtop"><a class="gback" href="${back}">‹ ${zone ? zone.name : 'Toolbox'}</a>
       <h2><span class="ge">${meta.e}</span> ${mod.title}</h2>
-      <span class="gchip">${meta.q ? meta.d : 'Free play'}</span><button class="btn ghost sm" id="moduleBookmark" type="button" aria-pressed="${isBookmarked(mod.id)}">${isBookmarked(mod.id) ? '★ Bookmarked' : '☆ Bookmark'}</button></div>
+      <span class="gchip">${meta.q ? meta.d : 'Free play'}</span><span class="gchip module-time-chip">⏱ ${mod.duration || 10} min estimated</span><button class="btn ghost sm" id="moduleBookmark" type="button" aria-pressed="${isBookmarked(mod.id)}">${isBookmarked(mod.id) ? '★ Bookmarked' : '☆ Bookmark'}</button></div>
     <div class="gsteps" id="gsteps"></div>
     <div class="gstage" id="gstage"></div>
     <div class="gbar"><button class="btn big" id="gnext" type="button" hidden></button></div>
