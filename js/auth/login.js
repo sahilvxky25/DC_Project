@@ -112,9 +112,23 @@ function setMessage(message, kind = 'error') {
   errorBox.classList.toggle('is-success', kind === 'success');
 }
 
-function closeProfileMenu() {
+function closeProfileMenu({ restoreFocus = false } = {}) {
+  const wasOpen = !profileDropdown.hidden;
   profileDropdown.hidden = true;
   profileBtn.setAttribute('aria-expanded', 'false');
+  if (restoreFocus && wasOpen) profileBtn.focus();
+}
+
+function profileMenuItems() {
+  return [...profileDropdown.querySelectorAll('.profile-menu-item:not([hidden]):not(:disabled)')];
+}
+
+function openProfileMenu({ focus = 'none' } = {}) {
+  profileDropdown.hidden = false;
+  profileBtn.setAttribute('aria-expanded', 'true');
+  const items = profileMenuItems();
+  if (focus === 'first') items[0]?.focus();
+  if (focus === 'last') items.at(-1)?.focus();
 }
 
 function renderProfile(user) {
@@ -157,6 +171,8 @@ function setMode(mode) {
   signUpTab.classList.toggle('is-active', signingUp);
   signInTab.setAttribute('aria-selected', String(!signingUp));
   signUpTab.setAttribute('aria-selected', String(signingUp));
+  signInTab.tabIndex = signingUp ? -1 : 0;
+  signUpTab.tabIndex = signingUp ? 0 : -1;
   nameField.hidden = !signingUp;
   nameInput.required = signingUp;
   passwordInput.autocomplete = signingUp ? 'new-password' : 'current-password';
@@ -260,6 +276,19 @@ function validEmail(email) {
 
 signInTab.addEventListener('click', () => setMode('signin'));
 signUpTab.addEventListener('click', () => setMode('signup'));
+
+document.querySelector('.auth-tabs').addEventListener('keydown', event => {
+  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+  event.preventDefault();
+  const useSignUp = event.key === 'End'
+    ? true
+    : event.key === 'Home'
+      ? false
+      : event.target === signInTab;
+  const nextTab = useSignUp ? signUpTab : signInTab;
+  setMode(useSignUp ? 'signup' : 'signin');
+  nextTab.focus();
+});
 
 loginForm.addEventListener('submit', async event => {
   event.preventDefault();
@@ -392,9 +421,31 @@ function resetPasswordVisibility() {
 }
 
 profileBtn.addEventListener('click', () => {
-  const shouldOpen = profileDropdown.hidden;
-  profileDropdown.hidden = !shouldOpen;
-  profileBtn.setAttribute('aria-expanded', String(shouldOpen));
+  if (profileDropdown.hidden) openProfileMenu();
+  else closeProfileMenu();
+});
+
+profileBtn.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+  event.preventDefault();
+  openProfileMenu({ focus: event.key === 'ArrowDown' ? 'first' : 'last' });
+});
+
+profileDropdown.addEventListener('keydown', event => {
+  const items = profileMenuItems();
+  const currentIndex = items.indexOf(document.activeElement);
+  let nextIndex = null;
+  if (event.key === 'ArrowDown') nextIndex = (currentIndex + 1) % items.length;
+  if (event.key === 'ArrowUp') nextIndex = (currentIndex - 1 + items.length) % items.length;
+  if (event.key === 'Home') nextIndex = 0;
+  if (event.key === 'End') nextIndex = items.length - 1;
+  if (nextIndex !== null && items.length) {
+    event.preventDefault();
+    items[nextIndex].focus();
+  } else if (event.key === 'Escape') {
+    event.preventDefault();
+    closeProfileMenu({ restoreFocus: true });
+  }
 });
 
 document.addEventListener('click', event => {
@@ -402,7 +453,7 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeProfileMenu();
+  if (event.key === 'Escape' && !profileDropdown.hidden) closeProfileMenu({ restoreFocus: true });
 });
 
 // Toggle visibility independently for each password field in the change-password dialog.
