@@ -34,6 +34,7 @@ import { $, esc } from '../core/utils.js';
 import { CORE, GROUPS, modById } from '../modules/registry.js';
 import { crumbs, setStage } from './navigation.js';
 import { renderDaily, renderHome, renderProfile, renderZone } from '../game/screens.js';
+import { renderBookmarks } from './dashboard.js';
 import { renderFlow } from '../game/flow.js';
 import { ZONES } from '../game/data.js';
 import { checkMeta, updatePill, visitXp } from '../game/store.js';
@@ -92,6 +93,12 @@ export function route() {
     if (i === 1) labSplit();
     if (i === 2) labPrepare();
     if (i === 3) labRecv();
+  } else if (kind === 'bookmarks') {
+    currentKey = 'bookmarks';
+    setStage('dash');
+    crumbs(['Dashboard', 'Bookmarked Modules']);
+    document.title = 'Bookmarked Modules · BitSecure';
+    renderBookmarks();
   } else if (kind === 'privacy') {
     currentKey = 'privacy';
     setStage('info-page');
