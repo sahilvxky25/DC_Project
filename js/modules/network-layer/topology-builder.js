@@ -44,6 +44,14 @@ regMod({
     'Connect devices with virtual cables and configure IPv4 addresses.',
     'Validate common mistakes and simulate a packet delivery test.',
   ],
+  revision: [
+    "A network topology describes devices and the links between them.",
+    "Switches connect devices within a local area network.",
+    "Routers connect different IP networks and forward packets between them.",
+    "Hosts need valid IP addresses and compatible subnet masks to communicate locally.",
+    "A default gateway is used to reach destinations outside the local subnet.",
+    "A physical or logical link failure can prevent connectivity even when IP settings are correct."
+  ],
   mount(root) {
     let topology = loadTopology();
     let selectedId = topology.devices[0]?.id || null;
