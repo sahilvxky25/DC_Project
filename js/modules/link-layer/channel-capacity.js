@@ -70,6 +70,14 @@ regMod({
     'Convert an SNR in decibels to a plain ratio.',
     'Explain why adding signal levels stops helping in a noisy channel.',
   ],
+  revision: [
+    "Bandwidth limits the range of signal frequencies a channel can carry.",
+    "The Nyquist formula gives a noiseless-channel maximum bit rate: 2B log₂(M).",
+    "The Shannon formula gives a noisy-channel capacity: B log₂(1 + SNR).",
+    "SNR is the signal power divided by noise power.",
+    "Convert SNR from decibels to a ratio using 10^(SNRdB/10).",
+    "Increasing signal levels can raise the Nyquist limit but cannot exceed Shannon capacity under the assumed noise."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML =
