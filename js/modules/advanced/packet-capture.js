@@ -64,6 +64,14 @@ regMod({
     'Expand the decoded layers and click a field to highlight its bytes.',
     'Follow a TCP stream and spot a retransmission.',
   ],
+  revision: [
+    "A packet capture records traffic for protocol analysis.",
+    "Display filters narrow packets without changing the capture.",
+    "TCP/UDP ports help identify application conversations.",
+    "Expand protocol layers to inspect decoded headers and fields.",
+    "Selecting a field can highlight its byte range in the packet.",
+    "Follow TCP streams to reconstruct conversations and spot retransmissions."
+  ],
   mount(root) {
     let pk = [],
       sel_ = 0,
