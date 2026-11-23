@@ -48,6 +48,15 @@ regMod({
     'Explore simulated signal coverage, channel overlap, and obstacle attenuation.',
     'Compare 2.4 GHz and 5 GHz Wi-Fi with wired Ethernet.',
   ],
+  revision: [
+    "An access point connects wireless clients to a network.",
+    "The SSID identifies a wireless network name.",
+    "2.4 GHz generally offers longer range but has fewer non-overlapping channels.",
+    "5 GHz generally offers more channel capacity but shorter range through obstacles.",
+    "Nearby networks on overlapping channels can increase interference.",
+    "Walls and other obstacles attenuate radio signals.",
+    "Channel selection and transmit power affect coverage and interference."
+  ],
   mount(root) {
     let state = loadState();
     let selectedId = state.devices[0]?.id || null;
