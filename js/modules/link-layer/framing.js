@@ -45,6 +45,14 @@ regMod({
     'See exactly which bytes or bits are added to protect the data.',
     'Learn why flag-based methods recover after an error and length counts do not.',
   ],
+  revision: [
+    "Framing marks the boundaries between data-link frames.",
+    "Length-count framing records the frame size in a header.",
+    "Byte stuffing inserts escape bytes when data contains a reserved flag byte.",
+    "Bit stuffing inserts a 0 after five consecutive 1 bits in common flag-based framing.",
+    "The receiver removes stuffing to recover the original payload.",
+    "A damaged length field can disrupt frame parsing; flags help locate later boundaries."
+  ],
   mount(root) {
     let data = msgBytes().slice(0, 10),
       damage = false,
