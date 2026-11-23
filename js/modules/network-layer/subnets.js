@@ -41,6 +41,14 @@ regMod({
     'Divide an address block into equal subnets and with variable-length masks (VLSM).',
     'Practise with generated questions and get instant feedback.',
   ],
+  revision: [
+    "CIDR notation writes a prefix length after an IPv4 address, such as /24.",
+    "The prefix identifies network bits; remaining bits identify host addresses.",
+    "A subnet mask marks network bits with 1s and host bits with 0s.",
+    "The network address identifies the subnet; the broadcast address targets all hosts on it.",
+    "Usable host count for a conventional IPv4 subnet is commonly 2^h − 2, with special cases.",
+    "VLSM allocates differently sized subnets to match different host requirements."
+  ],
   mount(root) {
     root.innerHTML = '<div id="sntabs"></div>';
     const tabs = tabset(
