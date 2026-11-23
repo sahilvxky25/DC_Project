@@ -37,6 +37,14 @@ regMod({
     'See why a 1-bit sequence number lets the receiver discard duplicates.',
     'Calculate why Stop-and-Wait wastes long, fast links.',
   ],
+  revision: [
+    "Stop-and-Wait allows only one unacknowledged frame at a time.",
+    "The sender waits for an ACK before sending the next frame.",
+    "A timeout triggers retransmission when an ACK does not arrive in time.",
+    "A 1-bit sequence number (0/1) lets the receiver detect duplicates.",
+    "A lost ACK can cause a retransmission even when the original frame arrived.",
+    "Long RTT and low bandwidth make Stop-and-Wait inefficient."
+  ],
   mount(root) {
     const SCN = {
       normal: {
