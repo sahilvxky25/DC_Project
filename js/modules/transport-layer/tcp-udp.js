@@ -65,14 +65,14 @@ regMod({
     'Choose the right protocol for common applications.',
   ],
   revision: [
-    'TCP is connection-oriented and establishes a connection with a three-way handshake; UDP sends datagrams without a connection setup.',
-    'TCP provides reliable, ordered byte-stream delivery using sequence numbers, acknowledgements and retransmissions.',
-    'UDP is best-effort: it preserves datagram boundaries but does not guarantee delivery or ordering.',
-    'A minimum TCP header is 20 bytes; a UDP header is 8 bytes.',
-    'TCP includes receiver flow control and congestion control; UDP has neither built in.',
-    'Both TCP and UDP use port numbers to deliver data to the correct application process.',
-    'The transport checksum uses a pseudo-header containing source IP, destination IP, protocol and transport length.',
-  ],
+    'TCP: connection-oriented; uses a three-way handshake (SYN → SYN-ACK → ACK).',
+    'TCP reliability: sequence numbers + ACKs + retransmissions; delivers an ordered byte stream.',
+    'UDP: connectionless and best-effort; no delivery or ordering guarantee; keeps datagram boundaries.',
+    'Header size: TCP = 20 bytes minimum; UDP = 8 bytes.',
+    'TCP has flow control and congestion control; UDP has neither built in.',
+    'Ports identify the sending and receiving application processes.',
+    'Checksum: covers transport data plus a pseudo-header (source IP, destination IP, protocol and length).',
+  ]
   mount(root) {
     root.innerHTML = '<div id="tutabs"></div>';
     const tabs = tabset(
