@@ -15,6 +15,14 @@ regMod({
     'Compare wildcard, address-specific, and connected UDP sockets.',
     'Follow TCP and UDP NAT mappings in both directions.',
   ],
+  revision: [
+    "A socket is an endpoint used by an application to send or receive network data.",
+    "A TCP connection is identified by source IP, source port, destination IP and destination port.",
+    "TCP demultiplexing uses the connection four-tuple to select the correct socket.",
+    "UDP socket selection can use local address and port, with wildcard binding options.",
+    "NAT rewrites address and often port information while tracking a translation mapping.",
+    "Return traffic must match the NAT state to be translated back to the internal endpoint."
+  ],
   mount(root) {
     root.innerHTML = '<div id="sktabs"></div>';
     const SERVER = '203.0.113.5';
