@@ -81,6 +81,14 @@ regMod({
     'Compute gᵃ mod p by square-and-multiply and follow both sides to the same key.',
     'Explain why an unauthenticated exchange is vulnerable to a man in the middle.',
   ],
+  revision: [
+    "Diffie–Hellman lets two parties derive a shared secret over a public channel.",
+    "Both parties agree on public parameters such as a group and generator.",
+    "Each party keeps its private exponent secret and shares a public value.",
+    "Combining the peer's public value with the private exponent yields the same shared secret.",
+    "The discrete logarithm problem underpins the security of suitable Diffie–Hellman groups.",
+    "Unauthenticated Diffie–Hellman is vulnerable to a man-in-the-middle attack."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML =
