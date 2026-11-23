@@ -45,6 +45,15 @@ regMod({
     'Flip bits by hand and read the pass or fail result of each method.',
     'Find the errors that parity and checksums miss but a CRC catches.',
   ],
+  revision: [
+    "Parity adds a bit to detect selected bit errors but can miss an even number of flips.",
+    "A checksum combines data words to detect many accidental errors.",
+    "CRC treats data as a polynomial and uses division by a generator polynomial.",
+    "The CRC remainder is appended to the transmitted frame for receiver checking.",
+    "Hamming codes add redundant bits that can locate and correct a single-bit error under suitable conditions.",
+    "Two-dimensional parity can locate some single-bit errors using row and column checks.",
+    "Reed–Solomon codes operate on symbols and can correct symbol errors or erasures within their redundancy limit."
+  ],
   mount(root) {
     let text = (S.msg || 'Hello').slice(0, 6),
       flips = new Set(),
