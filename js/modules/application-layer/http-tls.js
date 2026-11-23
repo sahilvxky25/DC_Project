@@ -65,6 +65,15 @@ regMod({
     'Compare the TLS 1.2, TLS 1.3 and resumption handshakes.',
     'Perform an actual ECDH key agreement and AES-GCM encryption in your browser.',
   ],
+  revision: [
+    "HTTP is an application-layer request/response protocol.",
+    "A request includes a method, target, headers and sometimes a body.",
+    "The response includes a status code, headers and an optional body.",
+    "TLS authenticates the server and establishes keys for protected communication.",
+    "TLS 1.3 generally completes a full handshake in fewer round trips than TLS 1.2.",
+    "Session resumption can reduce the cost of reconnecting to a server.",
+    "AES-GCM is an authenticated-encryption mode that provides confidentiality and integrity."
+  ],
   mount(root) {
     root.innerHTML = '<div id="httabs"></div>';
     const tabs = tabset(
