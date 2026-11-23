@@ -32,13 +32,15 @@
 }
 .quick-revision ol {
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem 1.25rem;
   margin: 0.8rem 0 0;
-  padding-left: 1.5rem;
+  padding-left: 1.35rem;
 }
 .quick-revision li {
-  padding-left: 0.2rem;
-  line-height: 1.5;
+  padding: 0.35rem 0.35rem 0.35rem 0.15rem;
+  line-height: 1.4;
+  font-size: 0.9rem;
 }
 .quick-revision li::marker {
   color: var(--accent);
@@ -59,5 +61,8 @@
   }
   .quick-revision-head {
     flex-direction: column;
+  }
+  .quick-revision ol {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
