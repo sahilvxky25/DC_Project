@@ -151,9 +151,9 @@ export function renderFlow(mod, root, freePlay) {
       stage.insertAdjacentHTML('beforeend', `
         <section class="quick-revision" aria-labelledby="quickRevisionTitle">
           <div class="quick-revision-head">
-            <div><span class="quick-revision-kicker">RECAP</span><h3 id="quickRevisionTitle">Quick Revision</h3>
-              <p>Key points to remember from this module.</p></div>
-            <button class="btn ghost sm quick-revision-copy" type="button">Copy notes</button>
+            <div><span class="quick-revision-kicker">REVISION NOTES</span><h3 id="quickRevisionTitle">Quick Revision</h3>
+              <p>Short notes for a quick recap.</p></div>
+            <button class="btn ghost sm quick-revision-copy" type="button">Copy short notes</button>
           </div>
           <ol>${revisionItems.map(item => `<li>${esc(item)}</li>`).join('')}</ol>
           <p class="quick-revision-status" aria-live="polite"></p>
