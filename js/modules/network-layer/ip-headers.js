@@ -41,6 +41,14 @@ regMod({
     'Change TTL like a router does and watch the checksum change.',
     'Fragment a packet across a small MTU and reassemble it, or lose a piece.',
   ],
+  revision: [
+    "IPv4 and IPv6 headers carry addressing and packet-delivery metadata.",
+    "IPv4 routers decrement TTL; IPv6 uses the Hop Limit field.",
+    "IPv4 header checksum covers the IPv4 header and changes when TTL changes.",
+    "Path MTU can require packet fragmentation or other size handling.",
+    "IPv4 fragmentation uses identification, flags and fragment offset fields.",
+    "IPv6 routers do not fragment packets; fragmentation is performed by the source using an extension header."
+  ],
   mount(root) {
     let h = {
       src: '10.0.0.2',
