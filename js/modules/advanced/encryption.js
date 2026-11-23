@@ -21,6 +21,14 @@ regMod({
     'Understand symmetric, asymmetric and hybrid encryption.',
     'Inspect intermediate outputs, packetization and receiver verification.',
   ],
+  revision: [
+    "Symmetric encryption uses the same secret key to encrypt and decrypt.",
+    "Asymmetric cryptography uses a public/private key pair.",
+    "Hybrid encryption combines public-key methods for key establishment with symmetric data encryption.",
+    "Authenticated encryption, such as AES-GCM, provides confidentiality and integrity.",
+    "Decryption alone does not prove that ciphertext has not been modified.",
+    "Use secure, randomly generated keys and nonces in real systems."
+  ],
   mount(root) {
     const supported = typeof crypto !== 'undefined' && !!crypto.subtle;
     root.innerHTML = panel('Explore encryption, one stage at a time',
