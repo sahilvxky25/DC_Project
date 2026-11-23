@@ -173,6 +173,14 @@ regMod({
     'Inspect the bytes each layer produces.',
     'See what a router changes and what it leaves alone.',
   ],
+  revision: [
+    "Application data is converted into bytes before network transmission.",
+    "Transport adds process-to-process information such as ports.",
+    "The network layer adds logical addressing for delivery across networks.",
+    "The link layer frames data for the next local hop.",
+    "Routers forward packets and normally replace the link-layer frame at each hop.",
+    "The receiver decapsulates headers in reverse order to recover the payload."
+  ],
   mount(root) {
     const JD = journeyData();
     let i = 0,
