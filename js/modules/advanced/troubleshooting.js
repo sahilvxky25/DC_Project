@@ -37,6 +37,14 @@ regMod({
     'Test it with the right tool instead of guessing.',
     'Separate name resolution, routing and port filtering problems.',
   ],
+  revision: [
+    "Start with symptoms and form a testable hypothesis.",
+    "ping checks reachability and round-trip response, not every application service.",
+    "traceroute reveals the hop path and where responses stop.",
+    "nslookup tests DNS name resolution.",
+    "curl tests an application-layer HTTP/HTTPS request.",
+    "Separate DNS failures, routing failures and blocked service ports."
+  ],
   mount(root) {
     const shuffledCases = [...TROUBLE];
     for (let i = shuffledCases.length - 1; i > 0; i--) {
