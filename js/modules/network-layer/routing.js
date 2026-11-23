@@ -39,6 +39,14 @@ regMod({
     'Fail a link and watch the network reroute.',
     'Apply the longest-prefix-match rule to a forwarding table.',
   ],
+  revision: [
+    "Routers use forwarding tables to choose the next hop for a packet.",
+    "Routing algorithms calculate paths using network topology and link costs.",
+    "A shortest-path result depends on the configured edge weights.",
+    "Longest-prefix match selects the most specific matching destination prefix.",
+    "A failed link can change the best available route after recomputation.",
+    "Forwarding moves each packet to the next hop; routing builds the path information."
+  ],
   mount(root) {
     const down = new Set();
     let timer = null;
