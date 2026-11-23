@@ -33,6 +33,15 @@ regMod({
     'Optionally connect a local helper for operating-system interface, route and neighbour-cache details.',
     'Distinguish a cached neighbour list from a complete physical network map.'
   ],
+  revision: [
+    "Browser connectivity APIs report limited connection hints and may not expose a full network configuration.",
+    "A public IP address identifies the visible internet-facing address for a connection.",
+    "Local network interfaces and routes require operating-system-level access.",
+    "A local helper can provide details that a browser sandbox cannot access directly.",
+    "Neighbour-cache entries show recently observed address-to-link-layer mappings.",
+    "A neighbour cache is temporary and is not a complete map of every device on a network.",
+    "Treat demo or cached observations as partial information, not definitive network discovery."
+  ],
   mount(root) {
     let controller=null, snapshot=null, activeTab='overview', selectedInterface=0;
     let autoTimer=null, refreshBusy=false, demoMode=false, neighbourQuery='';
