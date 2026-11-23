@@ -69,6 +69,15 @@ regMod({
     'Encrypt and decrypt with modular exponentiation.',
     'Explain why RSA’s security rests on the difficulty of factoring.',
   ],
+  revision: [
+    "RSA is an asymmetric public-key cryptosystem.",
+    "Choose two primes p and q and compute n = p × q.",
+    "Compute φ(n) = (p − 1)(q − 1) for distinct primes p and q.",
+    "Choose public exponent e coprime to φ(n), then find d as its modular inverse.",
+    "Public key (n, e) encrypts; private exponent d decrypts.",
+    "RSA security relies on the difficulty of factoring a sufficiently large modulus.",
+    "Toy-sized primes in a learning simulator are not secure for real data."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML =
