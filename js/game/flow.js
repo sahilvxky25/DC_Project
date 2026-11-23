@@ -138,6 +138,51 @@ export function renderFlow(mod, root, freePlay) {
     stage.className = 'gstage play';
     stage.innerHTML = '';
     try { inner = mod.mount(stage) || null; } catch (e) { console.error(e); stage.innerHTML = `<p class="gfb">This module failed to load: ${esc(e.message)}</p>`; }
+
+    // Append a shared revision panel after each module's own content.
+    // Curated revision notes take priority; existing learning objectives are the default.
+    const revision = Array.isArray(mod.revision) && mod.revision.length
+      ? mod.revision
+      : Array.isArray(mod.obj) && mod.obj.length
+        ? mod.obj
+        : [mod.desc];
+    const revisionItems = revision.filter(Boolean).slice(0, 8);
+    if (revisionItems.length) {
+      stage.insertAdjacentHTML('beforeend', `
+        <section class="quick-revision" aria-labelledby="quickRevisionTitle">
+          <div class="quick-revision-head">
+            <div><span class="quick-revision-kicker">RECAP</span><h3 id="quickRevisionTitle">Quick Revision</h3>
+              <p>Key points to remember from this module.</p></div>
+            <button class="btn ghost sm quick-revision-copy" type="button">Copy notes</button>
+          </div>
+          <ol>${revisionItems.map(item => `<li>${esc(item)}</li>`).join('')}</ol>
+          <p class="quick-revision-status" aria-live="polite"></p>
+        </section>`);
+      const revisionPanel = stage.querySelector('.quick-revision');
+      const copyButton = revisionPanel.querySelector('.quick-revision-copy');
+      const status = revisionPanel.querySelector('.quick-revision-status');
+      copyButton.addEventListener('click', async () => {
+        const notes = [`Quick Revision — ${mod.title}`, ...revisionItems.map((item, i) => `${i + 1}. ${item}`)].join('\\n');
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(notes);
+          } else {
+            const field = document.createElement('textarea');
+            field.value = notes;
+            field.style.position = 'fixed';
+            field.style.opacity = '0';
+            document.body.appendChild(field);
+            field.select();
+            const copied = document.execCommand('copy');
+            field.remove();
+            if (!copied) throw new Error('Copy unavailable');
+          }
+          status.textContent = 'Revision notes copied.';
+        } catch {
+          status.textContent = 'Could not copy automatically. You can select the notes and copy them.';
+        }
+      });
+    }
     if (meta.q && !freePlay) setNext('Ready for the quiz ▸', () => go('quiz'));
     else if (!meta.q) { visitXp(mod.id); setNext(nextMod ? 'Next: ' + nextMod.title + ' ▸' : 'Done ▸', () => (location.hash = nextMod ? '#/m/' + nextMod.id : back)); }
     else setNext('Back to ' + zone.name + ' ▸', () => (location.hash = back));
