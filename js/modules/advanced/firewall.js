@@ -30,6 +30,14 @@ regMod({
     'Identify the matching rule and follow the evaluation trace.',
     'Compare the same packets before and after reordering overlapping rules.',
   ],
+  revision: [
+    "A packet-filtering rule matches traffic using fields such as protocol and port.",
+    "Rules are evaluated in order when the firewall uses first-match processing.",
+    "The first matching rule determines the packet's allow or deny decision.",
+    "A default policy handles packets that match no explicit rule.",
+    "Overlapping rules can produce different outcomes when their order changes.",
+    "Test packets against the rule list and inspect the evaluation trace."
+  ],
   mount(root) {
     let rules = [], nextId = 1, editingId = null, revision = 0;
     let latest = null, baseline = null, selectedPacket = 0;
