@@ -92,6 +92,14 @@ regMod({
     'Explain why long runs of identical bits cause clock-recovery trouble.',
     'Compare edges, average level and signal rate between schemes.',
   ],
+  revision: [
+    "Line coding maps bit sequences to signal levels or transitions on a physical link.",
+    "NRZ uses signal levels to represent bits and can have long runs without transitions.",
+    "Manchester coding guarantees a transition in the middle of each bit period.",
+    "AMI alternates the polarity of marks and uses zero level for spaces.",
+    "4B/5B maps each four data bits to a five-bit code group to improve transition density.",
+    "Clock recovery becomes difficult when the signal has too few transitions."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML =
