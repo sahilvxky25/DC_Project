@@ -37,6 +37,14 @@ regMod({
     'Read how sequence and acknowledgment numbers advance.',
     'Watch both state machines change, including TIME_WAIT.',
   ],
+  revision: [
+    "TCP opens with SYN → SYN-ACK → ACK.",
+    "The client’s SYN consumes one sequence number; the server acknowledges it.",
+    "ACK numbers identify the next byte expected.",
+    "FIN closes one direction of a TCP connection; each side closes independently.",
+    "TIME_WAIT helps absorb delayed segments and supports retransmission of the final ACK.",
+    "TCP states track connection setup, data transfer and teardown."
+  ],
   mount(root) {
     let cfg = { x: 100, y: 300, n: 500, v: 'normal' },
       step = 0,
