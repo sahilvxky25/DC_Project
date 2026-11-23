@@ -43,6 +43,14 @@ regMod({
     'Compare the overhead of headers against the data they carry.',
     'Damage the packet and see which layer’s check catches it.',
   ],
+  revision: [
+    "Encapsulation adds protocol headers as data moves down the stack.",
+    "The transport layer adds TCP or UDP information, including ports.",
+    "The network layer adds an IP header for end-to-end addressing.",
+    "The data-link layer adds a frame header and trailer for the local link.",
+    "Each layer processes its own header during decapsulation at the receiver.",
+    "Header overhead increases transmitted size beyond the original application data."
+  ],
   mount(root) {
     let step = 0;
     root.innerHTML =
