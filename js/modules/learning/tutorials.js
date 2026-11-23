@@ -134,6 +134,13 @@ regMod({
     'Record what you saw in the notes pad.',
     'Review your own experiments.',
   ],
+  revision: [
+    "Guided labs turn each task into a sequence of checkable steps.",
+    "Complete the action before marking a step done.",
+    "Use the notes pad to record observations and results.",
+    "Experiment history helps you revisit earlier work.",
+    "Treat the simulator output as evidence for your notes."
+  ],
   mount(root) {
     let cur = 0;
     root.innerHTML =
