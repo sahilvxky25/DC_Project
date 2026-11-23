@@ -69,6 +69,14 @@ regMod({
     'Read a constellation diagram and explain nearest-point decoding.',
     'Explain the trade-off between bits per symbol and noise tolerance.',
   ],
+  revision: [
+    "Modulation maps digital information onto a carrier signal.",
+    "ASK changes carrier amplitude; FSK changes frequency; PSK changes phase.",
+    "A constellation diagram represents symbols as points in a signal space.",
+    "The receiver decodes a noisy symbol by selecting a likely constellation point.",
+    "Higher-order modulation carries more bits per symbol but needs better signal quality.",
+    "Noise can cause a received point to cross a decision boundary and decode incorrectly."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML =
