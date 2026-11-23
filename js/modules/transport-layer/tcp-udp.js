@@ -72,7 +72,7 @@ regMod({
     'TCP has flow control and congestion control; UDP has neither built in.',
     'Ports identify the sending and receiving application processes.',
     'Checksum: covers transport data plus a pseudo-header (source IP, destination IP, protocol and length).',
-  ]
+  ],
   mount(root) {
     root.innerHTML = '<div id="tutabs"></div>';
     const tabs = tabset(
