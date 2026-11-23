@@ -367,6 +367,15 @@ regMod({
     'Plan FDM channels with guard bands.',
     'Explain why packet switching beats message switching on multi-hop paths.',
   ],
+  revision: [
+    "Multiplexing allows multiple logical streams to share one physical medium.",
+    "TDM assigns users time slots; FDM assigns users frequency bands.",
+    "Synchronous TDM reserves slots even when a source has no data to send.",
+    "Statistical TDM assigns capacity dynamically based on active traffic.",
+    "Guard bands reduce interference between adjacent FDM channels.",
+    "Packet switching shares links dynamically and can pipeline packets across multiple hops.",
+    "Message switching stores an entire message before forwarding it, increasing delay."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML = '<div id="ms-tabs"></div>';
