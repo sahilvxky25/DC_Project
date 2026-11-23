@@ -48,6 +48,14 @@ regMod({
     'Step through window and receiver state after every event.',
     'Discover the window-size limit: 2^m − 1 for Go-Back-N, 2^(m−1) for Selective Repeat.',
   ],
+  revision: [
+    "Sliding-window protocols allow multiple frames to be in flight.",
+    "Go-Back-N retransmits the missing frame and later outstanding frames.",
+    "Selective Repeat retransmits only frames that were not received correctly.",
+    "Go-Back-N receiver window is typically one frame.",
+    "With m sequence bits, Go-Back-N window size is at most 2^m − 1.",
+    "With m sequence bits, Selective Repeat window size is at most 2^(m−1) to avoid ambiguity."
+  ],
   mount(root) {
     let st = { proto: 'gbn', W: 4, m: 3, scn: 'f2', p: 20, seed: 11 },
       snaps = [],
