@@ -248,6 +248,14 @@ regMod({
     'Explain how a certificate chain turns a public key into a trusted identity.',
     'Identify why a certificate is rejected (expired, wrong name, untrusted, tampered).',
   ],
+  revision: [
+    "A digital signature is created using the sender's private key.",
+    "Verification uses the corresponding public key and checks message integrity.",
+    "A valid signature supports authenticity and integrity, not confidentiality.",
+    "A certificate binds a public key to an identity through a certificate authority.",
+    "Browsers validate certificate chains up to a trusted root.",
+    "Expired, mismatched, untrusted or altered certificates can cause validation failure."
+  ],
   mount(root) {
     kitStyles();
     root.innerHTML = '<div id="sg-tabs"></div>';
