@@ -452,6 +452,13 @@ regMod({
     'Use hints sparingly: a hinted answer scores half.',
     'Review which topics need more work.',
   ],
+  revision: [
+    "Quizzes check understanding across the networking layers.",
+    "Read each question carefully before choosing an answer.",
+    "Hints provide guidance but can reduce the score for that question.",
+    "Review explanations to understand why an answer is correct.",
+    "Use missed topics to decide what to revise next."
+  ],
   mount(root) {
     let qs = [], i = 0, pts = 0, answered = false, hinted = false, res = [], level = Math.max(1, Math.min(5, Number(P.stats.quizLevel) || 1));
     const shuffle = items => { const copy=items.slice(); for(let n=copy.length-1;n>0;n--){const j=Math.floor(Math.random()*(n+1));[copy[n],copy[j]]=[copy[j],copy[n]];} return copy; };
