@@ -73,6 +73,15 @@ regMod({
     'See how a slow application throttles the sender through the receive window.',
     'Compute the retransmission timeout from round-trip samples.',
   ],
+  revision: [
+    "Flow control protects the receiver using its advertised receive window (rwnd).",
+    "Congestion control limits sending to avoid overwhelming the network.",
+    "TCP slow start increases cwnd rapidly, typically doubling each RTT while ACKs arrive.",
+    "Congestion avoidance grows cwnd more gradually.",
+    "Loss detection can trigger retransmission and reduce the congestion window.",
+    "Tahoe and Reno differ in their response to loss detected by timeout versus duplicate ACKs.",
+    "The retransmission timeout is based on smoothed RTT and RTT variation."
+  ],
   mount(root) {
     root.innerHTML = '<div id="cgtabs"></div>';
     const tabs = tabset(
