@@ -15,6 +15,15 @@ regMod({
     'Explain how RTT and packet loss affect a stop-and-wait transfer.',
     'Compare delivery ratio, retransmissions and effective throughput.',
   ],
+  revision: [
+    "Serialization delay depends on packet size and link bandwidth.",
+    "Round-trip time (RTT) is the time for a signal to travel to a peer and back.",
+    "Stop-and-Wait throughput is strongly limited by RTT when only one packet is outstanding.",
+    "Packet loss can cause retransmissions and increase total transfer time.",
+    "Delivery ratio compares successfully delivered packets with the packets sent.",
+    "Effective throughput measures useful delivered data per unit time.",
+    "Simulator results are estimates based on configured inputs, not live internet measurements."
+  ],
   mount(root) {
     root.innerHTML = `
       <section class="npa-wrap">
