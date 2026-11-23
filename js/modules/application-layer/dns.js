@@ -51,6 +51,15 @@ regMod({
     'Watch CNAME chains and NXDOMAIN answers.',
     'See the cache answer instantly, then expire when its TTL runs out.',
   ],
+  revision: [
+    "DNS translates domain names into records such as IP addresses.",
+    "A recursive resolver performs lookup work on behalf of a client.",
+    "An iterative lookup can query root, TLD and authoritative name servers.",
+    "A CNAME record aliases one name to another canonical name.",
+    "NXDOMAIN indicates that the queried domain name does not exist.",
+    "DNS cache entries are retained according to their TTL.",
+    "An expired cache entry may require a fresh lookup."
+  ],
   mount(root) {
     const cache = new Map();
     let now = 0,
