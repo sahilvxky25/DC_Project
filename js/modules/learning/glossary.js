@@ -468,6 +468,14 @@ regMod({
     'Compare the OSI and TCP/IP models.',
     'Keep the common ports and status codes handy.',
   ],
+  revision: [
+    "Use the glossary to look up networking terms and definitions.",
+    "OSI is a seven-layer reference model; TCP/IP groups functions into fewer layers.",
+    "Port numbers identify application endpoints at the transport layer.",
+    "HTTP status codes summarize the result of an HTTP request.",
+    "CIDR prefixes describe the network portion of an IP address.",
+    "Use related concepts to connect terms across layers."
+  ],
   mount(root) {
     root.innerHTML = '<div id="gltabs"></div>';
     const tabs = tabset(
