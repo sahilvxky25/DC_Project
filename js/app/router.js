@@ -44,6 +44,7 @@ import { labSplit } from '../lab/packet-stage.js';
 import { labRecv } from '../lab/receiver-stage.js';
 import { labPrepare } from '../lab/transmission-stage.js';
 import { renderSupportPage } from './support.js';
+import { renderTableOfContents } from './table-of-contents.js';
 
 /**
  * DOM ids of the four core-lab screens, indexed by the number in #/lab/<n>.
@@ -107,6 +108,12 @@ export function route() {
     crumbs(['Dashboard', 'Bookmarked Modules']);
     document.title = 'Bookmarked Modules · BitSecure';
     renderBookmarks();
+  } else if (kind === 'contents') {
+    currentKey = 'contents';
+    setStage('info-page');
+    crumbs(['Explore', 'Table of Contents']);
+    document.title = 'Table of Contents · BitSecure';
+    cleanup = renderTableOfContents($('#info-page'));
   } else if (kind === 'privacy') {
     currentKey = 'privacy';
     setStage('info-page');
