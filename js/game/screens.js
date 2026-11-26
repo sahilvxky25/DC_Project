@@ -8,6 +8,7 @@ import { dailyIndex, dayNum, levelFor } from './rules.js';
 import { BADGES, MEDALS, addXp, hasBadge, isDone, medal, quizIds, streak, xp, checkMeta } from './store.js';
 import { LEVEL_LABELS, runQuiz } from './flow.js';
 import { boom } from './ui.js';
+import { learningPathDashboardHTML } from '../app/learning-path.js';
 
 // Pick a different fact from the one most recently shown in this app session.
 let lastFactIndex = -1;
@@ -55,6 +56,7 @@ export function renderHome() {
       <div class="gcard static" style="--l:#fff;--d:#ffffff22"><small>Your level</small><b>Lv ${l.n} · ${l.title}</b>${bar((l.into / l.size) * 100)}
         <div class="gstats"><span>🔥 <b>${streak()}</b> day streak</span><span>⭐ <b>${xp()}</b> XP</span><span>🏅 <b>${medals}</b> medals</span></div></div>
     </div>
+    ${learningPathDashboardHTML()}
     <h3 class="gh">Zones</h3>
     <div class="ggrid">${ZONES.map(z => {
       const ids = zoneMods(z.id).filter(i => META[i].q), n = ids.filter(isDone).length;
