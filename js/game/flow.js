@@ -11,12 +11,13 @@ import { ZONES, META } from './data.js';
 import { levelFor, medalFor, quizBadges, quizXp } from './rules.js';
 import { MEDALS, addXp, checkMeta, grant, setMedal, visitXp, xp, BADGES, updatePill } from './store.js';
 import { boom, gl } from './ui.js';
+import { addMistake } from '../core/mistakes.js';
 
 const pos = (i, n) => 8 + (i * 84) / (n - 1);
 const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(x => x[1]);
 
 /** Quiz runner shared by module quizzes and the daily challenge. `qs` = pipe strings, `labels` = tag per question. */
-export function runQuiz(stage, qs, labels, onDone) {
+export function runQuiz(stage, qs, labels, onDone, options = {}) {
   const items = qs.map(s => { const p = s.split('|'); return { q: p[0], a: p[1], o: shuffle(p.slice(1)) }; });
   const next = $('#gnext');
   let i = 0, right = 0;
@@ -30,6 +31,7 @@ export function runQuiz(stage, qs, labels, onDone) {
     stage.querySelectorAll('.gopt').forEach(b => b.addEventListener('click', () => {
       const ok = b.textContent === it.a;
       if (ok) right++;
+      else if (typeof options.onIncorrect === 'function') options.onIncorrect({ question: it.q, selectedAnswer: b.textContent, correctAnswer: it.a, options: it.o.slice() });
       stage.querySelectorAll('.gopt').forEach(x => {
         x.disabled = true;
         if (x.textContent === it.a) x.classList.add('good');
@@ -189,7 +191,7 @@ export function renderFlow(mod, root, freePlay) {
   }
   function quiz() {
     stage.className = 'gstage';
-    runQuiz(stage, meta.q, LEVEL_LABELS, (r, secs) => { res = applyResult(mod.id, r, meta.q.length, secs); res.right = r; if (res.m > 0) boom(); go('reward'); });
+    runQuiz(stage, meta.q, LEVEL_LABELS, (r, secs) => { res = applyResult(mod.id, r, meta.q.length, secs); res.right = r; if (res.m > 0) boom(); go('reward'); }, { onIncorrect: item => addMistake({ ...item, moduleId: mod.id, moduleTitle: mod.title }) });
   }
   function reward() {
     stage.className = 'gstage';
