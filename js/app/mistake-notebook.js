@@ -2,43 +2,10 @@ import { P, save } from '../core/storage.js';
 import { $, esc } from '../core/utils.js';
 import { DC } from '../core/state.js';
 import { runQuiz } from '../game/flow.js';
+import { addMistake } from '../core/mistakes.js';
 
-const MAX_MISTAKES = 200;
 const records = () => Array.isArray(P.notes.mistakes) ? P.notes.mistakes : [];
 const sourceTitle = id => DC.mods.find(m => m.id === id)?.title || (id === 'daily' ? 'Daily challenge' : 'Quiz');
-
-export function addMistake(entry) {
-  if (!entry || !entry.question || !entry.correctAnswer) return;
-  const list = records();
-  const key = String(entry.moduleId || 'daily') + '::' + entry.question;
-  const existing = list.find(item => item.key === key);
-  const now = Date.now();
-  if (existing) {
-    existing.selectedAnswer = entry.selectedAnswer;
-    existing.correctAnswer = entry.correctAnswer;
-    existing.options = Array.isArray(entry.options) ? entry.options : existing.options;
-    existing.attempts = (Number(existing.attempts) || 1) + 1;
-    existing.lastSeen = now;
-    existing.reviewed = false;
-  } else {
-    list.unshift({
-      id: 'mistake_' + now + '_' + Math.random().toString(36).slice(2, 8),
-      key,
-      moduleId: entry.moduleId || 'daily',
-      moduleTitle: entry.moduleTitle || sourceTitle(entry.moduleId || 'daily'),
-      question: String(entry.question),
-      selectedAnswer: String(entry.selectedAnswer),
-      correctAnswer: String(entry.correctAnswer),
-      options: Array.isArray(entry.options) ? entry.options.map(String) : [],
-      attempts: 1,
-      firstSeen: now,
-      lastSeen: now,
-      reviewed: false
-    });
-  }
-  P.notes.mistakes = list.slice(0, MAX_MISTAKES);
-  save();
-}
 
 const formatDate = value => {
   const date = new Date(Number(value) || Date.now());
