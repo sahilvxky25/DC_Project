@@ -105,7 +105,8 @@ regMod({
       const labels = direction === 'send'
         ? [{name:'Application data',pdu:'Data'},{name:protocol === 'UDP' ? 'UDP header' : 'TCP header',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'IP header',pdu:'Packet'},{name:'Link header + trailer',pdu:'Frame'},{name:'Signals on medium',pdu:'Bits / symbols'}]
         : [{name:'Signals recovered',pdu:'Bits / symbols'},{name:'Link header + trailer removed',pdu:'Frame'},{name:'IP header examined / removed',pdu:'Packet'},{name:protocol === 'UDP' ? 'UDP header examined / removed' : 'TCP header examined / removed',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'Application data delivered',pdu:'Data'}];
-      const count = direction === 'send' ? Math.min(5, Math.max(1, Math.ceil((7-index)/1.5))) : Math.min(5, Math.max(1, Math.ceil((index+1)/1.5)));
+      const reached = direction === 'send' ? [1, 1, 2, 2, 3, 4, 5][index] : [1, 2, 3, 4, 5, 5, 5][index];
+      const count = reached;
       $('[data-pdu-flow]').innerHTML = labels.map((item,i) => '<div class="osi-pdu-node' + (i < count ? ' is-reached' : '') + '"><small>' + escape(item.name) + '</small><strong>' + escape(item.pdu) + '</strong></div>').join('<span class="osi-pdu-arrow" aria-hidden="true">→</span>');
     };
     const renderTcpMap = active => {
