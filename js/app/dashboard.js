@@ -134,6 +134,7 @@ export function renderDash() {
       <p>Follow one message from words to bytes, packets, frames and back again. Every module is a working simulator.</p></div>
     <div class="resume panel"><div class="ring" style="--p:${pct}"><b>${pct}%</b></div><div><small>Continue where you left off</small><h3>${lastLabel}</h3><p class="hint">${seen} of ${keys.length} screens visited</p><a class="btn" href="${lastHref}">${icon('play')} Resume</a></div></div>
   </div>
+  <a class="learning-path-dashboard-card" href="#/learning-path"><span class="lp-dash-icon">🧭</span><span><b>Guided Learning Path</b><small>Follow topic prerequisites and discover what to learn next</small></span><strong>Explore path →</strong></a>
   <div class="panel recent-panel"><div class="recent-heading"><h3>Recently Viewed</h3><a class="btn ghost sm" href="#/recent">View all</a></div>
     <p class="hint">Pick up where you left off.</p>
     ${recentCards.length ? `<div class="recent-list">${recentCards.map(c => `<a class="recent-item" href="${c.href}"><span><b>${esc(c.t)}</b><small>${esc(c.g === 'core' ? 'Core lab' : (GROUPS.find(g => g.id === c.g)?.name || 'Learning module'))} · ⏱ ${c.duration} min</small></span><time datetime="${new Date(c.viewedAt).toISOString()}">${new Date(c.viewedAt).toLocaleString()}</time></a>`).join('')}</div>` : '<p class="hint">Modules you open will appear here.</p>'}
