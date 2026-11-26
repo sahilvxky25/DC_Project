@@ -83,10 +83,12 @@ export function startMistakePractice(root, mistakes, onDone, onBack) {
   const questions = mistakes.map(item => [item.question, item.correctAnswer, ...item.options.filter(option => option !== item.correctAnswer)].slice(0, 5).join('|'));
   root.innerHTML = '<div class="mn-practice"><h2>Practice saved mistakes</h2><p>Try these questions again. This practice does not award XP or change quiz medals.</p><div id="mn-practice-stage"></div><div class="gbar"><button class="btn big" id="gnext" type="button" hidden></button></div></div>';
   const stage = root.querySelector('#mn-practice-stage');
-  const next = root.querySelector('#mn-practice-next');
   runQuiz(stage, questions, mistakes.map(() => 'Revision'), (right, secs) => {
     onDone?.(right, questions.length);
     root.innerHTML = '<div class="mn-empty"><span>🧠</span><h2>Practice complete</h2><p>You got ' + right + ' of ' + questions.length + ' correct.</p><button class="btn" type="button" data-practice-back>Back to notebook</button></div>';
-    root.querySelector('[data-practice-back]').addEventListener('click', () => renderMistakeNotebook(root));
-  });
+    root.querySelector('[data-practice-back]').addEventListener('click', () => onBack?.());
+  }, { onIncorrect: item => {
+    const source = mistakes.find(saved => saved.question === item.question);
+    addMistake({ ...item, moduleId: source?.moduleId, moduleTitle: source?.moduleTitle });
+  } });
 }
