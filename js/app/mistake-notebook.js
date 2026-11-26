@@ -26,7 +26,7 @@ export function renderMistakeNotebook(root) {
       '<button type="button" data-filter="all" class="' + (filter === 'all' ? 'active' : '') + '">All (' + all.length + ')</button>' +
       '<button type="button" data-filter="pending" class="' + (filter === 'pending' ? 'active' : '') + '">To review (' + pending + ')</button>' +
       '<button type="button" data-filter="reviewed" class="' + (filter === 'reviewed' ? 'active' : '') + '">Reviewed (' + (all.length - pending) + ')</button></div>' +
-      (all.length ? '<button type="button" class="btn ghost sm mn-clear">Clear notebook</button>' : '') + '</div>' +
+      (all.length ? '<div class="mn-toolbar-actions">' + (!pending ? '' : '<button type="button" class="btn sm mn-practice-start">Practice to review (' + pending + ')</button>') + '<button type="button" class="btn ghost sm mn-clear">Clear notebook</button></div>' : '') + '</div>' +
       (shown.length ? '<section class="mn-list" aria-label="Saved incorrect answers">' + shown.map(item =>
         '<article class="mn-card" data-id="' + esc(item.id) + '">' +
         '<div class="mn-card-meta"><span>' + esc(item.moduleTitle || sourceTitle(item.moduleId)) + '</span><span>' + formatDate(item.lastSeen) + '</span></div>' +
@@ -41,10 +41,10 @@ export function renderMistakeNotebook(root) {
         '</div></div></article>'
       ).join('') + '</section>' :
       '<div class="mn-empty"><span>📘</span><h2>' + (all.length ? 'Nothing in this filter' : 'Your notebook is empty') + '</h2><p>' + (all.length ? 'Try another filter to see your saved mistakes.' : 'Complete a module quiz or daily challenge. Incorrect answers will appear here automatically.') + '</p><a class="btn" href="#/">Explore lessons</a></div>') +
-      '<p class="mn-note">Mistakes are saved to your existing account progress and sync when cloud progress sync is available. Up to ' + MAX_MISTAKES + ' distinct questions are kept.</p></div>';
+      '<p class="mn-note">Mistakes are saved to your existing account progress and sync when cloud progress sync is available. Up to 200 distinct questions are kept.</p></div>';
   };
   root.addEventListener('click', event => {
-    const filterButton = event.target.closest('[data-filter]');
+    if (event.target.closest('.mn-practice-start')) {\n      const pendingItems = records().filter(item => !item.reviewed);\n      startMistakePractice(root, pendingItems, (right, total) => {\n        if (right === total) { pendingItems.forEach(item => { const saved = records().find(x => x.id === item.id); if (saved) saved.reviewed = true; }); save(); }\n      }, render);\n      return;\n    }\n    const filterButton = event.target.closest('[data-filter]');
     if (filterButton) { filter = filterButton.dataset.filter; render(); return; }
     const action = event.target.closest('[data-action]');
     if (action) {
@@ -78,7 +78,7 @@ export function mistakeCaptureOptions(moduleId, moduleTitle) {
   };
 }
 
-export function startMistakePractice(root, mistakes, onDone) {
+export function startMistakePractice(root, mistakes, onDone, onBack) {
   if (!mistakes.length) return;
   const questions = mistakes.map(item => [item.question, item.correctAnswer, ...item.options.filter(option => option !== item.correctAnswer)].slice(0, 5).join('|'));
   root.innerHTML = '<div class="mn-practice"><h2>Practice saved mistakes</h2><p>Try these questions again. This practice does not award XP or change quiz medals.</p><div id="mn-practice-stage"></div><div class="gbar"><button class="btn big" id="mn-practice-next" type="button" hidden></button></div></div>';
