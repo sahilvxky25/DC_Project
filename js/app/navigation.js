@@ -26,7 +26,7 @@ import { CORE, GROUPS } from '../modules/registry.js';
  * Builds the sidebar HTML: dashboard link, core-lab steps and one collapsible group per learning-path group.
  */
 export function buildNav() {
-  let h = `<a class="nav-link" href="#/contents" data-r="contents">${icon('book-open')}<span>Table of Contents</span></a><a class="nav-link" href="#/" data-r="dash">${icon('dash')}<span>Dashboard</span></a>`;
+  let h = `<a class="nav-link" href="#/learning-path" data-r="learning-path">${icon('route')}<span>Learning Path</span></a><a class="nav-link" href="#/contents" data-r="contents">${icon('book-open')}<span>Table of Contents</span></a><a class="nav-link" href="#/" data-r="dash">${icon('dash')}<span>Dashboard</span></a>`;
   h += `<div class="nav-h">${icon('flask')}<span>Core lab</span></div><div class="nav-list">`;
   CORE.forEach((c, i) => {
     h += `<a class="nav-link step" href="#/lab/${i}" data-r="lab${i}"><span class="num">${i + 1}</span><span class="nl"><b>${c[0]}</b><small>${c[1]}</small></span></a>`;
