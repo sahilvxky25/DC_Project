@@ -46,3 +46,11 @@
 .osi-takeaway p{margin:.35rem 0 0;color:var(--muted);line-height:1.5;font-size:.88rem}
 @media(max-width:760px){.osi-main-grid{grid-template-columns:1fr}.osi-tcp-map{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.osi-setup-grid{grid-template-columns:1fr}.osi-workspace-head{align-items:flex-start}.osi-direction{width:100%}.osi-direction button{flex:1}.osi-controls button{flex:1}.osi-tcp-map{grid-template-columns:1fr 1fr}.osi-pdu-node{min-width:105px}}
+
+/* Homepage shortcut for the dedicated OSI walkthrough. */
+.osi-home-card{display:flex;align-items:center;gap:.85rem;padding:.9rem 1rem;border:var(--gborder);border-radius:var(--radius);box-shadow:var(--gshadow);background:var(--surface);color:var(--text);text-decoration:none}
+.osi-home-icon{display:grid;place-items:center;flex:none;width:42px;height:42px;border-radius:12px;background:var(--accent-soft);font-size:1.5rem}
+.osi-home-card>span:nth-child(2){display:grid;gap:.12rem;flex:1;min-width:0}
+.osi-home-card b{font-size:.95rem}.osi-home-card small{font-size:.75rem;color:var(--muted)}
+.osi-home-card strong{font-size:.74rem;color:var(--accent);white-space:nowrap}
+@media(max-width:480px){.osi-home-card{align-items:flex-start}.osi-home-card strong{font-size:.68rem}}
