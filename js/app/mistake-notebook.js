@@ -81,7 +81,7 @@ export function mistakeCaptureOptions(moduleId, moduleTitle) {
 export function startMistakePractice(root, mistakes, onDone, onBack) {
   if (!mistakes.length) return;
   const questions = mistakes.map(item => [item.question, item.correctAnswer, ...item.options.filter(option => option !== item.correctAnswer)].slice(0, 5).join('|'));
-  root.innerHTML = '<div class="mn-practice"><h2>Practice saved mistakes</h2><p>Try these questions again. This practice does not award XP or change quiz medals.</p><div id="mn-practice-stage"></div><div class="gbar"><button class="btn big" id="mn-practice-next" type="button" hidden></button></div></div>';
+  root.innerHTML = '<div class="mn-practice"><h2>Practice saved mistakes</h2><p>Try these questions again. This practice does not award XP or change quiz medals.</p><div id="mn-practice-stage"></div><div class="gbar"><button class="btn big" id="gnext" type="button" hidden></button></div></div>';
   const stage = root.querySelector('#mn-practice-stage');
   const next = root.querySelector('#mn-practice-next');
   runQuiz(stage, questions, mistakes.map(() => 'Revision'), (right, secs) => {
