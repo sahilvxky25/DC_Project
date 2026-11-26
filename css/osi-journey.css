@@ -54,3 +54,10 @@
 .osi-home-card b{font-size:.95rem}.osi-home-card small{font-size:.75rem;color:var(--muted)}
 .osi-home-card strong{font-size:.74rem;color:var(--accent);white-space:nowrap}
 @media(max-width:480px){.osi-home-card{align-items:flex-start}.osi-home-card strong{font-size:.68rem}}
+
+/* Expanded learning panels: responsibilities and real-world implementation notes. */
+.osi-key-functions,.osi-real-world{padding:.75rem .85rem;margin:.6rem 0;border:1px solid var(--line);border-radius:10px;background:var(--bg2)}
+.osi-key-functions strong,.osi-real-world strong{display:block;font-size:.82rem;margin-bottom:.3rem}
+.osi-key-functions p,.osi-real-world p{margin:0;color:var(--muted);font-size:.82rem;line-height:1.55}
+.osi-real-world{border-left:3px solid var(--accent)}
+.osi-key-functions{border-left:3px solid var(--ok)}
