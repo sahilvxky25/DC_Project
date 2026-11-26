@@ -12,6 +12,7 @@ const SITE_PAGES = [
   ['Dashboard', 'Home screen and learning overview', '#/'],
   ['Bookmarked Modules', 'Your saved learning modules', '#/bookmarks'],
   ['Recently Viewed', 'Return to modules you opened recently', '#/recent'],
+  ['Mistake Notebook', 'Review incorrect quiz answers and practise weak topics', '#/mistakes'],
   ['Profile', 'Your account, learning progress and achievements', '#/profile'],
   ['Daily Challenge', 'Open the daily learning challenge', '#/daily'],
   ['About Us', 'Learn about the BitSecure project', '#/about'],
