@@ -8,6 +8,7 @@ import { dailyIndex, dayNum, levelFor } from './rules.js';
 import { BADGES, MEDALS, addXp, hasBadge, isDone, medal, quizIds, streak, xp, checkMeta } from './store.js';
 import { LEVEL_LABELS, runQuiz } from './flow.js';
 import { boom } from './ui.js';
+import { addMistake } from '../core/mistakes.js';
 import { learningPathDashboardHTML } from '../app/learning-path.js';
 
 // Pick a different fact from the one most recently shown in this app session.
@@ -57,6 +58,7 @@ export function renderHome() {
         <div class="gstats"><span>🔥 <b>${streak()}</b> day streak</span><span>⭐ <b>${xp()}</b> XP</span><span>🏅 <b>${medals}</b> medals</span></div></div>
     </div>
     ${learningPathDashboardHTML()}
+    <a class="mistake-home-card" href="#/mistakes"><span class="mistake-home-icon">📓</span><span><b>Mistake Notebook</b><small>Review incorrect quiz answers and practise weak topics</small></span><strong>Review mistakes →</strong></a>
     <h3 class="gh">Zones</h3>
     <div class="ggrid">${ZONES.map(z => {
       const ids = zoneMods(z.id).filter(i => META[i].q), n = ids.filter(isDone).length;
@@ -125,5 +127,5 @@ export function renderDaily() {
     if (right) boom();
     stage.innerHTML = `<div class="greward"><div class="gmedal">${right ? '🌟' : '💪'}</div><h3>+${right ? 50 : 5} XP</h3><p>${right ? 'Correct! See you tomorrow.' : 'Good try. Every question teaches something.'}</p></div>`;
     next.textContent = 'Back to map ▸'; next.hidden = false; next.onclick = () => (location.hash = '#/');
-  });
+  }, { onIncorrect: item => addMistake({ ...item, moduleId: 'daily', moduleTitle: 'Daily challenge' }) });
 }
