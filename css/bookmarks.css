@@ -34,3 +34,7 @@
 /* Keep Recently Viewed beside Bookmarks in the primary navigation. */
 .topbar-info-links .topbar-recent-link { background: var(--surface2); color: var(--text); border: 1px solid var(--line); padding: 0.4rem 0.75rem; }
 .topbar-info-links .topbar-recent-link:hover { border-color: var(--accent); color: var(--accent); background: var(--surface2); }
+
+/* Make Mistake Notebook easy to discover from the primary header. */
+.topbar-info-links .topbar-mistakes-link { background: var(--surface); color: var(--text); border: var(--gborder); box-shadow: var(--gshadow); padding: .4rem .75rem; }
+.topbar-info-links .topbar-mistakes-link:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
