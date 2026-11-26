@@ -44,7 +44,20 @@ export function renderMistakeNotebook(root) {
       '<p class="mn-note">Mistakes are saved to your existing account progress and sync when cloud progress sync is available. Up to 200 distinct questions are kept.</p></div>';
   };
   root.addEventListener('click', event => {
-    if (event.target.closest('.mn-practice-start')) {\n      const pendingItems = records().filter(item => !item.reviewed);\n      startMistakePractice(root, pendingItems, (right, total) => {\n        if (right === total) { pendingItems.forEach(item => { const saved = records().find(x => x.id === item.id); if (saved) saved.reviewed = true; }); save(); }\n      }, render);\n      return;\n    }\n    const filterButton = event.target.closest('[data-filter]');
+    if (event.target.closest('.mn-practice-start')) {
+      const pendingItems = records().filter(item => !item.reviewed);
+      startMistakePractice(root, pendingItems, (right, total) => {
+        if (right === total) {
+          pendingItems.forEach(item => {
+            const saved = records().find(x => x.id === item.id);
+            if (saved) saved.reviewed = true;
+          });
+          save();
+        }
+      }, render);
+      return;
+    }
+    const filterButton = event.target.closest('[data-filter]');
     if (filterButton) { filter = filterButton.dataset.filter; render(); return; }
     const action = event.target.closest('[data-action]');
     if (action) {
