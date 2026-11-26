@@ -123,3 +123,41 @@ export function renderLearningPath(root) {
     </section>`;
   return () => {};
 }
+
+/**
+ * Compact prerequisite-aware roadmap shown directly on the home dashboard.
+ * The full path remains available from the "View full learning path" link.
+ */
+export function learningPathDashboardHTML() {
+  const modules = DC.mods;
+  const completed = modules.filter(module => visited(module.id)).length;
+  const pct = modules.length ? Math.round(completed / modules.length * 100) : 0;
+  const recommended = modules.find(module => !visited(module.id) &&
+    (PREREQUISITES[module.id] || []).every(visited));
+  const candidates = modules.filter(module => !visited(module.id)).slice(0, 4);
+  const recommendedId = recommended?.id || '';
+  const groupSummary = GROUPS.map(group => {
+    const items = modules.filter(module => module.group === group.id);
+    if (!items.length) return '';
+    const done = items.filter(module => visited(module.id)).length;
+    return `<div class="lp-home-group"><span>${esc(group.name)}</span><b>${done}/${items.length}</b><i><span style="width:${Math.round(done / items.length * 100)}%"></span></i></div>`;
+  }).join('');
+  return `
+    <section class="lp-home panel" aria-labelledby="lp-home-title">
+      <div class="lp-home-heading">
+        <div><span class="lp-eyebrow">YOUR NEXT STEPS</span><h2 id="lp-home-title">Guided Learning Path</h2><p>See what to learn next and which topics build on one another.</p></div>
+        <a class="btn ghost sm" href="#/learning-path">View full path →</a>
+      </div>
+      <div class="lp-home-progress"><div><b>${completed} / ${modules.length} modules explored</b><span>${pct}%</span></div><div class="lp-progress-track" role="progressbar" aria-label="Learning path progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><span style="width:${pct}%"></span></div></div>
+      ${recommended ? `<a class="lp-home-recommended" href="${hrefFor(recommended.id)}"><span>★ RECOMMENDED NEXT</span><b>${esc(recommended.title)}</b><small>${esc(recommended.desc)}</small><strong>Start lesson →</strong></a>` : '<p class="hint">You have explored all registered modules. Revisit a topic or try a challenge.</p>'}
+      <div class="lp-home-roadmap"><h3>Upcoming lessons</h3><div class="lp-home-module-grid">${candidates.map(module => {
+        const prerequisites = PREREQUISITES[module.id] || [];
+        const missing = prerequisites.filter(id => !visited(id));
+        const isRecommended = module.id === recommendedId;
+        const requirement = prerequisites.length ? (missing.length ? 'Learn first: ' + missing.map(id => DC.mods.find(m => m.id === id)?.title || id).join(', ') : 'Prerequisites completed') : 'No prerequisites';
+        return `<a class="lp-home-module ${isRecommended ? 'is-recommended' : ''}" href="${hrefFor(module.id)}"><span>${isRecommended ? '★ Recommended' : missing.length ? 'Prerequisites pending' : 'Ready to learn'}</span><b>${esc(module.title)}</b><small>${esc(requirement)}</small></a>`;
+      }).join('')}</div></div>
+      <div class="lp-home-groups"><h3>Progress by topic</h3><div class="lp-home-group-grid">${groupSummary}</div></div>
+      <p class="lp-home-note">Prerequisites guide the suggested order; every lesson remains open to explore.</p>
+    </section>`;
+}
