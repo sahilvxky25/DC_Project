@@ -160,7 +160,7 @@ regMod({
         render();
       } else if (button.hasAttribute('data-auto')) {
         if (timer) { stopAuto(); return; }
-        if (index === 6) index = 0;
+        if (index === 6) index = -1;
         button.textContent = 'Ⅱ Pause'; button.setAttribute('aria-pressed','true');
         timer = window.setInterval(() => {
           if (index >= 6) { stopAuto(); return; }
