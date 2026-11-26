@@ -45,6 +45,7 @@ import { labRecv } from '../lab/receiver-stage.js';
 import { labPrepare } from '../lab/transmission-stage.js';
 import { renderSupportPage } from './support.js';
 import { renderTableOfContents } from './table-of-contents.js';
+import { renderLearningPath } from './learning-path.js';
 
 /**
  * DOM ids of the four core-lab screens, indexed by the number in #/lab/<n>.
@@ -156,6 +157,12 @@ export function route() {
         <p>BitSecure is an educational project and is not designed to knowingly collect children's personal information unlawfully. This policy may change as features and service providers change; the effective date above identifies its latest revision.</p>
       </section>
       <section class="info-cta"><div><span class="info-kicker">QUESTIONS?</span><h2>We're happy to hear from you.</h2><p>Contact the project maintainers through the repository, without sharing sensitive account details publicly.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Project repository ↗</a></section>`;
+  } else if (kind === 'learning-path') {
+    currentKey = 'learning-path';
+    setStage('info-page');
+    crumbs(['Learning', 'Guided Learning Path']);
+    document.title = 'Learning Path · BitSecure';
+    cleanup = renderLearningPath($('#info-page'));
   } else if (kind === 'support') {
     currentKey = 'support';
     setStage('info-page');
