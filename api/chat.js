@@ -7,7 +7,7 @@ function json(res,status,body){res.setHeader("Content-Type","application/json; c
 function decodePart(value){return JSON.parse(Buffer.from(value,"base64url").toString("utf8"));}
 async function getFirebaseCertificates(){
  if(Date.now()<certificateCache.expiresAt)return certificateCache.certificates;
- const response=await fetch("https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys");
+ const response=await fetch("https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com");
  if(!response.ok)throw new Error("Unable to retrieve Firebase signing certificates.");
  const certificates=await response.json();
  const cacheControl=response.headers.get("cache-control")||"",match=cacheControl.match(/max-age=(\d+)/i);
