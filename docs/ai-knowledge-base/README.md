@@ -7,7 +7,7 @@ This directory contains curated, version-controlled source material used by the 
 
 ## Current status
 
-Phase 2 adds Gemini embeddings and Cloud Firestore vector retrieval to the authenticated Vercel chat endpoint. The ingestion script reads the Markdown sources, writes 768-dimensional embeddings and metadata to `assistant_knowledge_chunks`, and the API retrieves the top five relevant chunks before generating a grounded answer with source links. See [RAG setup](./PHASE-1-SETUP.md). Persistent chat history is not included yet.
+Phase 2 adds Gemini embeddings and Cloud Firestore vector retrieval to the authenticated Vercel chat endpoint. The ingestion script reads the Markdown sources, writes 768-dimensional embeddings and metadata to `assistant_knowledge_chunks`, and the API retrieves the top five relevant chunks before generating a grounded answer with source links. See [RAG setup](./PHASE-2-RAG-SETUP.md). Persistent chat history is not included yet.
 
 ## Document layout
 
