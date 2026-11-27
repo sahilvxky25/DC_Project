@@ -15,6 +15,7 @@ function getServiceAccount(){
 export function getFirestore(){
  if(firestoreClient)return firestoreClient;
  const account=getServiceAccount();
+ if(process.env.FIREBASE_PROJECT_ID&&process.env.FIREBASE_PROJECT_ID!==account.project_id)throw new Error("FIREBASE_PROJECT_ID does not match the service-account project.");
  firestoreClient=new Firestore({projectId:account.project_id,credentials:{client_email:account.client_email,private_key:account.private_key}});
  return firestoreClient;
 }
