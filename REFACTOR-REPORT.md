@@ -193,3 +193,37 @@ The documentation branch `docs/security-and-contributing` adds repository-level 
 These additions are documentation-only. They do not add an in-app security reporting form, enable GitHub private vulnerability reporting in repository settings, or change application runtime behaviour. The private reporting option must be enabled and available in the repository's GitHub Security settings for that route to work; otherwise, reporters are directed to contact the maintainer privately.
 
 No application tests were run for these documentation changes. Review the two policy files whenever repository ownership, supported versions, reporting channels, or contribution workflows change.
+
+
+## 12. Learning experience and navigation features (27 November 2026)
+
+The application has continued to grow beyond the initial modularization and the features recorded in sections 10–11. The following additions are present in the current `main` snapshot inspected for this documentation update.
+
+### Learning discovery and navigation
+- **Global Table of Contents:** a central page links to major site destinations and learning areas.
+- **Bookmarks:** learners can save modules and open the bookmarked-module view from the primary navigation.
+- **Recently Viewed:** module visits are recorded and a dedicated page lists recent learning activity, including module details and an open-module action.
+- **Recently Searched:** the search experience retains the last five queries so a learner can repeat a previous search.
+- **Mistake Notebook:** incorrect quiz answers are collected in a dedicated review page. The page exposes saved/reviewed counts and filters to help learners revisit unanswered or reviewed mistakes. It is linked from the dashboard and primary navigation to improve discoverability.
+
+### Module-level learning support
+- **Quick Revision:** supported modules include concise short-note-style revision content at the end of the module.
+- **Manual completion:** learners can explicitly mark a module complete without relying solely on quiz completion.
+- **Estimated completion time:** module views/cards display configured duration estimates (for example, short 5- or 10-minute activities).
+- **Interactive OSI layer learning:** the protocol-comparison learning area provides an interactive OSI and TCP/IP mapping; the learning groups remain pedagogical groupings rather than a literal one-to-one implementation of the seven OSI layers.
+
+### UI integration
+- The primary header exposes shortcuts for the Table of Contents, Bookmarks, Recently Viewed, and Mistake Notebook, alongside project information and support destinations.
+- The router handles dedicated destinations for the relevant learning-history and review pages.
+- New feature stylesheets are loaded by `index.html`, keeping feature presentation separate from the shared base styles.
+
+### Documentation accuracy and verification
+This section records feature presence and the intended user-facing behaviour based on the current source inspection. It is not a claim that every feature has just been exercised in a browser. The documentation update itself did not run application tests, browser automation, accessibility checks, or Firebase integration tests. Validate empty states, persistence, search suggestions, quiz-mistake capture, module completion, and responsive navigation as part of the next regression pass.
+
+## 13. Documentation maintenance notes (27 November 2026)
+
+- The README was reorganized to describe the current learning experience, application architecture, setup requirements, account/progress model, security caveats, and feature locations in one consistent guide.
+- The project tree and change-location guide were aligned with the current entry point and the `app/`, `auth/`, `core/`, `game/`, `lab/`, `modules/`, and `simulations/` areas.
+- Simulation boundaries are called out explicitly so educational models are not mistaken for real network operations.
+- The original test results in section 7 remain historical results from the initial modularization. They have not been relabelled as current results.
+- No application source code, Firebase rules, deployment configuration, or runtime behaviour was changed as part of this documentation-only update.
