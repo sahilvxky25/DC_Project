@@ -1,13 +1,13 @@
 # BitSecure AI Knowledge Base
 
-This directory contains curated, version-controlled source material for the future BitSecure RAG assistant. It is designed for two answer domains:
+This directory contains curated, version-controlled source material used by the BitSecure RAG assistant. It is designed for two answer domains:
 
 1. **Data Communications Tutor** — networking concepts, protocol behaviour, calculations, and worked examples.
 2. **BitSecure Platform Assistant** — accurate guidance about the platform, its learning modules, simulations, account features, and limitations.
 
 ## Current status
 
-These are source documents only. Phase 1 now provides an authenticated Gemini chat through the Vercel `/api/chat` function. It verifies Firebase ID-token signatures server-side and keeps the Gemini API key on the server. It does **not** yet add embeddings, a vector database, RAG retrieval, citations, or persistent chat history. See [Phase 1 setup](./PHASE-1-SETUP.md).
+Phase 2 adds Gemini embeddings and Cloud Firestore vector retrieval to the authenticated Vercel chat endpoint. The ingestion script reads the Markdown sources, writes 768-dimensional embeddings and metadata to `assistant_knowledge_chunks`, and the API retrieves the top five relevant chunks before generating a grounded answer with source links. See [RAG setup](./PHASE-1-SETUP.md). Persistent chat history is not included yet.
 
 ## Document layout
 
