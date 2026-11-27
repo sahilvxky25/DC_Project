@@ -1,0 +1,11 @@
+{
+  "name": "bitsecure-dc-project",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assistant:ingest": "node scripts/ingest-knowledge-base.mjs"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.0"
+  }
+}
