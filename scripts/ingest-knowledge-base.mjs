@@ -78,7 +78,7 @@ async function main(){
  try{
   for(const file of files){
    const markdown=await readFile(file,"utf8"),relative=path.relative(ROOT,file).split(path.sep).join("/");
-   const title=titleFrom(markdown,relative),domain=relative.split("/")[2]||"platform",sections=splitSections(markdown);
+   const title=titleFrom(markdown,relative),segments=relative.split("/"),domain=segments.length>3?segments[2]:"platform",sections=splitSections(markdown);
    const activeIds=[];
    for(const section of sections){
     const chunks=splitText(section.text);
