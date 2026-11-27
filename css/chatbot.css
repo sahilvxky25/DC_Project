@@ -122,3 +122,20 @@
   .chatbot-panel { animation: none; }
   .chatbot-launcher { transition: none; }
 }
+
+/* Interactive BitSecure Assistant */
+.chatbot-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--bg2)}
+.chatbot-mode-label{font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.chatbot-new-chat{border:0;background:transparent;color:var(--info);font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.chatbot-messages{height:min(390px,48vh);min-height:190px;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;scroll-behavior:smooth}
+.chatbot-message{display:flex;max-width:92%}.chatbot-message.user{align-self:flex-end}
+.chatbot-message-bubble{padding:10px 12px;border:1px solid var(--line);border-radius:13px 13px 13px 4px;background:var(--bg2);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.chatbot-message.user .chatbot-message-bubble{border-color:transparent;border-radius:13px 13px 4px 13px;background:var(--info);color:#fff}
+.chatbot-status{min-height:17px;margin:0;padding:0 14px;color:var(--muted);font-size:10px}
+.chatbot-composer{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.chatbot-composer textarea{flex:1;min-width:0;max-height:110px;resize:vertical;padding:10px 11px;border:1px solid var(--line2);border-radius:12px;color:var(--text);background:var(--bg2);font:inherit;font-size:12px;line-height:1.5}
+.chatbot-composer textarea:focus{outline:2px solid var(--info);outline-offset:1px}
+.chatbot-composer button{width:38px;height:38px;flex:0 0 38px;display:grid;place-items:center;border:0;border-radius:11px;color:#fff;background:var(--info);cursor:pointer}
+.chatbot-composer button:disabled{opacity:.5;cursor:wait}.chatbot-composer button svg{width:18px;height:18px}
+.chatbot-panel-footer{line-height:1.5}
+@media(max-width:480px){.chatbot-panel{width:min(390px,calc(100vw - 20px));right:-4px}.chatbot-messages{height:min(55vh,440px)}}
