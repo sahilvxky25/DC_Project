@@ -16,7 +16,7 @@ async function getFirebaseCertificates(){
  const response=await fetch("https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com");
  if(!response.ok)throw new Error("Unable to retrieve Firebase signing certificates.");
  const certificates=await response.json();
- const cacheControl=response.headers.get("cache-control")||"",match=cacheControl.match(/max-age=(\\d+)/i);
+ const cacheControl=response.headers.get("cache-control")||"",match=cacheControl.match(/max-age=(\d+)/i);
  certificateCache={certificates,expiresAt:Date.now()+Math.min(Number(match?.[1]||300),3600)*1000};
  return certificates;
 }
@@ -42,18 +42,20 @@ function allowRequest(uid){
 function getRetryDelayMs(error){
  for(const detail of error?.details||[]){
   if(detail?.["@type"]?.endsWith(".RetryInfo")&&typeof detail.retryDelay==="string"){
-   const match=detail.retryDelay.match(/^(\\d+(?:\\.\\d+)?)s$/);
+   const match=detail.retryDelay.match(/^(\d+(?:\.\d+)?)s$/);
    if(match)return Math.min(Number(match[1])*1000,MAX_RETRY_DELAY_MS);
   }
  }
  return null;
 }
-function isQuotaExhausted(error){
- return error?.status==="RESOURCE_EXHAUSTED"||
-  (error?.details||[]).some(detail=>
-   detail?.["@type"]?.includes("QuotaFailure")||
-   /quota|daily limit|billing/i.test(detail?.reason||"")
-  );
+function getQuotaCategory(error){
+ const violations=(error?.details||[]).flatMap(detail=>detail?.violations||[]);
+ const quotaIds=violations.map(item=>item?.quotaId||"").join(" ");
+ const descriptions=[error?.message,...violations.map(item=>item?.description||"")].filter(Boolean).join(" ");
+ if(/PerDay|per.?day|daily/i.test(quotaIds+" "+descriptions))return "daily";
+ if(/PerMinute|per.?minute|per.?second|rate.?limit/i.test(quotaIds+" "+descriptions))return "rate";
+ if(error?.status==="RESOURCE_EXHAUSTED"||(error?.details||[]).some(detail=>detail?.["@type"]?.includes("QuotaFailure")))return "unknown";
+ return null;
 }
 function sleep(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
 async function callGemini({apiKey,model,contents,systemInstruction}){
@@ -80,10 +82,13 @@ async function callGemini({apiKey,model,contents,systemInstruction}){
   lastError={httpStatus:response.status,status:apiError.status||"UNKNOWN",message:apiError.message||"No provider message",details:apiError.details||[]};
   // A hard quota exhaustion will not be repaired by retrying. Retry only transient
   // 503 overloads or 429 responses that explicitly include Google's RetryInfo.
-  if(isQuotaExhausted(apiError)){
+  const quotaCategory=getQuotaCategory(apiError);
+  if(quotaCategory==="daily")return {error:"daily_quota",diagnostic:lastError};
+  if(quotaCategory==="unknown")return {error:"quota",diagnostic:lastError};
+  if(quotaCategory==="rate"){
    const retryDelay=getRetryDelayMs(apiError);
-   if(retryDelay!==null&&attempt<MAX_UPSTREAM_ATTEMPTS){await sleep(retryDelay+Math.floor(Math.random()*250));continue;}
-   return {error:"quota",diagnostic:lastError};
+   if(retryDelay!==null&&attempt<MAX_UPSTREAM_ATTEMPTS&&retryDelay<=MAX_RETRY_DELAY_MS){await sleep(retryDelay+Math.floor(Math.random()*250));continue;}
+   return {error:"rate_limit",diagnostic:lastError};
   }
   const transient=response.status===503||response.status===500||response.status===502||
    (response.status===429&&getRetryDelayMs(apiError)!==null);
@@ -97,7 +102,7 @@ export default async function handler(req,res){
  if(req.method!=="POST"){res.setHeader("Allow","POST");return json(res,405,{error:"Method not allowed."});}
  const projectId=process.env.FIREBASE_PROJECT_ID,apiKey=process.env.GEMINI_API_KEY;
  if(!projectId||!apiKey)return json(res,503,{error:"The assistant is not configured yet. Please try again later."});
- const match=(req.headers.authorization||"").match(/^Bearer\\s+(.+)$/i);
+ const match=(req.headers.authorization||"").match(/^Bearer\s+(.+)$/i);
  if(!match)return json(res,401,{error:"Please sign in to use the assistant."});
  let uid;
  try{uid=await verifyFirebaseToken(match[1],projectId);}
@@ -118,9 +123,17 @@ export default async function handler(req,res){
  const model=process.env.GEMINI_MODEL||"gemini-2.5-flash";
  try{
   const outcome=await callGemini({apiKey,model,contents,systemInstruction});
+  if(outcome.error==="daily_quota"){
+   console.error("Gemini daily quota exhausted:",JSON.stringify({model,...outcome.diagnostic}));
+   return json(res,429,{error:"The Gemini daily request quota for this model has been reached. It will not be fixed by retrying. Check Google AI Studio → Rate limits, then wait for the daily reset or use a model with available quota."});
+  }
+  if(outcome.error==="rate_limit"){
+   console.error("Gemini rate limit reached:",JSON.stringify({model,...outcome.diagnostic}));
+   return json(res,429,{error:"Gemini is rate-limiting requests for this project. Please wait for the indicated retry window and try again."});
+  }
   if(outcome.error==="quota"){
    console.error("Gemini quota exhausted:",JSON.stringify({model,...outcome.diagnostic}));
-   return json(res,429,{error:"Gemini API quota is exhausted for this project or model. Check your Google AI Studio usage and rate limits, then try again when the quota resets or adjust your plan."});
+   return json(res,429,{error:"Gemini reported a quota or capacity limit for this project/model. Check Google AI Studio → Rate limits and usage for the exact quota dimension."});
   }
   if(outcome.error){
    console.error("Gemini request failed after retries:",JSON.stringify({model,...outcome.diagnostic}));
