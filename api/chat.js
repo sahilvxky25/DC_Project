@@ -1,20 +1,39 @@
+import { createPublicKey, verify as verifySignature } from "node:crypto";
+
 const MAX_MESSAGES=10,MAX_MESSAGE_LENGTH=4000,MAX_OUTPUT_TOKENS=1200;
 const requestCounts=new Map(),WINDOW_MS=60000,MAX_REQUESTS_PER_WINDOW=12;
+let certificateCache={expiresAt:0,certificates:{}};
 function json(res,status,body){res.setHeader("Content-Type","application/json; charset=utf-8");res.setHeader("Cache-Control","no-store");return res.status(status).json(body);}
-async function verifyFirebaseToken(idToken,projectId){
-  // Google's token-info endpoint verifies the signed Firebase ID token and returns its claims.
-  const response=await fetch("https://oauth2.googleapis.com/tokeninfo?id_token="+encodeURIComponent(idToken));
-  if(!response.ok)return null;
-  const claims=await response.json(),now=Math.floor(Date.now()/1000);
-  if(claims.aud!==projectId||claims.iss!==`https://securetoken.google.com/${projectId}`||Number(claims.exp)<=now||!claims.user_id||claims.email_verified!=="true")return null;
-  return claims.user_id;
+function decodePart(value){return JSON.parse(Buffer.from(value,"base64url").toString("utf8"));}
+async function getFirebaseCertificates(){
+ if(Date.now()<certificateCache.expiresAt)return certificateCache.certificates;
+ const response=await fetch("https://www.googleapis.com/identitytoolkit/v3/relyingparty/publicKeys");
+ if(!response.ok)throw new Error("Unable to retrieve Firebase signing certificates.");
+ const certificates=await response.json();
+ const cacheControl=response.headers.get("cache-control")||"",match=cacheControl.match(/max-age=(\d+)/i);
+ const maxAge=Math.min(Number(match?.[1]||300),3600);
+ certificateCache={certificates,expiresAt:Date.now()+maxAge*1000};
+ return certificates;
+}
+async function verifyFirebaseToken(token,projectId){
+ const parts=token.split(".");
+ if(parts.length!==3)return null;
+ let header,claims,signature;
+ try{header=decodePart(parts[0]);claims=decodePart(parts[1]);signature=Buffer.from(parts[2],"base64url");}catch{return null;}
+ if(header.alg!=="RS256"||typeof header.kid!=="string")return null;
+ const certificates=await getFirebaseCertificates(),certificate=certificates[header.kid];
+ if(!certificate)return null;
+ const valid=verifySignature("RSA-SHA256",Buffer.from(parts[0]+"."+parts[1]),createPublicKey(certificate),signature);
+ const now=Math.floor(Date.now()/1000);
+ if(!valid||claims.aud!==projectId||claims.iss!==`https://securetoken.google.com/${projectId}`||typeof claims.sub!=="string"||!claims.sub||claims.sub.length>128||Number(claims.exp)<=now||Number(claims.iat)>now+60||claims.email_verified!==true)return null;
+ return claims.sub;
 }
 function allowRequest(uid){const now=Date.now(),entry=requestCounts.get(uid);if(!entry||now-entry.start>=WINDOW_MS){requestCounts.set(uid,{start:now,count:1});return true;}if(entry.count>=MAX_REQUESTS_PER_WINDOW)return false;entry.count++;return true;}
 export default async function handler(req,res){
  if(req.method!=="POST"){res.setHeader("Allow","POST");return json(res,405,{error:"Method not allowed."});}
  const projectId=process.env.FIREBASE_PROJECT_ID,apiKey=process.env.GEMINI_API_KEY;
  if(!projectId||!apiKey)return json(res,503,{error:"The assistant is not configured yet. Please try again later."});
- const match=(req.headers.authorization||"").match(/^Bearer\\s+(.+)$/i);
+ const match=(req.headers.authorization||"").match(/^Bearer\s+(.+)$/i);
  if(!match)return json(res,401,{error:"Please sign in to use the assistant."});
  let uid;try{uid=await verifyFirebaseToken(match[1],projectId);}catch(error){console.error("Assistant token verification failed:",error?.message||error);return json(res,401,{error:"Your sign-in session could not be verified. Please sign in again."});}
  if(!uid)return json(res,401,{error:"Your sign-in session is invalid or expired. Please sign in again."});
