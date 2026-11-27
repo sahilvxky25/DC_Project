@@ -445,23 +445,35 @@
           </div>
         </form>
       </dialog>
-    <!-- Chat assistant launcher: only rendered inside the authenticated app shell. -->
+    <!-- Assistant is inside the authenticated app shell; its API independently verifies Firebase ID tokens. -->
     <aside class="chatbot-widget" aria-label="BitSecure assistant">
       <section class="chatbot-panel" id="chatbotPanel" aria-label="Chat assistant" aria-live="polite" hidden>
         <header class="chatbot-panel-header">
           <span class="chatbot-mark" aria-hidden="true">✦</span>
           <div class="chatbot-heading">
             <strong>BitSecure Assistant</strong>
-            <span>Your Data Communications companion</span>
+            <span>Data Communications Tutor · Platform Guide</span>
           </div>
           <button class="chatbot-close" id="chatbotClose" type="button" aria-label="Close assistant">×</button>
         </header>
-        <div class="chatbot-panel-body">
-          <p class="chatbot-welcome">Hello! How can I help you learn today?</p>
-          <p class="chatbot-description">The AI assistant is coming soon. It will help answer Data Communications questions and guide you around the BitSecure website.</p>
-          <span class="chatbot-coming-soon">Chat functionality coming soon</span>
+        <div class="chatbot-toolbar">
+          <span class="chatbot-mode-label">AI learning assistant</span>
+          <button class="chatbot-new-chat" id="chatbotNewChat" type="button">New chat</button>
         </div>
-        <footer class="chatbot-panel-footer">This is a visual preview. No messages are sent or stored.</footer>
+        <div class="chatbot-messages" id="chatbotMessages" role="log" aria-label="Conversation" aria-live="polite" aria-relevant="additions text">
+          <article class="chatbot-message assistant">
+            <div class="chatbot-message-bubble">Hi! I’m your BitSecure Assistant. Ask me about networking concepts, protocols, calculations, or how to use this learning platform.</div>
+          </article>
+        </div>
+        <p class="chatbot-status" id="chatbotStatus" role="status" aria-live="polite"></p>
+        <form class="chatbot-composer" id="chatbotForm">
+          <label class="visually-hidden" for="chatbotInput">Your message</label>
+          <textarea id="chatbotInput" rows="1" maxlength="4000" placeholder="Ask a networking question…" required></textarea>
+          <button id="chatbotSend" type="submit" aria-label="Send message">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </form>
+        <footer class="chatbot-panel-footer">AI responses can make mistakes. Verify important technical details.</footer>
       </section>
       <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-label="Open BitSecure assistant" aria-controls="chatbotPanel" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>
