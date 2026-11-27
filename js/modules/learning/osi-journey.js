@@ -36,6 +36,14 @@ function renderLayer(layer, active, direction) {
     '<span class="osi-step-state">' + (active ? '●' : (direction === 'send' ? '↓' : '↑')) + '</span></button>';
 }
 
+
+const TCP_UDP_STAGES = [
+  { title: '1. Connection setup', tcp: 'TCP begins with a three-way handshake: SYN → SYN-ACK → ACK. Both endpoints synchronize initial sequence numbers before application data is exchanged.', udp: 'UDP sends without establishing a transport connection. There is no built-in handshake; an application can begin sending datagrams immediately.', insight: 'TCP spends a round trip establishing connection state. UDP avoids that transport handshake, which can reduce startup delay, but the application must handle any setup it needs.' },
+  { title: '2. Data transfer', tcp: 'TCP treats application data as a byte stream. It numbers bytes with sequence numbers, acknowledges received data and retransmits missing data when needed.', udp: 'UDP sends independent datagrams. Each datagram carries source and destination ports, length and checksum fields, but UDP itself does not retransmit lost data.', insight: 'TCP provides a reliable, ordered byte stream. UDP preserves message boundaries as datagrams but leaves loss handling to the application.' },
+  { title: '3. Delivery & ordering', tcp: 'The receiver reassembles the byte stream in order and acknowledges received bytes. Duplicate or out-of-order segments are handled by TCP; missing data can delay later bytes from being delivered to the application.', udp: 'Datagrams may arrive late, out of order, more than once, or not at all. UDP passes received datagrams to the application without an in-built ordering or recovery mechanism.', insight: 'Choose TCP when the application needs a reliable ordered stream. Choose UDP when low overhead or timely delivery matters and the application can tolerate or manage loss and reordering.' },
+  { title: '4. Connection close', tcp: 'TCP endpoints exchange FIN and ACK control segments to close each direction of the connection. A reset (RST) can abort a connection instead.', udp: 'UDP has no transport connection to close. When the application has no more datagrams to send, it simply stops sending; application-level session cleanup may still be needed.', insight: 'TCP maintains connection state and performs an orderly close. UDP has no handshake or transport teardown, though the application may still maintain its own session.' }
+];
+
 function markup() {
   return '<div class="osi-journey">' +
     '<header class="osi-hero"><p class="eyebrow">GUIDED NETWORK WALKTHROUGH</p><h2>Interactive OSI Layer Journey</h2><p>Follow one message through all seven OSI layers, then watch it move back up the stack at the receiver.</p><div class="osi-hero-tags"><span>7 OSI layers</span><span>Sender + receiver</span><span>Local simulation</span></div></header>' +
@@ -46,6 +54,13 @@ function markup() {
     '<div class="osi-detail" aria-live="polite"><div class="osi-detail-top"><span class="osi-layer-badge" data-layer-number>Layer 7</span><span class="osi-pdu-badge" data-pdu>Data</span></div><h3 data-layer-name>Application</h3><p data-layer-role></p><div class="osi-mapping"><small>TCP/IP correspondence</small><strong data-tcp-layer>Application</strong></div><div class="osi-step-explanation"><strong data-action-title>What happens at this layer</strong><p data-action-text></p></div><div class="osi-example"><small>EXAMPLE</small><code data-example></code></div><div class="osi-header"><small data-header-label>Information added / handled</small><strong data-header></strong></div><div class="osi-key-functions"><strong>Key responsibilities</strong><p data-functions></p></div><div class="osi-real-world"><strong>How this appears in real networks</strong><p data-real-world></p></div><div class="osi-analogy"><span>💡</span><p data-analogy></p></div></div></div>' +
     '<div class="osi-controls"><button class="btn ghost" type="button" data-prev disabled>← Previous</button><button class="btn" type="button" data-next>Next layer →</button><button class="btn ghost" type="button" data-auto>▶ Auto play</button><button class="btn ghost" type="button" data-reset>↺ Restart</button></div>' +
     '<div class="osi-complete" data-complete hidden><strong data-complete-title>Message ready for transmission</strong><p data-complete-text></p><button class="btn" type="button" data-switch>Continue to receiver →</button></div></section>' +
+    '<section class="panel osi-tcp-udp-lab"><div class="osi-compare-heading"><div><p class="eyebrow">TRANSPORT LAYER DEEP DIVE</p><h3>TCP vs UDP · Side-by-side journey</h3><p class="hint">Compare what happens during connection setup, data transfer, delivery and connection close. This is a conceptual sequence, not a live socket connection.</p></div><span class="osi-compare-layer">OSI Layer 4</span></div>' +
+    '<div class="osi-compare-stagebar"><div><small>JOURNEY STAGE</small><strong data-compare-stage-title>1. Connection setup</strong></div><div class="osi-compare-stage-actions"><button class="btn ghost" type="button" data-compare-prev disabled>← Previous</button><button class="btn" type="button" data-compare-next>Next stage →</button></div></div>' +
+    '<div class="osi-compare-track" data-compare-track></div>' +
+    '<div class="osi-compare-grid"><article class="osi-protocol-card osi-tcp-card"><div class="osi-protocol-title"><span class="osi-protocol-mark">T</span><div><h4>TCP</h4><small>Transmission Control Protocol</small></div><b>Connection-oriented</b></div><div class="osi-protocol-visual" data-tcp-visual></div><p data-tcp-stage-copy></p><div class="osi-protocol-facts"><div><small>Reliability</small><strong>Built-in</strong></div><div><small>Ordering</small><strong>In order</strong></div><div><small>Flow control</small><strong>Yes</strong></div><div><small>Handshake</small><strong>3-way</strong></div></div><div class="osi-protocol-use"><small>COMMON USES</small><span>Web traffic (HTTP/1.1, HTTP/2), email, file transfer, SSH</span></div></article>' +
+    '<article class="osi-protocol-card osi-udp-card"><div class="osi-protocol-title"><span class="osi-protocol-mark">U</span><div><h4>UDP</h4><small>User Datagram Protocol</small></div><b>Connectionless</b></div><div class="osi-protocol-visual" data-udp-visual></div><p data-udp-stage-copy></p><div class="osi-protocol-facts"><div><small>Reliability</small><strong>No guarantee</strong></div><div><small>Ordering</small><strong>Not guaranteed</strong></div><div><small>Flow control</small><strong>No built-in</strong></div><div><small>Handshake</small><strong>None</strong></div></div><div class="osi-protocol-use"><small>COMMON USES</small><span>DNS queries, voice/video, gaming, real-time telemetry</span></div></article></div>' +
+    '<div class="osi-compare-insight"><strong>Key takeaway</strong><p data-compare-insight></p></div>' +
+    '<div class="osi-compare-footnote">Important: applications can add their own reliability, ordering or congestion-control mechanisms over UDP. QUIC, for example, runs over UDP and implements reliable streams itself.</div></section>' +
     '<section class="panel osi-encapsulation"><div class="osi-encap-head"><div><p class="eyebrow">DATA UNIT TRANSFORMATION</p><h3>What is added along the way?</h3></div><span data-encap-direction>Encapsulation</span></div><div class="osi-pdu-flow" data-pdu-flow></div><p class="hint">Simplified conceptual view: not every OSI layer adds a separate wire header. Real Internet protocols combine responsibilities, and the TCP/IP mapping is approximate.</p></section>' +
     '<section class="panel osi-model-map"><p class="eyebrow">MODEL COMPARISON</p><h3>Where does this fit in TCP/IP?</h3><div class="osi-tcp-map" data-tcp-map></div><p class="hint">TCP/IP commonly uses four layers. Its Application layer combines responsibilities described separately by OSI Layers 5–7; its Network Access / Link layer commonly groups OSI Layers 1–2.</p></section>' +
     '<section class="panel osi-takeaway"><strong>Important distinction</strong><p>OSI is a conceptual reference model. TCP/IP describes the practical Internet architecture. Their mapping helps explain responsibilities, but it is not a strict one-to-one conversion.</p></section>' +
@@ -69,7 +84,7 @@ regMod({
   mount(root) {
     const controller = new AbortController();
     const { signal } = controller;
-    let direction = 'send', index = 0, timer = null;
+    let direction = 'send', index = 0, timer = null, compareStage = 0;
     const $ = selector => root.querySelector(selector);
     const stopAuto = () => {
       if (timer) window.clearInterval(timer);
@@ -119,7 +134,28 @@ regMod({
       renderPduFlow(protocol);
       renderTcpMap(layer);
     };
-    const renderPduFlow = protocol => {
+
+    const renderTcpUdpComparison = () => {
+      const stage = TCP_UDP_STAGES[compareStage];
+      $('[data-compare-stage-title]').textContent = stage.title;
+      $('[data-tcp-stage-copy]').textContent = stage.tcp;
+      $('[data-udp-stage-copy]').textContent = stage.udp;
+      $('[data-compare-insight]').textContent = stage.insight;
+      $('[data-compare-prev]').disabled = compareStage === 0;
+      $('[data-compare-next]').disabled = compareStage === TCP_UDP_STAGES.length - 1;
+      $('[data-compare-track]').innerHTML = TCP_UDP_STAGES.map((item, i) =>
+        '<button type="button" class="osi-compare-stage' + (i === compareStage ? ' is-active' : '') + (i < compareStage ? ' is-done' : '') + '" data-compare-step="' + i + '" aria-pressed="' + String(i === compareStage) + '"><span>' + (i < compareStage ? '✓' : String(i + 1)) + '</span><small>' + escape(item.title.replace(/^\\d+\\. /, '')) + '</small></button>'
+      ).join('');
+      const tcpVisual = compareStage === 0
+        ? ['Client  SYN','Server  SYN-ACK','Client  ACK']
+        : compareStage === 3 ? ['FIN →','← ACK','← FIN','ACK →'] : ['SEQ 1000 →','← ACK 1500','SEQ 1500 →'];
+      const udpVisual = compareStage === 0
+        ? ['No handshake','Datagram ready','Send immediately']
+        : compareStage === 3 ? ['No transport close','Stop sending','Application cleanup'] : ['Datagram 1 →','Datagram 2 →','Datagram 3 →'];
+      $('[data-tcp-visual]').innerHTML = tcpVisual.map((item, i) => '<span class="osi-packet-chip">' + escape(item) + '</span>').join('');
+      $('[data-udp-visual]').innerHTML = udpVisual.map((item, i) => '<span class="osi-packet-chip">' + escape(item) + '</span>').join('');
+    };
+\n    const renderPduFlow = protocol => {
       const labels = direction === 'send'
         ? [{name:'Application data',pdu:'Data'},{name:protocol === 'UDP' ? 'UDP header' : 'TCP header',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'IP header',pdu:'Packet'},{name:'Link header + trailer',pdu:'Frame'},{name:'Signals on medium',pdu:'Bits / symbols'}]
         : [{name:'Signals recovered',pdu:'Bits / symbols'},{name:'Link header + trailer removed',pdu:'Frame'},{name:'IP header examined / removed',pdu:'Packet'},{name:protocol === 'UDP' ? 'UDP header examined / removed' : 'TCP header examined / removed',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'Application data delivered',pdu:'Data'}];
@@ -147,9 +183,15 @@ regMod({
         render();
         return;
       }
+      const compareStep = event.target.closest('[data-compare-step]');
+      if (compareStep) { compareStage = Number(compareStep.dataset.compareStep); renderTcpUdpComparison(); return; }
       const button = event.target.closest('button');
       if (!button) return;
-      if (button.hasAttribute('data-direction')) {
+      if (button.hasAttribute('data-compare-prev')) {
+        compareStage = Math.max(0, compareStage - 1); renderTcpUdpComparison();
+      } else if (button.hasAttribute('data-compare-next')) {
+        compareStage = Math.min(TCP_UDP_STAGES.length - 1, compareStage + 1); renderTcpUdpComparison();
+      } else if (button.hasAttribute('data-direction')) {
         stopAuto();
         direction = button.dataset.direction;
         index = 0;
