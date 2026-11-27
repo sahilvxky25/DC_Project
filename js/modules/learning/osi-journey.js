@@ -144,7 +144,7 @@ regMod({
       $('[data-compare-prev]').disabled = compareStage === 0;
       $('[data-compare-next]').disabled = compareStage === TCP_UDP_STAGES.length - 1;
       $('[data-compare-track]').innerHTML = TCP_UDP_STAGES.map((item, i) =>
-        '<button type="button" class="osi-compare-stage' + (i === compareStage ? ' is-active' : '') + (i < compareStage ? ' is-done' : '') + '" data-compare-step="' + i + '" aria-pressed="' + String(i === compareStage) + '"><span>' + (i < compareStage ? '✓' : String(i + 1)) + '</span><small>' + escape(item.title.replace(/^\\d+\\. /, '')) + '</small></button>'
+        '<button type="button" class="osi-compare-stage' + (i === compareStage ? ' is-active' : '') + (i < compareStage ? ' is-done' : '') + '" data-compare-step="' + i + '" aria-pressed="' + String(i === compareStage) + '"><span>' + (i < compareStage ? '✓' : String(i + 1)) + '</span><small>' + escape(item.title.slice(3)) + '</small></button>'
       ).join('');
       const tcpVisual = compareStage === 0
         ? ['Client  SYN','Server  SYN-ACK','Client  ACK']
