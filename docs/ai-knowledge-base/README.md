@@ -24,7 +24,7 @@ An ingestion pipeline should treat each Markdown file as a source document and:
 3. Extract the title and headings as metadata.
 4. Split content into semantically coherent chunks. Prefer heading boundaries; target roughly 400–800 tokens with 60–100 tokens of overlap. Keep equations, tables, and worked examples together.
 5. Attach metadata such as `domain`, `topic`, `sourcePath`, `title`, `heading`, `contentVersion`, and `updatedAt`.
-6. Generate embeddings on the trusted backend and store vectors in the selected vector store (planned: Cloud Firestore vector search).
+6. Generate embeddings on the trusted backend and store vectors in the Cloud Firestore `assistant_knowledge_chunks` collection using the 768-dimensional vector index.
 7. Keep source identifiers in retrieval results so the answer can cite the source document and section.
 
 Suggested domain values: `data-communications`, `simulator`, and `platform`.
