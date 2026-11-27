@@ -7,7 +7,7 @@ This directory contains curated, version-controlled source material for the futu
 
 ## Current status
 
-These are source documents only. This change does **not** add embeddings, a vector database, Gemini calls, Cloud Functions, chat history, or a live retrieval endpoint. The existing chatbot launcher remains a UI placeholder until a backend is implemented.
+These are source documents only. Phase 1 now provides an authenticated Gemini chat through the Vercel `/api/chat` function. It verifies Firebase ID-token signatures server-side and keeps the Gemini API key on the server. It does **not** yet add embeddings, a vector database, RAG retrieval, citations, or persistent chat history. See [Phase 1 setup](./PHASE-1-SETUP.md).
 
 ## Document layout
 
