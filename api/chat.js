@@ -43,7 +43,7 @@ function getRetryDelayMs(error){
  for(const detail of error?.details||[]){
   if(detail?.["@type"]?.endsWith(".RetryInfo")&&typeof detail.retryDelay==="string"){
    const match=detail.retryDelay.match(/^(\d+(?:\.\d+)?)s$/);
-   if(match)return Math.min(Number(match[1])*1000,MAX_RETRY_DELAY_MS);
+   if(match)return Number(match[1])*1000;
   }
  }
  return null;
@@ -90,10 +90,11 @@ async function callGemini({apiKey,model,contents,systemInstruction}){
    if(retryDelay!==null&&attempt<MAX_UPSTREAM_ATTEMPTS&&retryDelay<=MAX_RETRY_DELAY_MS){await sleep(retryDelay+Math.floor(Math.random()*250));continue;}
    return {error:"rate_limit",diagnostic:lastError};
   }
+  const retryDelay=getRetryDelayMs(apiError);
   const transient=response.status===503||response.status===500||response.status===502||
-   (response.status===429&&getRetryDelayMs(apiError)!==null);
+   (response.status===429&&retryDelay!==null&&retryDelay<=MAX_RETRY_DELAY_MS);
   if(!transient||attempt===MAX_UPSTREAM_ATTEMPTS)break;
-  const delay=getRetryDelayMs(apiError)??Math.min(1000*2**(attempt-1),MAX_RETRY_DELAY_MS);
+  const delay=retryDelay??Math.min(1000*2**(attempt-1),MAX_RETRY_DELAY_MS);
   await sleep(delay+Math.floor(Math.random()*250));
  }
  return {error:"unavailable",diagnostic:lastError};
