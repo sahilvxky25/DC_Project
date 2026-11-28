@@ -58,6 +58,7 @@ export function renderHome() {
         <div class="gstats"><span>🔥 <b>${streak()}</b> day streak</span><span>⭐ <b>${xp()}</b> XP</span><span>🏅 <b>${medals}</b> medals</span></div></div>
     </div>
     ${learningPathDashboardHTML()}
+    <a class="osi-home-card" href="#/m/osi-journey"><span class="osi-home-icon">🌐</span><span><b>Interactive OSI Layer Journey</b><small>Follow a message through all 7 layers, from sender to receiver</small></span><strong>Start journey →</strong></a>
     <a class="mistake-home-card" href="#/mistakes"><span class="mistake-home-icon">📓</span><span><b>Mistake Notebook</b><small>Review incorrect quiz answers and practise weak topics</small></span><strong>Review mistakes →</strong></a>
     <h3 class="gh">Zones</h3>
     <div class="ggrid">${ZONES.map(z => {
