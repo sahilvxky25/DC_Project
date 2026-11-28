@@ -16,10 +16,20 @@ history.push({role:"assistant",content:payload.reply});history=history.slice(-MA
 }catch(error){history.pop();setBusy(false,error.message||"Something went wrong. Please try again.");}
 finally{input.disabled=false;sendButton.disabled=false;input.focus();}}
 if(launcher&&panel&&closeButton&&form&&input&&messages&&status&&sendButton&&newChatButton){
-launcher.addEventListener("click",()=>setOpen(panel.hidden));closeButton.addEventListener("click",()=>setOpen(false));
+launcher.addEventListener("click",()=>{
+  if(!auth.currentUser?.emailVerified){
+    status.textContent="The AI Assistant is available with a free BitSecure account.";
+    window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signup"}}));
+    return;
+  }
+  setOpen(panel.hidden);
+});closeButton.addEventListener("click",()=>setOpen(false));
 document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!panel.hidden)setOpen(false);});
 form.addEventListener("submit",event=>{event.preventDefault();sendMessage(input.value);});
 input.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();form.requestSubmit();}});
 newChatButton.addEventListener("click",resetChat);
-auth.onAuthStateChanged(user=>{if(!user){history=[];messages.replaceChildren();status.textContent="Sign in to use the assistant.";setOpen(false);}});
+auth.onAuthStateChanged(user=>{
+  if(!user){history=[];messages.replaceChildren();status.textContent="Create an account to use the AI Assistant.";setOpen(false);launcher.setAttribute("aria-label","Sign up to open BitSecure Assistant");}
+  else launcher.setAttribute("aria-label","Open BitSecure assistant");
+});
 }
