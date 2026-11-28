@@ -172,6 +172,7 @@ function renderGuestProfile() {
 function showApp(user = auth.currentUser) {
   authScreenRequested = false;
   hideAuthLoading();
+  hideAppAuthLoading();
   window.__bitSecureAuthenticated = Boolean(user);
   window.__bitSecureGuestMode = !user;
   if (user) renderProfile(user);
