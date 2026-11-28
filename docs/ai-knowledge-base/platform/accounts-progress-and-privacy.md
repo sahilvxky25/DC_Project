@@ -17,16 +17,16 @@ The README also documents additional learning data such as achievements, run his
 ## Security boundaries
 
 - Firebase Web app configuration is browser-visible client configuration; it is not a service-account secret.
-- Never put Firebase Admin SDK credentials, service-account private keys, Gemini API keys, or other server secrets in browser code or source control.
+- Never put Firebase Admin SDK credentials, service-account private keys, xAI API keys, or other server secrets in browser code or source control.
 - Firebase Security Rules must enforce authenticated per-user access.
 - Client-side validation and hiding UI controls are not security boundaries.
 - Client-written scores can be forged unless a trusted backend validates attempts and awards.
 - The repository README warns that the league prototype's client-side XP writes are not tamper-resistant and should not be used for valuable rewards or trusted rankings without server-side validation.
 
-## Privacy guidance for the future assistant
+## Privacy guidance for the assistant
 
 The assistant should only access the signed-in user's own authorized data through a trusted backend. Do not retrieve or reveal another user's profile, progress, quiz results, or conversation history. Do not put passwords, authentication tokens, private keys, or personal user records into the shared knowledge base.
 
 ## Chatbot state
 
-The repository currently includes a chatbot launcher UI, but this knowledge base does not itself implement an AI service. A future RAG backend should verify Firebase ID tokens server-side, apply App Check and abuse controls where configured, keep model/embedding credentials in server-side secrets, and scope any conversation history to the authenticated UID.
+The authenticated BitSecure Assistant is served by the Vercel `/api/chat` Edge Function. It validates Firebase ID tokens through Firebase Identity Toolkit, forwards bounded recent conversation turns to the xAI Responses API, and keeps the xAI API key server-side. The current phase does not implement RAG retrieval, persistent chat history, or access to account-specific learning data.
