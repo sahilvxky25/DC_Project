@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Existing learner progress remains private to the authenticated account.
+    match /users/{userId}/progress/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Contributions and webhook idempotency records are written/read only by
+    // the trusted Cloudflare Worker using its service account credentials.
+    // Never grant browser clients direct access to payment records.
+    match /contributions/{contributionId} {
+      allow read, write: if false;
+    }
+    match /paymentWebhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+
+    // Default deny for all other documents. Add explicit rules for future
+    // application collections rather than broad authenticated-user access.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
