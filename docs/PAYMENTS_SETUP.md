@@ -103,6 +103,10 @@ The Support Us page retains the existing QR, UPI ID, preset amounts and custom a
 - [ ] Browser clients cannot read/write contribution or webhook-event documents directly.
 - [ ] Existing DNS trace endpoint and the rest of BitSecure still work.
 
+
+
+The Worker readiness endpoint is also available at `https://dc-project-live-dns.sahilpatra274.workers.dev/health`. It reports only boolean readiness checks (`razorpay`, `firebase`, and `webhook`) and never returns secret values. For online checkout, `checks.razorpay` must be `true`. If it is `false`, add both `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` as Worker secrets, then redeploy the existing Worker.
+
 ## Data and reporting notes
 
 - Amounts are stored in paise, as integers.

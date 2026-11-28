@@ -1,7 +1,3 @@
-import { auth } from '../auth/firebase-client.js';
-import { RAZORPAY_API_BASE_URL } from './support-config.js';
-import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js';
-
 const AMOUNTS = [49, 99, 199];
 const UPI_ID = '8598032563@slc';
 const PAYEE_NAME = 'Mr Sahil Kumar Patra';
@@ -14,32 +10,6 @@ function showMessage(target, message, kind = 'error') {
 
 function validAmount(value) {
   return Number.isSafeInteger(value) && value >= 1 && value <= MAX_AMOUNT;
-}
-
-function loadRazorpay() {
-  if (window.Razorpay) return Promise.resolve(true);
-  if (window.__bitsecureRazorpayLoading) return window.__bitsecureRazorpayLoading;
-  window.__bitsecureRazorpayLoading = new Promise(resolve => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => resolve(!!window.Razorpay);
-    script.onerror = () => resolve(false);
-    document.head.appendChild(script);
-  });
-  return window.__bitsecureRazorpayLoading;
-}
-
-async function apiRequest(path, options = {}) {
-  if (!RAZORPAY_API_BASE_URL) throw new Error('Online payments are not configured yet. Please use the UPI QR option for now.');
-  const response = await fetch(RAZORPAY_API_BASE_URL.replace(/\/$/, '') + path, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    cache: 'no-store'
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(result.error || 'The payment service could not complete the request.');
-  return result;
 }
 
 export function renderSupportPage(root) {
@@ -104,27 +74,22 @@ export function renderSupportPage(root) {
           <h3 id="support-online-title">Pay securely with Razorpay</h3>
           <p>Choose from payment methods enabled for the merchant account, such as UPI, cards or net banking.</p>
           <div class="support-checkout-summary"><span>Contribution</span><strong id="support-checkout-amount">₹99</strong></div>
-          <button class="btn support-checkout-button" id="support-checkout" type="button">Continue to secure payment <span aria-hidden="true">↗</span></button>
-          <p class="support-payment-status" id="support-checkout-status" role="status" aria-live="polite"></p>
-          <p class="support-payment-footnote">Checkout is provided by Razorpay. BitSecure never asks for your UPI PIN, card number or banking password.</p>
+          <a class="btn support-checkout-button" id="support-checkout" href="https://razorpay.me/@bitsecure" target="_blank" rel="noopener noreferrer">Continue to secure payment <span aria-hidden="true">↗</span></a>
+          <p class="support-payment-footnote">You will be redirected to BitSecure’s Razorpay payment page to confirm your contribution amount and complete payment. BitSecure never asks for your UPI PIN, card number or banking password.</p>
         </aside>
       </div>
     </section>
 
     <section class="support-thanks-panel"><div><span class="info-kicker">THANK YOU</span><h2>Support is more than a payment.</h2><p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></section>
-    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. Direct UPI payments are not automatically verified by BitSecure. Razorpay payments are verified securely before their status is recorded.</p>
+    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. Direct UPI payments are not automatically verified by BitSecure. Razorpay payments are completed on Razorpay’s hosted payment page.</p>
   `;
 
   const customInput = root.querySelector('#support-custom-amount');
   const customLabel = root.querySelector('.support-custom-label');
   const upiStatus = root.querySelector('#support-upi-status');
-  const checkoutStatus = root.querySelector('#support-checkout-status');
   const upiLink = root.querySelector('#support-upi-open');
-  const checkoutButton = root.querySelector('#support-checkout');
   const checkoutAmount = root.querySelector('#support-checkout-amount');
   let selectedAmount = 99;
-  let activeUser = auth.currentUser || null;
-  let disposed = false;
 
   function currentAmount() {
     return selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
@@ -138,7 +103,6 @@ export function renderSupportPage(root) {
     if (valid) params.set('am', String(amount));
     upiLink.href = 'upi://pay?' + params.toString();
     upiLink.setAttribute('aria-disabled', String(!valid));
-    checkoutButton.disabled = !valid;
     return valid;
   }
 
@@ -155,7 +119,6 @@ export function renderSupportPage(root) {
       customLabel.hidden = !custom;
       if (custom) customInput.focus();
       upiStatus.textContent = '';
-      checkoutStatus.textContent = '';
       updatePaymentLinks();
     });
   });
@@ -179,74 +142,7 @@ export function renderSupportPage(root) {
     showMessage(upiStatus, 'Opening your UPI app. If nothing happens, scan the QR code or copy the UPI ID.', 'success');
   });
 
-  checkoutButton.addEventListener('click', async () => {
-    if (!updatePaymentLinks()) return;
-    checkoutButton.disabled = true;
-    checkoutButton.textContent = 'Preparing secure checkout…';
-    checkoutStatus.textContent = '';
-    try {
-      const loaded = await loadRazorpay();
-      if (!loaded) throw new Error('Razorpay Checkout could not load. Check your connection and try again.');
-      const amount = currentAmount();
-      const order = await apiRequest('/api/create-order', {
-        method: 'POST',
-        body: JSON.stringify({ amount: amount * 100 })
-      });
-      if (!order.order_id || !order.key_id || order.amount !== amount * 100) {
-        throw new Error('The payment service returned an invalid order. Please try again.');
-      }
-      const checkout = new window.Razorpay({
-        key: order.key_id,
-        amount: order.amount,
-        currency: order.currency || 'INR',
-        name: 'BitSecure',
-        description: 'Voluntary project contribution',
-        order_id: order.order_id,
-        image: '/favicon.png',
-        handler: async response => {
-          showMessage(checkoutStatus, 'Payment submitted. Verifying the captured payment…');
-          try {
-            const verified = await apiRequest('/api/verify-payment', {
-              method: 'POST',
-              body: JSON.stringify(response)
-            });
-            if (!verified.verified || verified.status !== 'captured') {
-              throw new Error('Payment could not be confirmed as captured. Please check your payment status before retrying.');
-            }
-            showMessage(checkoutStatus, 'Thank you! Your contribution was verified successfully.', 'success');
-          } catch (error) {
-            showMessage(checkoutStatus, error.message + ' If your account was charged, do not pay again; the payment will be reconciled through the secure webhook.');
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            if (!checkoutStatus.textContent) showMessage(checkoutStatus, 'Checkout closed. No successful payment has been confirmed.');
-          },
-          escape: true,
-          confirm_close: true
-        },
-        prefill: activeUser?.email ? { email: activeUser.email } : {},
-        notes: { source: 'BitSecure Support Us' },
-        theme: { color: '#6478f5' }
-      });
-      checkout.on('payment.failed', response => {
-        const description = response?.error?.description || 'The payment was not completed.';
-        showMessage(checkoutStatus, description + ' You can try again or use the UPI QR option.');
-      });
-      checkout.open();
-    } catch (error) {
-      showMessage(checkoutStatus, error.message || 'Unable to start checkout.');
-    } finally {
-      checkoutButton.disabled = !validAmount(currentAmount());
-      checkoutButton.innerHTML = 'Continue to secure payment <span aria-hidden="true">↗</span>';
-    }
-  });
 
-  const unsubscribe = onAuthStateChanged(auth, user => { activeUser = user; });
   updatePaymentLinks();
-  return () => {
-    disposed = true;
-    unsubscribe();
-    root.replaceChildren();
-  };
+  return () => root.replaceChildren();
 }
