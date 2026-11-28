@@ -102,7 +102,7 @@ Do not use an email address supplied by the browser as an admin authorization ch
 
 - Amounts are stored in paise, as integers.
 - The `contributions` document ID is the Razorpay order ID.
-- Status values include `created`, `captured`, `failed`, and `refunded`.
+- Status values include `created`, `captured`, `failed`, `partially_refunded`, and `refunded`. Refund amounts are tracked in paise so the dashboard can show net verified contributions.
 - The dashboard only counts `captured` records. Direct UPI payments are intentionally not included because no payment confirmation feed is connected.
 - This implementation does not issue tax receipts or claim tax deductibility. Do not advertise tax benefits without confirming the legal and tax status of the receiving entity.
 - Review privacy, retention, accounting, refund and payment-provider obligations before switching to Live Mode.
