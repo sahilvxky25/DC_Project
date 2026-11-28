@@ -5,6 +5,9 @@ const TYPES = { A:1, NS:2, CNAME:5, SOA:6, MX:15, TXT:16, AAAA:28, CAA:257 };
 const TYPE_NAMES = Object.fromEntries(Object.entries(TYPES).map(([k,v])=>[v,k]));
 const enc = new TextEncoder();
 const dec = new TextDecoder();
+const MAX_AMOUNT_PAISE = 10000000;
+const FIRESTORE_ROOT = "https://firestore.googleapis.com/v1";
+const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 
 function nameBytes(name) {
   const out=[];
@@ -92,7 +95,6 @@ function pickNsIp(message) {
   const glue=message.additional.find(r=>r.type==="A"&&r.name.toLowerCase()===String(ns.data).toLowerCase()&&publicIPv4(r.data));
   return glue?{host:ns.data,ip:glue.data}:null;
 }
-function zoneFor(name) {const p=name.split(".");return p.length>=2?p.slice(-2).join("."):name;}
 async function traceLookup(name,type) {
   const steps=[];let current=name,answers=[],allAnswers=[],server=ROOTS[0],rcode=0;
   for(let alias=0;alias<6;alias++) {
@@ -110,15 +112,11 @@ async function traceLookup(name,type) {
         if(stage==="authoritative"){answers=msg.answers;break;}
         throw new Error("The DNS server did not return an IPv4 glue address for its referral. Try another domain or query type.");
       }
-      server=referral.ip;
-      stage=depth===0?"tld":depth===1?"authoritative":"authoritative";
+      server=referral.ip;stage=depth===0?"tld":"authoritative";
     }
     const cname=answers.find(x=>x.type==="CNAME");
     if(!cname||type==="CNAME"||rcode!==0){allAnswers.push(...answers);break;}
-    allAnswers.push(cname);
-    current=String(cname.data);
-    answers=[];
-    server=ROOTS[0];
+    allAnswers.push(cname);current=String(cname.data);answers=[];server=ROOTS[0];
   }
   return {name,type,rcode,steps,answers:allAnswers.length?allAnswers:answers,queriedAt:new Date().toISOString(),method:"Direct iterative DNS over TCP/53"};
 }
@@ -129,89 +127,177 @@ function validName(value) {
 }
 function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
-  const allowedOrigin = env.ALLOWED_ORIGIN || "*";
-  const allowOrigin = allowedOrigin === "*" ? "*" : (origin === allowedOrigin ? allowedOrigin : "null");
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Vary": "Origin"
-  };
+  const allowed = (env.ALLOWED_ORIGINS || env.ALLOWED_ORIGIN || "").split(",").map(x=>x.trim()).filter(Boolean);
+  const allowOrigin = allowed.includes("*") ? "*" : (allowed.includes(origin) ? origin : "null");
+  return {"Access-Control-Allow-Origin":allowOrigin,"Access-Control-Allow-Methods":"GET, POST, OPTIONS","Access-Control-Allow-Headers":"Content-Type, Authorization, x-razorpay-signature, x-razorpay-event-id","Vary":"Origin"};
 }
-function jsonResponse(data, status, headers) {
-  return Response.json(data, { status: status || 200, headers: { ...headers, "Cache-Control": "no-store" } });
+function jsonResponse(data,status,headers) {
+  return Response.json(data,{status:status||200,headers:{...headers,"Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}});
 }
-function secureEqualHex(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length || !/^[a-f0-9]+$/i.test(a) || !/^[a-f0-9]+$/i.test(b)) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i++) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
+function bytesToHex(bytes){return [...new Uint8Array(bytes)].map(b=>b.toString(16).padStart(2,"0")).join("");}
+async function hmacHex(secret,message) {
+  const key=await crypto.subtle.importKey("raw",enc.encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  return bytesToHex(await crypto.subtle.sign("HMAC",key,enc.encode(message)));
 }
-async function createRazorpayOrder(request, env, headers) {
-  if (!env.RAZORPAY_KEY_ID || !env.RAZORPAY_KEY_SECRET) return jsonResponse({ error: "Payment service is not configured." }, 503, headers);
-  let body;
-  try { body = await request.json(); } catch { return jsonResponse({ error: "Request body must be valid JSON." }, 400, headers); }
-  const amount = body?.amount;
-  if (!Number.isSafeInteger(amount) || amount < 100) return jsonResponse({ error: "Amount must be an integer of at least 100 paise." }, 400, headers);
-  const receipt = "bitsecure_" + crypto.randomUUID().replace(/-/g, "").slice(0, 24);
-  try {
-    const auth = btoa(env.RAZORPAY_KEY_ID + ":" + env.RAZORPAY_KEY_SECRET);
-    const response = await fetch("https://api.razorpay.com/v1/orders", {
-      method: "POST",
-      headers: { "Authorization": "Basic " + auth, "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, currency: "INR", receipt })
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const status = response.status === 401 || response.status === 403 ? 401 : 500;
-      return jsonResponse({ error: status === 401 ? "Razorpay authentication failed. Check the configured API credentials." : (result?.error?.description || "Razorpay could not create the order.") }, status, headers);
+function secureEqualHex(a,b) {
+  if(typeof a!=="string"||typeof b!=="string"||a.length!==b.length||!/^[a-f0-9]+$/i.test(a)||!/^[a-f0-9]+$/i.test(b))return false;
+  let mismatch=0;for(let i=0;i<a.length;i++)mismatch|=a.charCodeAt(i)^b.charCodeAt(i);return mismatch===0;
+}
+async function razorpayRequest(env,path,method="GET",body) {
+  if(!env.RAZORPAY_KEY_ID||!env.RAZORPAY_KEY_SECRET)throw new Error("Razorpay is not configured.");
+  const headers={Authorization:"Basic "+btoa(env.RAZORPAY_KEY_ID+":"+env.RAZORPAY_KEY_SECRET)};
+  if(body)headers["Content-Type"]="application/json";
+  const response=await fetch("https://api.razorpay.com/v1/"+path,{method,headers,body:body?JSON.stringify(body):undefined});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error?.description||"Razorpay API request failed.");
+  return data;
+}
+function projectId(env){return env.FIREBASE_PROJECT_ID||"bit-7ce8a";}
+function firestoreDocUrl(env,path){return FIRESTORE_ROOT+"/projects/"+encodeURIComponent(projectId(env))+"/databases/(default)/documents/"+path;}
+function b64url(input) {
+  const bytes=typeof input==="string"?enc.encode(input):new Uint8Array(input);
+  let binary="";for(let i=0;i<bytes.length;i+=0x8000)binary+=String.fromCharCode(...bytes.subarray(i,i+0x8000));
+  return btoa(binary).replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");
+}
+async function firestoreAccessToken(env) {
+  if(!env.FIREBASE_CLIENT_EMAIL||!env.FIREBASE_PRIVATE_KEY)throw new Error("Firebase service account secrets are not configured.");
+  const now=Math.floor(Date.now()/1000);
+  const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"}));
+  const claims=b64url(JSON.stringify({iss:env.FIREBASE_CLIENT_EMAIL,scope:"https://www.googleapis.com/auth/datastore",aud:TOKEN_ENDPOINT,iat:now,exp:now+3600}));
+  const unsigned=header+"."+claims;
+  const pem=env.FIREBASE_PRIVATE_KEY.replace(/\\n/g,"\n").replace(/-----BEGIN PRIVATE KEY-----|-----END PRIVATE KEY-----|\s/g,"");
+  const binary=atob(pem);const der=Uint8Array.from(binary,c=>c.charCodeAt(0));
+  const key=await crypto.subtle.importKey("pkcs8",der,{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["sign"]);
+  const signature=await crypto.subtle.sign("RSASSA-PKCS1-v1_5",key,enc.encode(unsigned));
+  const assertion=unsigned+"."+b64url(signature);
+  const response=await fetch(TOKEN_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({grant_type:"urn:ietf:params:oauth:grant-type:jwt-bearer",assertion})});
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok||!data.access_token)throw new Error("Unable to obtain Firebase service access token.");
+  return data.access_token;
+}
+async function firestoreRequest(env,path,method="GET",body,query="") {
+  const token=await firestoreAccessToken(env);
+  const response=await fetch(firestoreDocUrl(env,path)+query,{method,headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:body?JSON.stringify(body):undefined});
+  if(response.status===404)return null;
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error?.message||"Firestore request failed.");
+  return data;
+}
+function fsString(value){return {stringValue:String(value??"")};}
+function fsInteger(value){return {integerValue:String(Math.trunc(Number(value)||0))};}
+function fsTimestamp(value){return {timestampValue:value||new Date().toISOString()};}
+function contributionFields(item) {
+  return {amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),verifiedAt:fsTimestamp(item.verifiedAt||""),email:fsString(item.email||""),userId:fsString(item.userId||"")};
+}
+function fromFirestore(doc) {
+  const f=doc.fields||{},get=k=>f[k]?.stringValue??"",num=k=>Number(f[k]?.integerValue||0);
+  return {id:doc.name?.split("/").pop(),amount:num("amount"),currency:get("currency"),method:get("method"),status:get("status"),orderId:get("orderId"),paymentId:get("paymentId"),createdAt:f.createdAt?.timestampValue||"",verifiedAt:f.verifiedAt?.timestampValue||""};
+}
+async function saveContribution(env,item,create=false) {
+  const path="contributions/"+encodeURIComponent(item.orderId);
+  const fields=contributionFields(item);
+  if(create) {
+    try { return await firestoreRequest(env,path,"POST",{fields},"?documentId="+encodeURIComponent(item.orderId)); }
+    catch(error) {
+      const existing=await firestoreRequest(env,path);
+      if(existing)return existing;
+      throw error;
     }
-    return jsonResponse({ order_id: result.id, amount: result.amount, currency: result.currency, key_id: env.RAZORPAY_KEY_ID }, 200, headers);
-  } catch (error) {
-    return jsonResponse({ error: error?.message || "Unable to create payment order." }, 500, headers);
   }
+  const mask=Object.keys(fields).map(k=>"updateMask.fieldPaths="+encodeURIComponent(k)).join("&");
+  return firestoreRequest(env,path,"PATCH",{fields},"?"+mask);
 }
-async function verifyRazorpayPayment(request, env, headers) {
-  if (!env.RAZORPAY_KEY_SECRET) return jsonResponse({ error: "Payment verification is not configured." }, 503, headers);
-  let body;
-  try { body = await request.json(); } catch { return jsonResponse({ error: "Request body must be valid JSON." }, 400, headers); }
-  const { razorpay_order_id: orderId, razorpay_payment_id: paymentId, razorpay_signature: signature } = body || {};
-  if (![orderId, paymentId, signature].every(value => typeof value === "string" && value.trim())) {
-    return jsonResponse({ error: "razorpay_order_id, razorpay_payment_id and razorpay_signature are required." }, 400, headers);
-  }
+async function findContribution(env,orderId) {
+  if(!/^[A-Za-z0-9_-]{5,80}$/.test(String(orderId||"")))return null;
+  const doc=await firestoreRequest(env,"contributions/"+encodeURIComponent(orderId));
+  return doc?fromFirestore(doc):null;
+}
+async function createRazorpayOrder(request,env,headers) {
+  if(!env.RAZORPAY_KEY_ID||!env.RAZORPAY_KEY_SECRET)return jsonResponse({error:"Payment service is not configured."},503,headers);
+  let body;try{body=await request.json();}catch{return jsonResponse({error:"Request body must be valid JSON."},400,headers);}
+  const amount=Number(body?.amount);
+  if(!Number.isSafeInteger(amount)||amount<100||amount>MAX_AMOUNT_PAISE)return jsonResponse({error:"Contribution must be between ₹1 and ₹1,00,000."},400,headers);
   try {
-    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(env.RAZORPAY_KEY_SECRET), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-    const digest = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(orderId + "|" + paymentId));
-    const expected = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
-    if (!secureEqualHex(expected, signature)) return jsonResponse({ verified: false, error: "Payment signature verification failed." }, 400, headers);
-    return jsonResponse({ verified: true, message: "Razorpay payment signature verified.", order_id: orderId, payment_id: paymentId }, 200, headers);
-  } catch {
-    return jsonResponse({ error: "Unable to verify payment signature." }, 500, headers);
+    const order=await razorpayRequest(env,"orders","POST",{amount,currency:"INR",receipt:"bs_"+crypto.randomUUID().replace(/-/g,"").slice(0,20),notes:{source:"BitSecure Support Us"}});
+    const item={amount,orderId:order.id,status:"created",createdAt:new Date().toISOString(),email:"",userId:""};
+    await saveContribution(env,item,true);
+    return jsonResponse({order_id:order.id,amount:order.amount,currency:order.currency,key_id:env.RAZORPAY_KEY_ID},200,headers);
+  } catch(error){return jsonResponse({error:error.message||"Unable to create payment order."},502,headers);}
+}
+async function verifyRazorpayPayment(request,env,headers) {
+  let body;try{body=await request.json();}catch{return jsonResponse({error:"Request body must be valid JSON."},400,headers);}
+  const {razorpay_order_id:orderId,razorpay_payment_id:paymentId,razorpay_signature:signature}=body||{};
+  if(![orderId,paymentId,signature].every(v=>typeof v==="string"&&v.trim()))return jsonResponse({error:"Razorpay payment details are required."},400,headers);
+  try {
+    const expected=await hmacHex(env.RAZORPAY_KEY_SECRET,orderId+"|"+paymentId);
+    if(!secureEqualHex(expected,signature))return jsonResponse({verified:false,error:"Payment signature verification failed."},400,headers);
+    const contribution=await findContribution(env,orderId);
+    if(!contribution)return jsonResponse({verified:false,error:"This order was not created by BitSecure."},404,headers);
+    if(contribution.paymentId&&contribution.paymentId!==paymentId)return jsonResponse({verified:false,error:"This order is already linked to another payment."},409,headers);
+    const payment=await razorpayRequest(env,"payments/"+encodeURIComponent(paymentId));
+    if(payment.order_id!==orderId||Number(payment.amount)!==contribution.amount||payment.currency!=="INR")return jsonResponse({verified:false,error:"Payment details do not match the original order."},409,headers);
+    if(payment.status!=="captured")return jsonResponse({verified:false,status:payment.status,error:"Payment is not captured yet. The webhook will reconcile its final status."},409,headers);
+    await saveContribution(env,{...contribution,orderId,paymentId,status:"captured",verifiedAt:new Date().toISOString()});
+    return jsonResponse({verified:true,status:"captured",order_id:orderId,payment_id:paymentId},200,headers);
+  } catch(error){return jsonResponse({verified:false,error:error.message||"Unable to verify payment."},502,headers);}
+}
+async function handleWebhook(request,env,headers) {
+  if(!env.RAZORPAY_WEBHOOK_SECRET)return jsonResponse({error:"Webhook is not configured."},503,headers);
+  const raw=await request.text();
+  const signature=request.headers.get("x-razorpay-signature")||"";
+  const expected=await hmacHex(env.RAZORPAY_WEBHOOK_SECRET,raw);
+  if(!secureEqualHex(expected,signature))return jsonResponse({error:"Invalid webhook signature."},401,headers);
+  let event;try{event=JSON.parse(raw);}catch{return jsonResponse({error:"Invalid webhook payload."},400,headers);}
+  const eventId=request.headers.get("x-razorpay-event-id")||"";
+  if(eventId&&!/^[A-Za-z0-9_-]{1,150}$/.test(eventId))return jsonResponse({error:"Invalid event identifier."},400,headers);
+  const payment=event.payload?.payment?.entity;
+  if(!payment?.order_id||!["payment.captured","payment.failed"].includes(event.event))return jsonResponse({received:true,ignored:true},200,headers);
+  const contribution=await findContribution(env,payment.order_id);
+  if(!contribution)return jsonResponse({received:true,ignored:true},200,headers);
+  if(Number(payment.amount)!==contribution.amount||payment.currency!=="INR")return jsonResponse({error:"Webhook amount does not match the original contribution."},409,headers);
+  if(eventId) {
+    const seen=await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId));
+    if(seen)return jsonResponse({received:true,duplicate:true},200,headers);
   }
+  const status=event.event==="payment.captured"?"captured":"failed";
+  await saveContribution(env,{...contribution,paymentId:payment.id||contribution.paymentId,status,verifiedAt:status==="captured"?new Date().toISOString():contribution.verifiedAt});
+  if(eventId) {
+    await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId),"POST",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?documentId="+encodeURIComponent(eventId));
+  }
+  return jsonResponse({received:true},200,headers);
+}
+async function verifyFirebaseUser(request,env) {
+  const auth=request.headers.get("Authorization")||"";
+  const match=auth.match(/^Bearer\s+(.+)$/i);
+  if(!match||!env.FIREBASE_WEB_API_KEY)return null;
+  const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:lookup?key="+encodeURIComponent(env.FIREBASE_WEB_API_KEY),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idToken:match[1]})});
+  if(!response.ok)return null;
+  const data=await response.json().catch(()=>({}));
+  return data.users?.[0]?.localId||null;
+}
+async function adminContributions(request,env,headers) {
+  const uid=await verifyFirebaseUser(request,env);
+  const allowed=(env.ADMIN_UIDS||"").split(",").map(x=>x.trim()).filter(Boolean);
+  if(!uid||!allowed.includes(uid))return jsonResponse({error:"Administrator access is required."},403,headers);
+  try {
+    const data=await firestoreRequest(env,"contributions","GET",null,"?pageSize=100");
+    const contributions=(data?.documents||[]).map(fromFirestore).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
+    return jsonResponse({contributions},200,headers);
+  } catch(error){return jsonResponse({error:error.message||"Unable to load contributions."},502,headers);}
 }
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const cors = corsHeaders(request, env || {});
-    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
-    if (url.pathname === "/api/create-order") {
-      if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
-      return createRazorpayOrder(request, env || {}, cors);
-    }
-    if (url.pathname === "/api/verify-payment") {
-      if (request.method !== "POST") return jsonResponse({ error: "Method not allowed." }, 405, cors);
-      return verifyRazorpayPayment(request, env || {}, cors);
-    }
-    if (url.pathname === "/health") return Response.json({ ok: true, service: "DC_Project DNS and Razorpay API" }, { headers: cors });
-    if (url.pathname !== "/trace") return Response.json({ error: "Use /trace?name=example.com&type=A or POST /api/create-order" }, { status: 404, headers: cors });
-    const name = validName(url.searchParams.get("name"));
-    const type = (url.searchParams.get("type") || "A").toUpperCase();
-    if (!name || !TYPES[type]) return Response.json({ error: "Enter a valid public domain and a supported record type." }, { status: 400, headers: cors });
-    try {
-      const result = await traceLookup(name, type);
-      return Response.json(result, { headers: { ...cors, "Cache-Control": "no-store" } });
-    } catch (error) {
-      return Response.json({ error: error?.message || "DNS lookup failed", hint: "The hosting provider or destination DNS server may block outbound TCP port 53." }, { status: 502, headers: cors });
-    }
+  async fetch(request,env) {
+    const url=new URL(request.url),cors=corsHeaders(request,env||{});
+    if(request.method==="OPTIONS")return new Response(null,{headers:cors});
+    if(url.pathname==="/api/create-order")return request.method==="POST"?createRazorpayOrder(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
+    if(url.pathname==="/api/verify-payment")return request.method==="POST"?verifyRazorpayPayment(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
+    if(url.pathname==="/api/razorpay-webhook")return request.method==="POST"?handleWebhook(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
+    if(url.pathname==="/api/admin/contributions")return request.method==="GET"?adminContributions(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
+    if(url.pathname==="/health")return jsonResponse({ok:true,service:"DC_Project DNS and Razorpay API"},200,cors);
+    if(url.pathname!=="/trace")return jsonResponse({error:"Use /trace?name=example.com&type=A or the /api payment routes."},404,cors);
+    const name=validName(url.searchParams.get("name")),type=(url.searchParams.get("type")||"A").toUpperCase();
+    if(!name||!TYPES[type])return jsonResponse({error:"Enter a valid public domain and a supported record type."},400,cors);
+    try{return jsonResponse(await traceLookup(name,type),200,cors);}
+    catch(error){return jsonResponse({error:error?.message||"DNS lookup failed",hint:"The hosting provider or destination DNS server may block outbound TCP port 53."},502,cors);}
   }
 };
