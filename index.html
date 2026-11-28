@@ -116,7 +116,8 @@
           <button class="btn login-submit" id="verification-continue" type="button">Continue to Sign In <span aria-hidden="true">→</span></button>
           <p class="verification-resend-note">Didn't receive the email? Continue to Sign In and try signing in. If your address is still unverified, we'll send a fresh verification email.</p>
         </section>
-        <p class="login-security-note">Your account is managed securely by Firebase Authentication. Never share your password.</p>
+        <button class="btn ghost guest-continue-btn" id="guest-continue-btn" type="button">← Continue as Guest</button>
+        <p class="login-security-note">An account is optional. Create one to unlock the AI Assistant and sync your progress across devices. Never share your password.</p>
       </div>
       <div class="auth-loading-overlay" id="auth-loading" role="status" aria-live="polite" aria-atomic="true">
         <span class="auth-loading-spinner" aria-hidden="true"></span>
@@ -158,14 +159,18 @@
             <button class="btn ghost sm profile-trigger" id="profileBtn" type="button"
               aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
               <span class="profile-avatar" id="profileAvatar" aria-hidden="true">U</span>
-              <span>User Profile</span>
+              <span id="profileTriggerLabel">User Profile</span>
               <span aria-hidden="true">▾</span>
             </button>
             <div class="profile-dropdown" id="profileDropdown" hidden>
               <div class="profile-summary">
-                <strong id="profileName">User</strong>
-                <span id="profileEmail"></span>
+                <strong id="profileName">Guest Mode</strong>
+                <span id="profileEmail">Progress is saved on this device.</span>
               </div>
+              <p class="profile-access-note" id="profileAccessNote">Create a free account to unlock AI chat and sync your learning progress across devices.</p>
+              <button class="profile-menu-item" id="profileSignInBtn" type="button">Sign In</button>
+              <button class="profile-menu-item" id="profileSignUpBtn" type="button">Create Account</button>
+              <button class="profile-menu-item" id="profileSyncBtn" type="button">Sync with Cloud</button>
               <button class="profile-menu-item" id="editUsernameBtn" type="button">Edit Username</button>
               <button class="profile-menu-item" id="changePasswordBtn" type="button">Change Password</button>
               <button class="profile-menu-item danger" id="logoutBtn" type="button">Log out</button>
