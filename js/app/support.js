@@ -98,7 +98,6 @@ export function renderSupportPage(root) {
   function updatePaymentLinks() {
     const amount = currentAmount();
     const valid = validAmount(amount);
-    checkoutAmount.textContent = valid ? '₹' + amount.toLocaleString('en-IN') : 'Enter a valid amount';
     const params = new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' });
     if (valid) params.set('am', String(amount));
     upiLink.href = 'upi://pay?' + params.toString();
