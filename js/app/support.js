@@ -73,6 +73,7 @@ export function renderSupportPage(root) {
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">⌑</span><span class="support-payment-provider">SECURE ONLINE CHECKOUT</span></div>
           <h3 id="support-online-title">Pay securely with Razorpay</h3>
           <p>Choose from payment methods enabled for the merchant account, such as UPI, cards or net banking.</p>
+          <div class="support-checkout-summary"><span>Contribution</span><strong id="support-checkout-amount">₹99</strong></div>
           <a class="btn support-checkout-button" id="support-checkout" href="https://razorpay.me/@bitsecure" target="_blank" rel="noopener noreferrer">Continue to secure payment <span aria-hidden="true">↗</span></a>
           <p class="support-payment-footnote">You will be redirected to BitSecure’s Razorpay payment page to confirm your contribution amount and complete payment. BitSecure never asks for your UPI PIN, card number or banking password.</p>
         </aside>
@@ -87,6 +88,7 @@ export function renderSupportPage(root) {
   const customLabel = root.querySelector('.support-custom-label');
   const upiStatus = root.querySelector('#support-upi-status');
   const upiLink = root.querySelector('#support-upi-open');
+  const checkoutAmount = root.querySelector('#support-checkout-amount');
   let selectedAmount = 99;
 
   function currentAmount() {
