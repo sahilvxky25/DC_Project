@@ -285,7 +285,7 @@ export default {
     if(url.pathname==="/api/create-order")return request.method==="POST"?createRazorpayOrder(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
     if(url.pathname==="/api/verify-payment")return request.method==="POST"?verifyRazorpayPayment(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
     if(url.pathname==="/api/razorpay-webhook")return request.method==="POST"?handleWebhook(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
-    if(url.pathname==="/health")return jsonResponse({ok:true,service:"DC_Project DNS and Razorpay API"},200,cors);
+    if(url.pathname==="/health")return jsonResponse({ok:true,service:"DC_Project DNS and Razorpay API",checks:{razorpay:!!(env.RAZORPAY_KEY_ID&&env.RAZORPAY_KEY_SECRET),firebase:!!(env.FIREBASE_CLIENT_EMAIL&&env.FIREBASE_PRIVATE_KEY),webhook:!!env.RAZORPAY_WEBHOOK_SECRET}},200,cors);
     if(url.pathname!=="/trace")return jsonResponse({error:"Use /trace?name=example.com&type=A or the /api payment routes."},404,cors);
     const name=validName(url.searchParams.get("name")),type=(url.searchParams.get("type")||"A").toUpperCase();
     if(!name||!TYPES[type])return jsonResponse({error:"Enter a valid public domain and a supported record type."},400,cors);
