@@ -262,10 +262,7 @@ The in-app Privacy Policy is available from the site footer at `#/privacy`. It d
 
 ## Support Us
 
-The Support Us page currently accepts **direct UPI contributions**. The QR code is stored at `assets/sahil-upi-qr.svg`; the displayed UPI ID is `8598032563@slc` (payee: Mr Sahil Kumar Patra). Card payments and other payment options are marked **Coming Soon**. Razorpay checkout has been temporarily removed from the frontend; retained Cloudflare Worker API routes are not called by the current Support Us page.
-
-Direct UPI payments take place outside BitSecure. The site does not automatically receive or verify payment confirmations, so it must not display a payment as successful or issue a verified receipt based only on a user statement or screenshot. Confirm transactions independently in the receiving UPI/bank account.
-
+The Support Us page supports both **direct UPI QR** and **Razorpay Checkout**. Direct UPI payments go to the displayed payee and are not automatically confirmed by BitSecure. Razorpay payments are checked against the original order and captured status before they are counted in the verified dashboard. The site does not issue tax receipts or claim tax deductibility.
 
 ## Support BitSecure
 
