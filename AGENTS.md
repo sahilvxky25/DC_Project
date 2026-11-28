@@ -7,7 +7,7 @@ BitSecure is a browser-based Data Communications and Computer Networks learning 
 ## Repository map
 
 - `index.html`: application shell, DOM mount points, stylesheet order, and the entry script.
-- `js/app.js`: application entry point. It imports feature modules, sorts registered modules, initializes the core lab/search/cookie consent/game UI, and starts routing after authentication.
+- `js/app.js`: application entry point. It imports feature modules, sorts registered modules, initializes the core lab/search/cookie consent/game UI, and starts routing after guest or authenticated session initialization.
 - `js/auth/`: Firebase client setup and sign-in, sign-up, verification, password, and sign-out flows.
 - `js/core/`: shared state, storage, encoding, checksums, addressing, and UI helpers.
 - `js/app/`: routing, navigation, theme, search, progress-related UI, notifications, and cookie consent.
