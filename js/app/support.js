@@ -318,8 +318,9 @@ export function renderSupportPage(root) {
       renderAdminRows(adminContent, result.contributions || []);
       const summary = document.createElement('div');
       summary.className = 'support-admin-summary';
-      const total = (result.contributions || []).filter(item => item.status === 'captured').reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-      summary.textContent = 'Verified contributions: ₹' + (total / 100).toLocaleString('en-IN') + ' · ' + (result.contributions || []).filter(item => item.status === 'captured').length + ' successful payments';
+      const successful = (result.contributions || []).filter(item => ['captured', 'partially_refunded'].includes(item.status));
+      const total = successful.reduce((sum, item) => sum + Math.max(0, (Number(item.amount) || 0) - (Number(item.refundedAmount) || 0)), 0);
+      summary.textContent = 'Net verified contributions: ₹' + (total / 100).toLocaleString('en-IN') + ' · ' + successful.length + ' successful payments';
       adminContent.prepend(summary);
       showMessage(adminStatus, 'Dashboard data loaded from verified Razorpay transactions.', 'success');
     } catch (error) {
