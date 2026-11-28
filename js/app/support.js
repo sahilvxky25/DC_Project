@@ -1,7 +1,5 @@
-const AMOUNTS = [49, 99, 199];
 const UPI_ID = '8598032563@slc';
 const PAYEE_NAME = 'Mr Sahil Kumar Patra';
-const MAX_AMOUNT = 100000;
 
 function showMessage(target, message, kind = 'error') {
   target.className = 'support-payment-status ' + (kind === 'success' ? 'support-payment-success' : 'support-payment-error');
@@ -36,25 +34,6 @@ export function renderSupportPage(root) {
     </section>
 
     <section class="support-giving-layout support-upi-layout" aria-labelledby="support-giving-title">
-      <div class="support-giving-copy">
-        <span class="info-kicker">ONE-TIME PROJECT SUPPORT</span>
-        <h2 id="support-giving-title">Choose an amount that feels right.</h2>
-        <p>There is no subscription or expectation to contribute. Even a small one-time contribution can help us keep improving the project.</p>
-        <div class="support-amount-label">Contribution amount (INR)</div>
-        <div class="support-amount-options" role="group" aria-label="Choose a contribution amount">
-          ${AMOUNTS.map((amount, index) => '<button class="support-amount-option' + (index === 1 ? ' is-selected' : '') + '" type="button" data-amount="' + amount + '" aria-pressed="' + (index === 1) + '">₹' + amount + '</button>').join('')}
-          <button class="support-amount-option" type="button" data-amount="custom" aria-pressed="false">Custom</button>
-        </div>
-        <label class="support-custom-label" for="support-custom-amount" hidden>Custom amount (₹)</label>
-        <input class="support-custom-input" id="support-custom-amount" type="number" min="1" max="100000" step="1" inputmode="numeric" placeholder="Enter amount in ₹" hidden>
-        <p class="support-amount-help">Choose a suggested amount or enter a custom whole-rupee amount between ₹1 and ₹1,00,000.</p>
-        <div class="support-trust-points">
-          <div><span aria-hidden="true">✓</span><span>One-time, voluntary support</span></div>
-          <div><span aria-hidden="true">✓</span><span>UPI QR or secure Razorpay checkout</span></div>
-          <div><span aria-hidden="true">✓</span><span>No BitSecure account required to contribute</span></div>
-        </div>
-      </div>
-
       <div class="support-payment-methods">
         <aside class="support-payment-card support-upi-card" aria-labelledby="support-upi-title">
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">↗</span><span class="support-payment-provider">DIRECT UPI PAYMENT</span></div>
@@ -83,43 +62,9 @@ export function renderSupportPage(root) {
     <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. Direct UPI payments are not automatically verified by BitSecure. Razorpay payments are completed on Razorpay’s hosted payment page.</p>
   `;
 
-  const customInput = root.querySelector('#support-custom-amount');
-  const customLabel = root.querySelector('.support-custom-label');
   const upiStatus = root.querySelector('#support-upi-status');
   const upiLink = root.querySelector('#support-upi-open');
-  let selectedAmount = 99;
-
-  function currentAmount() {
-    return selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
-  }
-
-  function updatePaymentLinks() {
-    const amount = currentAmount();
-    const valid = validAmount(amount);
-    const params = new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' });
-    if (valid) params.set('am', String(amount));
-    upiLink.href = 'upi://pay?' + params.toString();
-    upiLink.setAttribute('aria-disabled', String(!valid));
-    return valid;
-  }
-
-  root.querySelectorAll('[data-amount]').forEach(button => {
-    button.addEventListener('click', () => {
-      selectedAmount = button.dataset.amount === 'custom' ? 'custom' : Number(button.dataset.amount);
-      root.querySelectorAll('[data-amount]').forEach(option => {
-        const active = option === button;
-        option.classList.toggle('is-selected', active);
-        option.setAttribute('aria-pressed', String(active));
-      });
-      const custom = selectedAmount === 'custom';
-      customInput.hidden = !custom;
-      customLabel.hidden = !custom;
-      if (custom) customInput.focus();
-      upiStatus.textContent = '';
-      updatePaymentLinks();
-    });
-  });
-  customInput.addEventListener('input', updatePaymentLinks);
+  upiLink.href = 'upi://pay?' + new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' }).toString();
 
   root.querySelector('#support-copy-upi').addEventListener('click', async () => {
     try {
@@ -131,15 +76,8 @@ export function renderSupportPage(root) {
   });
 
   upiLink.addEventListener('click', event => {
-    if (!updatePaymentLinks()) {
-      event.preventDefault();
-      showMessage(upiStatus, 'Enter a whole-rupee amount between ₹1 and ₹1,00,000.');
-      return;
-    }
+    upiStatus.textContent = '';
     showMessage(upiStatus, 'Opening your UPI app. If nothing happens, scan the QR code or copy the UPI ID.', 'success');
   });
-
-
-  updatePaymentLinks();
   return () => root.replaceChildren();
 }
