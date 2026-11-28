@@ -1,14 +1,9 @@
-const AMOUNTS = [49, 99, 199];
 const UPI_ID = '8598032563@slc';
 const PAYEE_NAME = 'Mr Sahil Kumar Patra';
 
 function showMessage(target, message, kind = 'error') {
   target.className = 'support-payment-status ' + (kind === 'success' ? 'support-payment-success' : 'support-payment-error');
   target.textContent = message;
-}
-
-function validAmount(value) {
-  return Number.isSafeInteger(value) && value >= 1 && value <= MAX_AMOUNT;
 }
 
 export function renderSupportPage(root) {
@@ -39,12 +34,12 @@ export function renderSupportPage(root) {
         <aside class="support-payment-card support-upi-card" aria-labelledby="support-upi-title">
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">↗</span><span class="support-payment-provider">DIRECT UPI PAYMENT</span></div>
           <h3 id="support-upi-title">Pay using UPI QR</h3>
-          <p>Scan this QR code with any UPI app. Direct UPI payments are completed in your UPI app and are not automatically verified by BitSecure.</p>
+          <p>Scan this QR code with any UPI app. Enter the amount you wish to contribute in your UPI app. Direct UPI payments are not automatically verified by BitSecure.</p>
           <div class="support-upi-qr-wrap"><img class="support-upi-qr" src="assets/sahil-upi-qr.svg" alt="UPI QR code for 8598032563@slc" width="240" height="240"></div>
           <div class="support-upi-payee"><span class="support-upi-caption">PAY TO</span><strong>${PAYEE_NAME}</strong><span class="support-upi-id">${UPI_ID}</span></div>
           <div class="support-upi-actions">
             <button class="btn support-copy-upi" id="support-copy-upi" type="button">Copy UPI ID</button>
-            <a class="btn support-upi-open" id="support-upi-open" href="upi://pay?pa=8598032563%40slc&amp;pn=Mr%20Sahil%20Kumar%20Patra&amp;cu=INR&amp;am=99&amp;tn=BitSecure%20project%20support">Open UPI app ↗</a>
+            <a class="btn support-upi-open" id="support-upi-open" href="upi://pay?pa=8598032563%40slc&amp;pn=Mr%20Sahil%20Kumar%20Patra&amp;cu=INR&amp;tn=BitSecure%20project%20support">Open UPI app ↗</a>
           </div>
           <p class="support-payment-status" id="support-upi-status" role="status" aria-live="polite"></p>
         </aside>
@@ -53,9 +48,8 @@ export function renderSupportPage(root) {
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">⌑</span><span class="support-payment-provider">SECURE ONLINE CHECKOUT</span></div>
           <h3 id="support-online-title">Pay securely with Razorpay</h3>
           <p>Choose from payment methods enabled for the merchant account, such as UPI, cards or net banking.</p>
-          <div class="support-checkout-summary"><span>Contribution</span><strong id="support-checkout-amount">₹99</strong></div>
           <a class="btn support-checkout-button" id="support-checkout" href="https://razorpay.me/@bitsecure" target="_blank" rel="noopener noreferrer">Continue to secure payment <span aria-hidden="true">↗</span></a>
-          <p class="support-payment-footnote">You will be redirected to BitSecure’s Razorpay payment page to confirm your contribution amount and complete payment. BitSecure never asks for your UPI PIN, card number or banking password.</p>
+          <p class="support-payment-footnote">You will be redirected to BitSecure’s Razorpay payment page to enter or confirm your contribution amount and complete payment. BitSecure never asks for your UPI PIN, card number or banking password.</p>
         </aside>
       </div>
     </section>
@@ -65,41 +59,6 @@ export function renderSupportPage(root) {
   `;
 
   const upiStatus = root.querySelector('#support-upi-status');
-  const upiLink = root.querySelector('#support-upi-open');
-  const checkoutAmount = root.querySelector('#support-checkout-amount');
-  let selectedAmount = 99;
-
-  function currentAmount() {
-    return selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
-  }
-
-  function updatePaymentLinks() {
-    const amount = currentAmount();
-    const valid = validAmount(amount);
-    const params = new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' });
-    if (valid) params.set('am', String(amount));
-    upiLink.href = 'upi://pay?' + params.toString();
-    upiLink.setAttribute('aria-disabled', String(!valid));
-    return valid;
-  }
-
-  root.querySelectorAll('[data-amount]').forEach(button => {
-    button.addEventListener('click', () => {
-      selectedAmount = button.dataset.amount === 'custom' ? 'custom' : Number(button.dataset.amount);
-      root.querySelectorAll('[data-amount]').forEach(option => {
-        const active = option === button;
-        option.classList.toggle('is-selected', active);
-        option.setAttribute('aria-pressed', String(active));
-      });
-      const custom = selectedAmount === 'custom';
-      customInput.hidden = !custom;
-      customLabel.hidden = !custom;
-      if (custom) customInput.focus();
-      upiStatus.textContent = '';
-      updatePaymentLinks();
-    });
-  });
-  customInput.addEventListener('input', updatePaymentLinks);
 
   root.querySelector('#support-copy-upi').addEventListener('click', async () => {
     try {
@@ -110,12 +69,10 @@ export function renderSupportPage(root) {
     }
   });
 
-  upiLink.addEventListener('click', event => {
+  root.querySelector('#support-upi-open').addEventListener('click', () => {
     upiStatus.textContent = '';
-    showMessage(upiStatus, 'Opening your UPI app. If nothing happens, scan the QR code or copy the UPI ID.', 'success');
+    showMessage(upiStatus, 'Opening your UPI app. Enter the amount you wish to contribute.', 'success');
   });
 
-
-  updatePaymentLinks();
   return () => root.replaceChildren();
 }
