@@ -246,7 +246,7 @@ async function handleWebhook(request,env,headers) {
   if(!secureEqualHex(expected,signature))return jsonResponse({error:"Invalid webhook signature."},401,headers);
   let event;try{event=JSON.parse(raw);}catch{return jsonResponse({error:"Invalid webhook payload."},400,headers);}
   const eventId=request.headers.get("x-razorpay-event-id")||"";
-  if(eventId&&!/^[A-Za-z0-9_-]{1,150}$/.test(eventId))return jsonResponse({error:"Invalid event identifier."},400,headers);
+  if(!/^[A-Za-z0-9_-]{1,150}$/.test(eventId))return jsonResponse({error:"A valid Razorpay event identifier is required."},400,headers);
   const payment=event.payload?.payment?.entity;
   if(!["payment.captured","payment.failed","refund.processed"].includes(event.event))return jsonResponse({received:true,ignored:true},200,headers);
   const refund=event.event==="refund.processed"?event.payload?.refund?.entity:null;
