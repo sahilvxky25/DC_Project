@@ -42,58 +42,6 @@ async function apiRequest(path, options = {}) {
   return result;
 }
 
-function formatDate(value) {
-  if (!value) return '—';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
-}
-
-function renderAdminRows(container, records) {
-  container.replaceChildren();
-  if (!records.length) {
-    const empty = document.createElement('p');
-    empty.className = 'support-admin-empty';
-    empty.textContent = 'No Razorpay transactions have been recorded yet.';
-    container.append(empty);
-    return;
-  }
-  const tableWrap = document.createElement('div');
-  tableWrap.className = 'support-admin-table-wrap';
-  const table = document.createElement('table');
-  table.className = 'support-admin-table';
-  const headings = ['Date', 'Amount', 'Method', 'Status', 'Payment reference'];
-  const thead = document.createElement('thead');
-  const headRow = document.createElement('tr');
-  headings.forEach(label => {
-    const th = document.createElement('th');
-    th.textContent = label;
-    headRow.append(th);
-  });
-  thead.append(headRow);
-  table.append(thead);
-  const tbody = document.createElement('tbody');
-  records.forEach(record => {
-    const row = document.createElement('tr');
-    const values = [
-      formatDate(record.createdAt),
-      '₹' + ((Number(record.amount) || 0) / 100).toLocaleString('en-IN'),
-      record.method || '—',
-      record.status || 'unknown',
-      record.paymentId || record.orderId || '—'
-    ];
-    values.forEach((value, index) => {
-      const cell = document.createElement('td');
-      cell.textContent = String(value);
-      if (index === 3) cell.dataset.status = String(value).toLowerCase();
-      row.append(cell);
-    });
-    tbody.append(row);
-  });
-  table.append(tbody);
-  tableWrap.append(table);
-  container.append(tableWrap);
-}
-
 export function renderSupportPage(root) {
   root.innerHTML = `
     <div class="info-hero support-hero">
@@ -141,7 +89,7 @@ export function renderSupportPage(root) {
         <aside class="support-payment-card support-upi-card" aria-labelledby="support-upi-title">
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">↗</span><span class="support-payment-provider">DIRECT UPI PAYMENT</span></div>
           <h3 id="support-upi-title">Pay using UPI QR</h3>
-          <p>Scan this QR code with any UPI app. Direct UPI payments are not automatically verified or included in the online transaction dashboard.</p>
+          <p>Scan this QR code with any UPI app. Direct UPI payments are completed in your UPI app and are not automatically verified by BitSecure.</p>
           <div class="support-upi-qr-wrap"><img class="support-upi-qr" src="assets/sahil-upi-qr.svg" alt="UPI QR code for 8598032563@slc" width="240" height="240"></div>
           <div class="support-upi-payee"><span class="support-upi-caption">PAY TO</span><strong>${PAYEE_NAME}</strong><span class="support-upi-id">${UPI_ID}</span></div>
           <div class="support-upi-actions">
@@ -163,14 +111,8 @@ export function renderSupportPage(root) {
       </div>
     </section>
 
-    <section class="support-admin-section" id="support-admin-section">
-      <div class="support-admin-heading"><div><span class="info-kicker">PROJECT MANAGEMENT</span><h2>Contribution dashboard</h2><p>Restricted to the configured project administrator. Only server-verified Razorpay payments appear here.</p></div><button class="btn" id="support-admin-load" type="button">Open admin dashboard</button></div>
-      <p class="support-payment-status" id="support-admin-status" role="status" aria-live="polite"></p>
-      <div class="support-admin-content" id="support-admin-content" aria-live="polite"></div>
-    </section>
-
     <section class="support-thanks-panel"><div><span class="info-kicker">THANK YOU</span><h2>Support is more than a payment.</h2><p>Sharing BitSecure with a classmate, reporting an issue, suggesting a feature, or contributing code also helps the project move forward.</p></div><a class="btn" href="https://github.com/sahilvxky25/DC_Project" target="_blank" rel="noopener noreferrer">Explore the project on GitHub ↗</a></section>
-    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. Direct UPI payments are not automatically verified by BitSecure; only captured Razorpay payments are included in the verified transaction dashboard.</p>
+    <p class="support-disclaimer">Contributions are voluntary project support, not a purchase, investment, or promise of a particular feature. Do not assume they are tax-deductible. Direct UPI payments are not automatically verified by BitSecure. Razorpay payments are verified securely before their status is recorded.</p>
   `;
 
   const customInput = root.querySelector('#support-custom-amount');
@@ -180,9 +122,6 @@ export function renderSupportPage(root) {
   const upiLink = root.querySelector('#support-upi-open');
   const checkoutButton = root.querySelector('#support-checkout');
   const checkoutAmount = root.querySelector('#support-checkout-amount');
-  const adminButton = root.querySelector('#support-admin-load');
-  const adminStatus = root.querySelector('#support-admin-status');
-  const adminContent = root.querySelector('#support-admin-content');
   let selectedAmount = 99;
   let activeUser = auth.currentUser || null;
   let disposed = false;
@@ -300,33 +239,6 @@ export function renderSupportPage(root) {
     } finally {
       checkoutButton.disabled = !validAmount(currentAmount());
       checkoutButton.innerHTML = 'Continue to secure payment <span aria-hidden="true">↗</span>';
-    }
-  });
-
-  adminButton.addEventListener('click', async () => {
-    adminButton.disabled = true;
-    adminStatus.textContent = '';
-    adminContent.replaceChildren();
-    try {
-      const user = auth.currentUser || activeUser;
-      if (!user) throw new Error('Sign in with the configured administrator account to view this dashboard.');
-      const token = await user.getIdToken();
-      const result = await apiRequest('/api/admin/contributions', {
-        method: 'GET',
-        headers: { Authorization: 'Bearer ' + token }
-      });
-      renderAdminRows(adminContent, result.contributions || []);
-      const summary = document.createElement('div');
-      summary.className = 'support-admin-summary';
-      const successful = (result.contributions || []).filter(item => ['captured', 'partially_refunded'].includes(item.status));
-      const total = successful.reduce((sum, item) => sum + Math.max(0, (Number(item.amount) || 0) - (Number(item.refundedAmount) || 0)), 0);
-      summary.textContent = 'Net verified contributions: ₹' + (total / 100).toLocaleString('en-IN') + ' · ' + successful.length + ' successful payments';
-      adminContent.prepend(summary);
-      showMessage(adminStatus, 'Dashboard data loaded from verified Razorpay transactions.', 'success');
-    } catch (error) {
-      showMessage(adminStatus, error.message || 'Unable to load the admin dashboard.');
-    } finally {
-      adminButton.disabled = false;
     }
   });
 
