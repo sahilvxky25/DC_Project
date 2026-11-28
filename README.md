@@ -262,7 +262,7 @@ The in-app Privacy Policy is available from the site footer at `#/privacy`. It d
 
 ## Support Us
 
-The Support Us page supports both **direct UPI QR** and **Razorpay Checkout**. Direct UPI payments go to the displayed payee and are not automatically confirmed by BitSecure. Razorpay payments are checked against the original order and captured status before they are counted in the verified dashboard. The site does not issue tax receipts or claim tax deductibility.
+The Support Us page supports both **direct UPI QR** and **Razorpay Checkout**. Direct UPI payments go to the displayed payee and are not automatically confirmed by BitSecure. Razorpay payments are checked against the original order and captured status before the backend records their verified status. The site does not issue tax receipts or claim tax deductibility.
 
 ## Support BitSecure
 
@@ -270,7 +270,5 @@ The Support Us page supports two contribution routes:
 
 - **Direct UPI:** the existing QR code, UPI ID and UPI app intent remain available. These payments go directly to the displayed payee and are not automatically confirmed by the website.
 - **Razorpay Checkout:** secure hosted checkout creates an order through the Cloudflare Worker. The Worker verifies the checkout signature, confirms the payment amount and captured status with Razorpay, and records the verified contribution in Firestore.
-
-An administrator-only contribution dashboard is available on Support Us. Access is checked server-side using Firebase Authentication and a Cloudflare Worker UID allowlist. Browser clients cannot read or write the payment records.
 
 See [Payment setup and deployment](docs/PAYMENTS_SETUP.md) before enabling online payments. Test Mode, webhook configuration, Firestore rules, service-account secrets, administrator UID configuration and privacy review are required before switching to Live Mode. Direct UPI contributions are not included in Razorpay totals.
