@@ -29,16 +29,35 @@ If you prefer deploying from a development machine, install Node.js and run:
 
 This is an owner/developer deployment step only. It is not required for learners using the website.
 
-## Razorpay Standard Checkout API
+## Razorpay + Firestore contribution API
 
-This same Worker also exposes two payment routes for the BitSecure Support Us page:
+The same Worker now exposes:
 
-- `POST /api/create-order` with JSON `{"amount": 9900}` (amount in paise) creates an INR Razorpay order. The minimum is 100 paise.
-- `POST /api/verify-payment` with `razorpay_order_id`, `razorpay_payment_id`, and `razorpay_signature` verifies the HMAC-SHA256 signature.
+- `POST /api/create-order`: creates a Razorpay INR order and stores an initial `created` contribution record in Firestore. Request amount is integer paise; accepted range is ₹1–₹1,00,000.
+- `POST /api/verify-payment`: verifies the Razorpay checkout HMAC signature, confirms the order was created by BitSecure, fetches the payment from Razorpay, checks order ID/amount/currency and requires `captured` status before marking the contribution captured.
+- `POST /api/razorpay-webhook`: verifies the webhook HMAC against the raw request body and handles `payment.captured`, `payment.failed`, and `refund.processed`. Event IDs are stored for duplicate delivery protection. A failed event cannot downgrade an already captured contribution.
+- `GET /api/admin/contributions`: validates the Firebase ID token and checks the UID against the Worker-side `ADMIN_UIDS` allowlist before returning records.
 
-Set `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` as Worker secrets (not plain-text config). Set `ALLOWED_ORIGIN` as a Worker variable to the exact website origin. For local development, copy `.dev.vars.example` to `.dev.vars`; never commit the local file. Use Test Mode credentials first. Deployment steps and frontend configuration are documented in the repository README.
+### Required Cloudflare Worker secrets
 
-The signature endpoint verifies the response signature only. Before using payment state for accounting, donor totals, or receipts, reconcile payment capture status through a signed webhook or Razorpay's server API.
+- `RAZORPAY_KEY_ID`
+- `RAZORPAY_KEY_SECRET`
+- `RAZORPAY_WEBHOOK_SECRET`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY`
+- `FIREBASE_WEB_API_KEY`
+
+### Required Worker variables
+
+- `FIREBASE_PROJECT_ID=bit-7ce8a`
+- `ADMIN_UIDS=<comma-separated Firebase Auth UIDs>`
+- `ALLOWED_ORIGINS=https://bitsecure-ten.vercel.app`
+
+Use the exact deployed site origin(s); do not use a wildcard in production. Keep service-account private keys and Razorpay secrets in Cloudflare secrets, never in the frontend or repository. Publish the root `firestore.rules` file so browser clients cannot access the contribution collections.
+
+The Support Us frontend reads the public Worker origin from `js/app/support-config.js`. The UPI QR remains available alongside Razorpay Checkout. Direct QR payments are not automatically confirmed and are not included in the verified Razorpay dashboard.
+
+For the full dashboard setup, Firebase service-account permissions, Razorpay webhook setup, test checklist and production cutover steps, follow [docs/PAYMENTS_SETUP.md](../docs/PAYMENTS_SETUP.md).
 
 ## Important notes
 
