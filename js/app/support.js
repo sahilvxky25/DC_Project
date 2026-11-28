@@ -1,3 +1,4 @@
+const AMOUNTS = [49, 99, 199];
 const UPI_ID = '8598032563@slc';
 const PAYEE_NAME = 'Mr Sahil Kumar Patra';
 
@@ -52,6 +53,7 @@ export function renderSupportPage(root) {
           <div class="support-payment-card-top"><span class="support-payment-lock" aria-hidden="true">⌑</span><span class="support-payment-provider">SECURE ONLINE CHECKOUT</span></div>
           <h3 id="support-online-title">Pay securely with Razorpay</h3>
           <p>Choose from payment methods enabled for the merchant account, such as UPI, cards or net banking.</p>
+          <div class="support-checkout-summary"><span>Contribution</span><strong id="support-checkout-amount">₹99</strong></div>
           <a class="btn support-checkout-button" id="support-checkout" href="https://razorpay.me/@bitsecure" target="_blank" rel="noopener noreferrer">Continue to secure payment <span aria-hidden="true">↗</span></a>
           <p class="support-payment-footnote">You will be redirected to BitSecure’s Razorpay payment page to confirm your contribution amount and complete payment. BitSecure never asks for your UPI PIN, card number or banking password.</p>
         </aside>
@@ -64,7 +66,40 @@ export function renderSupportPage(root) {
 
   const upiStatus = root.querySelector('#support-upi-status');
   const upiLink = root.querySelector('#support-upi-open');
-  upiLink.href = 'upi://pay?' + new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' }).toString();
+  const checkoutAmount = root.querySelector('#support-checkout-amount');
+  let selectedAmount = 99;
+
+  function currentAmount() {
+    return selectedAmount === 'custom' ? Number(customInput.value) : selectedAmount;
+  }
+
+  function updatePaymentLinks() {
+    const amount = currentAmount();
+    const valid = validAmount(amount);
+    const params = new URLSearchParams({ pa: UPI_ID, pn: PAYEE_NAME, cu: 'INR', tn: 'BitSecure project support' });
+    if (valid) params.set('am', String(amount));
+    upiLink.href = 'upi://pay?' + params.toString();
+    upiLink.setAttribute('aria-disabled', String(!valid));
+    return valid;
+  }
+
+  root.querySelectorAll('[data-amount]').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedAmount = button.dataset.amount === 'custom' ? 'custom' : Number(button.dataset.amount);
+      root.querySelectorAll('[data-amount]').forEach(option => {
+        const active = option === button;
+        option.classList.toggle('is-selected', active);
+        option.setAttribute('aria-pressed', String(active));
+      });
+      const custom = selectedAmount === 'custom';
+      customInput.hidden = !custom;
+      customLabel.hidden = !custom;
+      if (custom) customInput.focus();
+      upiStatus.textContent = '';
+      updatePaymentLinks();
+    });
+  });
+  customInput.addEventListener('input', updatePaymentLinks);
 
   root.querySelector('#support-copy-upi').addEventListener('click', async () => {
     try {
@@ -79,5 +114,8 @@ export function renderSupportPage(root) {
     upiStatus.textContent = '';
     showMessage(upiStatus, 'Opening your UPI app. If nothing happens, scan the QR code or copy the UPI ID.', 'success');
   });
+
+
+  updatePaymentLinks();
   return () => root.replaceChildren();
 }
