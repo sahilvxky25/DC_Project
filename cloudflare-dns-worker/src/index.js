@@ -187,13 +187,13 @@ function fsString(value){return {stringValue:String(value??"")};}
 function fsInteger(value){return {integerValue:String(Math.trunc(Number(value)||0))};}
 function fsTimestamp(value){return {timestampValue:value||new Date().toISOString()};}
 function contributionFields(item) {
-  const fields={amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),email:fsString(item.email||""),userId:fsString(item.userId||"")};
+  const fields={amount:fsInteger(item.amount),refundedAmount:fsInteger(item.refundedAmount||0),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),email:fsString(item.email||""),userId:fsString(item.userId||"")};
   if(item.verifiedAt)fields.verifiedAt=fsTimestamp(item.verifiedAt);
   return fields;
 }
 function fromFirestore(doc) {
   const f=doc.fields||{},get=k=>f[k]?.stringValue??"",num=k=>Number(f[k]?.integerValue||0);
-  return {id:doc.name?.split("/").pop(),amount:num("amount"),currency:get("currency"),method:get("method"),status:get("status"),orderId:get("orderId"),paymentId:get("paymentId"),createdAt:f.createdAt?.timestampValue||"",verifiedAt:f.verifiedAt?.timestampValue||""};
+  return {id:doc.name?.split("/").pop(),amount:num("amount"),refundedAmount:num("refundedAmount"),currency:get("currency"),method:get("method"),status:get("status"),orderId:get("orderId"),paymentId:get("paymentId"),createdAt:f.createdAt?.timestampValue||"",verifiedAt:f.verifiedAt?.timestampValue||""};
 }
 async function saveContribution(env,item,create=false) {
   const path="contributions/"+encodeURIComponent(item.orderId);
@@ -246,9 +246,9 @@ async function handleWebhook(request,env,headers) {
   if(eventId&&!/^[A-Za-z0-9_-]{1,150}$/.test(eventId))return jsonResponse({error:"Invalid event identifier."},400,headers);
   const payment=event.payload?.payment?.entity;
   if(!["payment.captured","payment.failed","refund.processed"].includes(event.event))return jsonResponse({received:true,ignored:true},200,headers);
+  const refund=event.event==="refund.processed"?event.payload?.refund?.entity:null;
   let orderPayment=payment;
   if(event.event==="refund.processed") {
-    const refund=event.payload?.refund?.entity;
     if(!refund?.payment_id)return jsonResponse({received:true,ignored:true},200,headers);
     orderPayment=await razorpayRequest(env,"payments/"+encodeURIComponent(refund.payment_id));
   }
@@ -260,9 +260,16 @@ async function handleWebhook(request,env,headers) {
     const seen=await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId));
     if(seen)return jsonResponse({received:true,duplicate:true},200,headers);
   }
-  if(contribution.status==="captured"&&event.event==="payment.failed")return jsonResponse({received:true,ignored:true},200,headers);
-  const status=event.event==="payment.captured"?"captured":event.event==="refund.processed"?"refunded":"failed";
-  await saveContribution(env,{...contribution,paymentId:orderPayment.id||contribution.paymentId,status,verifiedAt:["captured","refunded"].includes(status)?new Date().toISOString():contribution.verifiedAt});
+  if(["captured","partially_refunded","refunded"].includes(contribution.status)&&event.event==="payment.failed")return jsonResponse({received:true,ignored:true},200,headers);
+  if(["refunded","partially_refunded"].includes(contribution.status)&&event.event==="payment.captured")return jsonResponse({received:true,ignored:true},200,headers);
+  let refundedAmount=Number(contribution.refundedAmount)||0;
+  if(event.event==="refund.processed") {
+    const refundAmount=Number(refund?.amount);
+    if(!Number.isSafeInteger(refundAmount)||refundAmount<1)return jsonResponse({error:"Invalid refund amount."},400,headers);
+    refundedAmount=Math.min(contribution.amount,refundedAmount+refundAmount);
+  }
+  const status=event.event==="payment.captured"?"captured":event.event==="refund.processed"?(refundedAmount>=contribution.amount?"refunded":"partially_refunded"):"failed";
+  await saveContribution(env,{...contribution,paymentId:orderPayment.id||contribution.paymentId,refundedAmount,status,verifiedAt:["captured","partially_refunded","refunded"].includes(status)?new Date().toISOString():contribution.verifiedAt});
   if(eventId) {
     await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId),"PATCH",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?updateMask.fieldPaths=event&updateMask.fieldPaths=processedAt");
   }
