@@ -187,7 +187,9 @@ function fsString(value){return {stringValue:String(value??"")};}
 function fsInteger(value){return {integerValue:String(Math.trunc(Number(value)||0))};}
 function fsTimestamp(value){return {timestampValue:value||new Date().toISOString()};}
 function contributionFields(item) {
-  return {amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),verifiedAt:fsTimestamp(item.verifiedAt||item.createdAt),email:fsString(item.email||""),userId:fsString(item.userId||"")};
+  const fields={amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),email:fsString(item.email||""),userId:fsString(item.userId||"")};
+  if(item.verifiedAt)fields.verifiedAt=fsTimestamp(item.verifiedAt);
+  return fields;
 }
 function fromFirestore(doc) {
   const f=doc.fields||{},get=k=>f[k]?.stringValue??"",num=k=>Number(f[k]?.integerValue||0);
