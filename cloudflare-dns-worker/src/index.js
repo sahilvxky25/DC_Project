@@ -198,6 +198,9 @@ function fromFirestore(doc) {
 async function saveContribution(env,item,create=false) {
   const path="contributions/"+encodeURIComponent(item.orderId);
   const fields=contributionFields(item);
+  if(create) {
+    return firestoreRequest(env,"contributions","POST",{fields},"?documentId="+encodeURIComponent(item.orderId));
+  }
   const mask=Object.keys(fields).map(k=>"updateMask.fieldPaths="+encodeURIComponent(k)).join("&");
   return firestoreRequest(env,path,"PATCH",{fields},"?"+mask);
 }
@@ -271,7 +274,7 @@ async function handleWebhook(request,env,headers) {
   const status=event.event==="payment.captured"?"captured":event.event==="refund.processed"?(refundedAmount>=contribution.amount?"refunded":"partially_refunded"):"failed";
   await saveContribution(env,{...contribution,paymentId:orderPayment.id||contribution.paymentId,refundedAmount,status,verifiedAt:["captured","partially_refunded","refunded"].includes(status)?new Date().toISOString():contribution.verifiedAt});
   if(eventId) {
-    await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId),"PATCH",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?updateMask.fieldPaths=event&updateMask.fieldPaths=processedAt");
+    await firestoreRequest(env,"paymentWebhookEvents","POST",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?documentId="+encodeURIComponent(eventId));
   }
   return jsonResponse({received:true},200,headers);
 }
