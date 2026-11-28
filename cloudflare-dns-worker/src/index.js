@@ -187,7 +187,7 @@ function fsString(value){return {stringValue:String(value??"")};}
 function fsInteger(value){return {integerValue:String(Math.trunc(Number(value)||0))};}
 function fsTimestamp(value){return {timestampValue:value||new Date().toISOString()};}
 function contributionFields(item) {
-  return {amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),verifiedAt:fsTimestamp(item.verifiedAt||""),email:fsString(item.email||""),userId:fsString(item.userId||"")};
+  return {amount:fsInteger(item.amount),currency:fsString("INR"),method:fsString("razorpay"),status:fsString(item.status),orderId:fsString(item.orderId),paymentId:fsString(item.paymentId||""),createdAt:fsTimestamp(item.createdAt),verifiedAt:fsTimestamp(item.verifiedAt||item.createdAt),email:fsString(item.email||""),userId:fsString(item.userId||"")};
 }
 function fromFirestore(doc) {
   const f=doc.fields||{},get=k=>f[k]?.stringValue??"",num=k=>Number(f[k]?.integerValue||0);
@@ -196,14 +196,6 @@ function fromFirestore(doc) {
 async function saveContribution(env,item,create=false) {
   const path="contributions/"+encodeURIComponent(item.orderId);
   const fields=contributionFields(item);
-  if(create) {
-    try { return await firestoreRequest(env,path,"POST",{fields},"?documentId="+encodeURIComponent(item.orderId)); }
-    catch(error) {
-      const existing=await firestoreRequest(env,path);
-      if(existing)return existing;
-      throw error;
-    }
-  }
   const mask=Object.keys(fields).map(k=>"updateMask.fieldPaths="+encodeURIComponent(k)).join("&");
   return firestoreRequest(env,path,"PATCH",{fields},"?"+mask);
 }
@@ -262,7 +254,7 @@ async function handleWebhook(request,env,headers) {
   const status=event.event==="payment.captured"?"captured":"failed";
   await saveContribution(env,{...contribution,paymentId:payment.id||contribution.paymentId,status,verifiedAt:status==="captured"?new Date().toISOString():contribution.verifiedAt});
   if(eventId) {
-    await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId),"POST",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?documentId="+encodeURIComponent(eventId));
+    await firestoreRequest(env,"paymentWebhookEvents/"+encodeURIComponent(eventId),"PATCH",{fields:{event:fsString(event.event),processedAt:fsTimestamp(new Date().toISOString())}},"?updateMask.fieldPaths=event&updateMask.fieldPaths=processedAt");
   }
   return jsonResponse({received:true},200,headers);
 }
