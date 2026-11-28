@@ -20,15 +20,6 @@ The Worker is a hosted service and must be deployed once by the project owner. T
 
 The Worker exposes GET /health and GET /trace?name=google.com&type=A. It uses Cloudflare outbound TCP sockets to contact DNS servers on TCP port 53. Documentation: https://developers.cloudflare.com/workers/runtime-apis/tcp-sockets/.
 
-## Optional deployment with Wrangler
-
-If you prefer deploying from a development machine, install Node.js and run:
-
-    cd cloudflare-dns-worker
-    npx wrangler deploy
-
-This is an owner/developer deployment step only. It is not required for learners using the website.
-
 ## Razorpay + Firestore contribution API
 
 The same Worker now exposes:
