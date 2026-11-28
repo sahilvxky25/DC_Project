@@ -1,38 +1,59 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Keep existing per-account data (progress, league profile and reward
-    // idempotency events) private to its owning authenticated user.
+    function userProfile(userId) {
+      return /databases/$(database)/documents/users/$(userId)/league/profile;
+    }
+
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Weekly league batch metadata and leaderboard entries are visible only
-    // to a learner whose own profile points to this exact week and batch.
-    // Member writes are restricted to the caller's own UID document.
     match /leagueWeeks/{weekId}/batches/{batchId} {
-      function isMemberOfBatch() {
-        return request.auth != null
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)/league/profile).data.weekId == weekId
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)/league/profile).data.batchId == batchId;
+      function profileAfterJoin() {
+        return getAfter(userProfile(request.auth.uid)).data.weekId == weekId
+          && getAfter(userProfile(request.auth.uid)).data.batchId == batchId;
       }
-      allow read: if isMemberOfBatch();
-      allow create, update: if request.auth != null;
+      function ownMemberAfterJoin() {
+        return existsAfter(/databases/$(database)/documents/leagueWeeks/$(weekId)/batches/$(batchId)/members/$(request.auth.uid));
+      }
+
+      // Batch metadata contains no learner-specific data. Authenticated users
+      // can discover open batches; leaderboard documents remain membership-gated.
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.memberCount == 1
+        && request.resource.data.memberCount <= 20
+        && profileAfterJoin()
+        && ownMemberAfterJoin();
+      allow update: if request.auth != null
+        && request.resource.data.tier == resource.data.tier
+        && request.resource.data.memberCount == resource.data.memberCount + 1
+        && request.resource.data.memberCount <= 20
+        && profileAfterJoin()
+        && ownMemberAfterJoin();
       allow delete: if false;
 
       match /members/{memberId} {
-        function isMemberOfBatch() {
+        function isCurrentBatchMember() {
           return request.auth != null
-            && get(/databases/$(database)/documents/users/$(request.auth.uid)/league/profile).data.weekId == weekId
-            && get(/databases/$(database)/documents/users/$(request.auth.uid)/league/profile).data.batchId == batchId;
+            && get(userProfile(request.auth.uid)).data.weekId == weekId
+            && get(userProfile(request.auth.uid)).data.batchId == batchId;
         }
-        allow read: if isMemberOfBatch();
-        allow create, update: if isMemberOfBatch() && request.auth.uid == memberId;
+        function joinsThisBatch() {
+          return request.auth != null
+            && getAfter(userProfile(request.auth.uid)).data.weekId == weekId
+            && getAfter(userProfile(request.auth.uid)).data.batchId == batchId;
+        }
+        allow read: if request.auth != null && (memberId == request.auth.uid || isCurrentBatchMember());
+        allow create, update: if request.auth != null
+          && request.auth.uid == memberId
+          && joinsThisBatch();
         allow delete: if false;
       }
     }
 
-    // Payment records and webhook idempotency markers are server-only.
+    // Only the trusted Cloudflare Worker service account can access payments.
     match /contributions/{contributionId} {
       allow read, write: if false;
     }
@@ -40,7 +61,6 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Deny all other documents unless a dedicated rule is added.
     match /{document=**} {
       allow read, write: if false;
     }
