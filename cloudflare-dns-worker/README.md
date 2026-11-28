@@ -14,7 +14,7 @@ The Worker is a hosted service and must be deployed once by the project owner. T
 2. Create a Worker named dc-project-live-dns.
 3. Open its code editor and replace the starter code with the complete contents of src/index.js from this folder.
 4. Deploy the Worker.
-5. Copy its workers.dev HTTPS URL.
+5. The existing BitSecure Worker URL is `https://dc-project-live-dns.sahilpatra274.workers.dev`.
 6. Open DC_Project > Application Layer > DNS > Live iterative DNS.
 7. Paste that URL into Hosted resolver URL and run a lookup such as google.com with record type A.
 
