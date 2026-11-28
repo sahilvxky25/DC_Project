@@ -278,25 +278,6 @@ async function handleWebhook(request,env,headers) {
   }
   return jsonResponse({received:true},200,headers);
 }
-async function verifyFirebaseUser(request,env) {
-  const auth=request.headers.get("Authorization")||"";
-  const match=auth.match(/^Bearer\s+(.+)$/i);
-  if(!match||!env.FIREBASE_WEB_API_KEY)return null;
-  const response=await fetch("https://identitytoolkit.googleapis.com/v1/accounts:lookup?key="+encodeURIComponent(env.FIREBASE_WEB_API_KEY),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({idToken:match[1]})});
-  if(!response.ok)return null;
-  const data=await response.json().catch(()=>({}));
-  return data.users?.[0]?.localId||null;
-}
-async function adminContributions(request,env,headers) {
-  const uid=await verifyFirebaseUser(request,env);
-  const allowed=(env.ADMIN_UIDS||"").split(",").map(x=>x.trim()).filter(Boolean);
-  if(!uid||!allowed.includes(uid))return jsonResponse({error:"Administrator access is required."},403,headers);
-  try {
-    const data=await firestoreRequest(env,"contributions","GET",null,"?pageSize=100");
-    const contributions=(data?.documents||[]).map(fromFirestore).sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt)));
-    return jsonResponse({contributions},200,headers);
-  } catch(error){return jsonResponse({error:error.message||"Unable to load contributions."},502,headers);}
-}
 export default {
   async fetch(request,env) {
     const url=new URL(request.url),cors=corsHeaders(request,env||{});
@@ -304,7 +285,6 @@ export default {
     if(url.pathname==="/api/create-order")return request.method==="POST"?createRazorpayOrder(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
     if(url.pathname==="/api/verify-payment")return request.method==="POST"?verifyRazorpayPayment(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
     if(url.pathname==="/api/razorpay-webhook")return request.method==="POST"?handleWebhook(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
-    if(url.pathname==="/api/admin/contributions")return request.method==="GET"?adminContributions(request,env||{},cors):jsonResponse({error:"Method not allowed."},405,cors);
     if(url.pathname==="/health")return jsonResponse({ok:true,service:"DC_Project DNS and Razorpay API"},200,cors);
     if(url.pathname!=="/trace")return jsonResponse({error:"Use /trace?name=example.com&type=A or the /api payment routes."},404,cors);
     const name=validName(url.searchParams.get("name")),type=(url.searchParams.get("type")||"A").toUpperCase();

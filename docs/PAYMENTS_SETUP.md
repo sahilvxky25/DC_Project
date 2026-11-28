@@ -1,6 +1,6 @@
 # BitSecure payment setup and deployment
 
-This feature keeps direct UPI QR contributions and adds Razorpay Standard Checkout, server-verified contribution records in Firestore, Razorpay webhooks, and an administrator-only dashboard.
+This feature keeps direct UPI QR contributions and adds Razorpay Standard Checkout, server-verified contribution records in Firestore, and Razorpay webhooks. There is no contribution dashboard in the Support Us page.
 
 ## Architecture
 
@@ -37,14 +37,12 @@ In the Cloudflare dashboard, open the existing DNS Worker and add these as **sec
 | `RAZORPAY_WEBHOOK_SECRET` | Razorpay webhook secret |
 | `FIREBASE_CLIENT_EMAIL` | Firebase service-account client email |
 | `FIREBASE_PRIVATE_KEY` | Firebase service-account private key |
-| `FIREBASE_WEB_API_KEY` | Firebase Web API key used by BitSecure |
 
 Add these Worker variables:
 
 | Variable | Value |
 |---|---|
 | `FIREBASE_PROJECT_ID` | `bit-7ce8a` |
-| `ADMIN_UIDS` | Comma-separated Firebase Auth UID(s) of authorized administrators |
 | `ALLOWED_ORIGINS` | `https://bitsecure-ten.vercel.app` (plus any exact preview/dev origins you intentionally need) |
 
 The Worker accepts `ALLOWED_ORIGIN` as a backwards-compatible single-origin setting. Prefer `ALLOWED_ORIGINS` for a comma-separated allowlist. Do not set it to `*` in production. Add Cloudflare rate-limiting/WAF rules for `/api/create-order` and `/api/verify-payment` to reduce automated order creation and abuse; CORS is not an authorization or rate-limiting control.
@@ -73,16 +71,7 @@ Commit this public endpoint value on the feature branch. It is not a secret. The
 
 The Support Us page retains the existing QR, UPI ID, preset amounts and custom amount input, and adds Razorpay Checkout. Checkout payment methods shown to users depend on merchant activation and Razorpay configuration.
 
-## 5. Configure administrator access
-
-1. Sign in to BitSecure with the intended administrator account.
-2. In Firebase Console > Authentication > Users, copy that account's UID.
-3. Add the UID to Cloudflare Worker variable `ADMIN_UIDS`. Multiple UIDs may be comma-separated.
-4. The dashboard button on Support Us calls the Worker with the signed-in Firebase ID token. The Worker validates the token with Firebase Identity Toolkit and checks the UID allowlist before returning records.
-
-Do not use an email address supplied by the browser as an admin authorization check.
-
-## 6. Test checklist
+## 5. Test checklist
 
 - [ ] UPI QR still scans and direct UPI intent opens with the selected amount.
 - [ ] Razorpay Test Mode opens for ₹49, ₹99, ₹199, and a valid custom amount.
@@ -93,8 +82,6 @@ Do not use an email address supplied by the browser as an admin authorization ch
 - [ ] `payment.failed` is recorded and cannot downgrade a captured payment.
 - [ ] `refund.processed` updates the contribution to `refunded`.
 - [ ] Re-delivering the same webhook event does not create another contribution or duplicate event record.
-- [ ] A non-admin user receives HTTP 403 from the admin endpoint.
-- [ ] The authorized admin can see the contribution table.
 - [ ] Browser clients cannot read/write contribution or webhook-event documents directly.
 - [ ] Existing DNS trace endpoint and the rest of BitSecure still work.
 
@@ -102,8 +89,8 @@ Do not use an email address supplied by the browser as an admin authorization ch
 
 - Amounts are stored in paise, as integers.
 - The `contributions` document ID is the Razorpay order ID.
-- Status values include `created`, `captured`, `failed`, `partially_refunded`, and `refunded`. Refund amounts are tracked in paise so the dashboard can show net verified contributions.
-- The dashboard only counts `captured` records. Direct UPI payments are intentionally not included because no payment confirmation feed is connected.
+- Status values include `created`, `captured`, `failed`, `partially_refunded`, and `refunded`. Refund amounts are tracked in paise for accurate payment and refund reconciliation.
+- Direct UPI payments are intentionally not included in server-verified Razorpay records because no payment confirmation feed is connected. Payment records are retained for backend verification and reconciliation; no contribution dashboard is exposed in the website.
 - This implementation does not issue tax receipts or claim tax deductibility. Do not advertise tax benefits without confirming the legal and tax status of the receiving entity.
 - Review privacy, retention, accounting, refund and payment-provider obligations before switching to Live Mode.
 
@@ -112,6 +99,5 @@ Do not use an email address supplied by the browser as an admin authorization ch
 - `Payment service is not configured`: verify Razorpay Worker secrets.
 - `Firebase service account secrets are not configured`: add the service account email and PEM key as Cloudflare secrets.
 - `Unable to obtain Firebase service access token`: check the service-account key format, IAM permissions and project.
-- `Administrator access is required`: check that the user is signed in and their Firebase UID is present in `ADMIN_UIDS`.
 - Checkout doesn't open: confirm the Worker endpoint in `support-config.js`, the Worker origin allowlist, and that Razorpay Checkout.js can load.
 - Payment says pending/not captured: check Razorpay capture settings and webhook delivery logs; do not ask the user to pay again until the original payment is reconciled.
