@@ -1,6 +1,11 @@
 /* Authenticated BitSecure Assistant client. The server verifies every Firebase ID token. */
 import { auth } from "../auth/firebase-client.js";
 const launcher=document.querySelector("#chatbotLauncher"),panel=document.querySelector("#chatbotPanel"),closeButton=document.querySelector("#chatbotClose");
+const authDialog=document.querySelector("#chatbotAuthDialog");
+const authDialogClose=document.querySelector("#chatbotAuthClose");
+const authDialogLater=document.querySelector("#chatbotAuthLater");
+const authDialogSignIn=document.querySelector("#chatbotAuthSignIn");
+const authDialogSignUp=document.querySelector("#chatbotAuthSignUp");
 const form=document.querySelector("#chatbotForm"),input=document.querySelector("#chatbotInput"),messages=document.querySelector("#chatbotMessages");
 const status=document.querySelector("#chatbotStatus"),sendButton=document.querySelector("#chatbotSend"),newChatButton=document.querySelector("#chatbotNewChat");
 const MAX_HISTORY=10;let history=[],sending=false;
@@ -16,10 +21,34 @@ history.push({role:"assistant",content:payload.reply});history=history.slice(-MA
 }catch(error){history.pop();setBusy(false,error.message||"Something went wrong. Please try again.");}
 finally{input.disabled=false;sendButton.disabled=false;input.focus();}}
 if(launcher&&panel&&closeButton&&form&&input&&messages&&status&&sendButton&&newChatButton){
-launcher.addEventListener("click",()=>setOpen(panel.hidden));closeButton.addEventListener("click",()=>setOpen(false));
+launcher.addEventListener("click",()=>{
+  if(!auth.currentUser?.emailVerified){
+    if(authDialog&&!authDialog.open)authDialog.showModal();
+    return;
+  }
+  setOpen(panel.hidden);
+});
+const closeAuthPrompt=()=>{if(authDialog?.open)authDialog.close();};
+authDialogClose?.addEventListener("click",closeAuthPrompt);
+authDialogLater?.addEventListener("click",closeAuthPrompt);
+authDialog?.addEventListener("click",event=>{
+  if(event.target===authDialog)closeAuthPrompt();
+});
+authDialogSignIn?.addEventListener("click",()=>{
+  closeAuthPrompt();
+  window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signin"}}));
+});
+authDialogSignUp?.addEventListener("click",()=>{
+  closeAuthPrompt();
+  window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signup"}}));
+});
+closeButton.addEventListener("click",()=>setOpen(false));
 document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!panel.hidden)setOpen(false);});
 form.addEventListener("submit",event=>{event.preventDefault();sendMessage(input.value);});
 input.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();form.requestSubmit();}});
 newChatButton.addEventListener("click",resetChat);
-auth.onAuthStateChanged(user=>{if(!user){history=[];messages.replaceChildren();status.textContent="Sign in to use the assistant.";setOpen(false);}});
+auth.onAuthStateChanged(user=>{
+  if(!user){history=[];messages.replaceChildren();status.textContent="Create an account to use the AI Assistant.";setOpen(false);launcher.setAttribute("aria-label","Sign up to open BitSecure Assistant");}
+  else launcher.setAttribute("aria-label","Open BitSecure assistant");
+});
 }

@@ -2,7 +2,7 @@
 
 ## Authentication
 
-The project uses Firebase Authentication for email/password account flows. The documented flows include sign-up, sign-in, email verification, password reset, password change, and sign-out. The application shell is shown after successful authentication; the chatbot launcher is intended to be available only inside that authenticated shell.
+The learning application is available in guest mode without an account. Guest progress is stored locally in the browser under the legacy `dcl.v2` key. Verified Firebase Authentication accounts unlock the AI Assistant and weekly leagues, and enable account-specific Cloud Firestore synchronization. On sign-in, guest progress is merged with the existing account progress; it is not used to replace the account snapshot. Sign-out returns to guest mode and keeps account data isolated in its UID-specific cache. The documented account flows include email/password sign-up and sign-in, Google sign-in when configured, email verification, password reset, password change, and sign-out.
 
 ## Progress storage
 

@@ -75,3 +75,6 @@
 }
 .profile-edit-dialog[aria-busy="true"] { cursor: progress; }
 .profile-edit-dialog button:disabled { opacity: .65; cursor: wait; }
+
+
+.profile-menu-item[hidden], .profile-access-note[hidden] { display: none !important; }

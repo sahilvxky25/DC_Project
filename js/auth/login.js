@@ -1,6 +1,6 @@
 /* Real email/password authentication through Firebase Auth. */
 import { auth } from './firebase-client.js';
-import { activateProgressForUser, deactivateProgressUser, flushProgressSync } from '../core/storage.js';
+import { activateGuestProgress, activateProgressForUser, deactivateProgressUser, flushProgressSync } from '../core/storage.js';
 import {
   browserLocalPersistence,
   browserSessionPersistence,
@@ -34,6 +34,12 @@ const profileDropdown = document.getElementById('profileDropdown');
 const profileName = document.getElementById('profileName');
 const profileEmail = document.getElementById('profileEmail');
 const profileAvatar = document.getElementById('profileAvatar');
+const profileTriggerLabel = document.getElementById('profileTriggerLabel');
+const profileAccessNote = document.getElementById('profileAccessNote');
+const profileSignInBtn = document.getElementById('profileSignInBtn');
+const profileSignUpBtn = document.getElementById('profileSignUpBtn');
+const profileSyncBtn = document.getElementById('profileSyncBtn');
+const guestContinueBtn = document.getElementById('guest-continue-btn');
 const changePasswordBtn = document.getElementById('changePasswordBtn');
 const editUsernameBtn = document.getElementById('editUsernameBtn');
 const editUsernameDialog = document.getElementById('editUsernameDialog');
@@ -89,6 +95,7 @@ function hideAppAuthLoading() {
 }
 
 let authMode = 'signin';
+let authScreenRequested = false;
 
 const authLoading = document.getElementById('auth-loading');
 const authLoadingTitle = document.getElementById('auth-loading-title');
@@ -136,28 +143,61 @@ function renderProfile(user) {
   profileName.textContent = name;
   profileEmail.textContent = user.email || '';
   profileAvatar.textContent = name.charAt(0).toUpperCase();
-  // Google-only accounts manage their password with Google, not BitSecure.
+  profileTriggerLabel.textContent = 'User Profile';
+  profileAccessNote.hidden = true;
+  profileSignInBtn.hidden = true;
+  profileSignUpBtn.hidden = true;
+  profileSyncBtn.hidden = true;
+  editUsernameBtn.hidden = false;
   changePasswordBtn.hidden = !user.providerData.some(provider => provider.providerId === 'password');
+  logoutBtn.hidden = false;
   profileBtn.setAttribute('aria-label', `User Profile: ${name}`);
 }
 
+function renderGuestProfile() {
+  profileName.textContent = 'Guest Mode';
+  profileEmail.textContent = 'Progress is saved on this device.';
+  profileAvatar.textContent = 'G';
+  profileTriggerLabel.textContent = 'Guest Mode';
+  profileAccessNote.hidden = false;
+  profileSignInBtn.hidden = false;
+  profileSignUpBtn.hidden = false;
+  profileSyncBtn.hidden = false;
+  editUsernameBtn.hidden = true;
+  changePasswordBtn.hidden = true;
+  logoutBtn.hidden = true;
+  profileBtn.setAttribute('aria-label', 'Guest Mode. Sign in or create an account to unlock cloud features.');
+}
+
 function showApp(user = auth.currentUser) {
+  authScreenRequested = false;
   hideAuthLoading();
-  // Keep a durable signal in case the application module finishes loading after this module.
-  window.__bitSecureAuthenticated = true;
+  hideAppAuthLoading();
+  window.__bitSecureAuthenticated = Boolean(user);
+  window.__bitSecureGuestMode = !user;
   if (user) renderProfile(user);
+  else renderGuestProfile();
   closeProfileMenu();
   loginScreen.hidden = true;
   appScreen.hidden = false;
   document.dispatchEvent(new CustomEvent('auth-success'));
 }
 
-function showLogin({ focus = false } = {}) {
+async function showGuestApp() {
+  await activateGuestProgress();
+  if (auth.currentUser?.emailVerified) return;
+  showApp(null);
+}
+
+function showLogin({ focus = false, mode = 'signin' } = {}) {
+  authScreenRequested = true;
   hideAppAuthLoading();
   window.__bitSecureAuthenticated = false;
+  window.__bitSecureGuestMode = false;
   appScreen.hidden = true;
   loginScreen.hidden = false;
   passwordInput.value = '';
+  setMode(mode);
   if (focus) emailInput.focus();
 }
 
@@ -276,6 +316,18 @@ function validEmail(email) {
 
 signInTab.addEventListener('click', () => setMode('signin'));
 signUpTab.addEventListener('click', () => setMode('signup'));
+
+profileSignInBtn.addEventListener('click', () => showLogin({ focus: true, mode: 'signin' }));
+profileSignUpBtn.addEventListener('click', () => showLogin({ focus: true, mode: 'signup' }));
+profileSyncBtn.addEventListener('click', () => showLogin({ focus: true, mode: 'signup' }));
+guestContinueBtn.addEventListener('click', async () => {
+  authScreenRequested = false;
+  hideAuthLoading();
+  await showGuestApp();
+});
+window.addEventListener('bitsecure:open-auth', event => {
+  showLogin({ focus: true, mode: event.detail?.mode === 'signup' ? 'signup' : 'signin' });
+});
 
 document.querySelector('.auth-tabs').addEventListener('keydown', event => {
   if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -631,10 +683,10 @@ logoutBtn.addEventListener('click', async () => {
   try {
     // Flush this account's latest progress before the Firebase session is cleared.
     await flushProgressSync();
+    authScreenRequested = false;
     await signOut(auth);
-    setMessage('You have been signed out.', 'success');
     hideAppAuthLoading();
-    showLogin({ focus: true });
+    // onAuthStateChanged restores the guest-local snapshot and returns to the learning app.
   } catch (error) {
     hideAppAuthLoading();
     setMessage(friendlyError(error));
@@ -666,10 +718,15 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  // Clear the in-memory state on sign-out so it cannot be reused by the next account.
+  // Unverified accounts stay on the requested sign-in screen. A normal signed-out visitor
+  // enters guest mode instead of being forced back to authentication.
   deactivateProgressUser();
+  if (authScreenRequested) {
+    hideAuthLoading();
+    loginScreen.hidden = false;
+    appScreen.hidden = true;
+    return;
+  }
   hideAuthLoading();
-  showLogin();
-  // Unverified users remain on the login screen. Signup signs out after sending
-  // the verification email; sign-in explicitly signs out any unverified account.
+  void showGuestApp();
 });

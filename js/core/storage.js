@@ -194,6 +194,9 @@ export const save = () => {
  */
 export async function activateProgressForUser(uid) {
   if (!uid) return false;
+  // Option A: safely merge the current guest snapshot into this account. The guest key
+  // has no UID, so it is consumed only after it has been copied into the signed-in cache.
+  const guestSnapshot = readSnapshot(STORE);
   const token = ++activationToken;
   clearSyncTimer();
   activeUid = uid;
@@ -220,17 +223,39 @@ export async function activateProgressForUser(uid) {
         cloudTime
       );
     }
+    if (guestSnapshot?.progress) {
+      P = mergeProgress(
+        guestSnapshot.progress,
+        P,
+        guestSnapshot.clientUpdatedAt,
+        Math.max(localSnapshot?.clientUpdatedAt || 0, cloudTime)
+      );
+    }
 
     cloudReady = true;
-    // Save the merged local cache immediately and upload it once the debounce expires.
+    // Persist the combined account + guest snapshot before removing the unowned guest key.
     save();
+    if (guestSnapshot) {
+      try { localStorage.removeItem(STORE); } catch (error) {}
+    }
     return true;
   } catch (error) {
     // Authentication still works offline. Keep local progress, but don't upload until a cloud read
     // succeeds; this prevents a failed read from overwriting data that already exists in Firestore.
     if (token === activationToken && activeUid === uid) {
+      if (guestSnapshot?.progress) {
+        P = mergeProgress(
+          guestSnapshot.progress,
+          P,
+          guestSnapshot.clientUpdatedAt,
+          localSnapshot?.clientUpdatedAt || 0
+        );
+      }
       cloudReady = false;
       persistLocal(P, uid);
+      if (guestSnapshot) {
+        try { localStorage.removeItem(STORE); } catch (storageError) {}
+      }
       console.warn('[BitSecure] Cloud progress could not be loaded; using this account’s local cache.', error);
     }
     return false;
@@ -271,6 +296,19 @@ export async function flushProgressSync() {
     console.warn('[BitSecure] Cloud progress could not be saved; it remains in this device’s local cache.', error);
     return false;
   }
+}
+
+/**
+ * Activate the browser-local guest snapshot. Guests never receive a Firebase UID and never
+ * schedule Firestore writes; save() continues to persist to the legacy dcl.v2 key.
+ */
+export function activateGuestProgress() {
+  activationToken++;
+  clearSyncTimer();
+  activeUid = null;
+  cloudReady = false;
+  P = normaliseProgress(readSnapshot(STORE)?.progress || fresh());
+  return P;
 }
 
 /**

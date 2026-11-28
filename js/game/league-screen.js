@@ -1,5 +1,6 @@
 /** Weekly competition screen: one Firestore-backed batch of up to 20 learners per league. */
 import { $, esc } from '../core/utils.js';
+import { auth } from '../auth/firebase-client.js';
 import { ensureLeagueMembership, getLeagueSnapshot } from './league-service.js';
 import { LEAGUES, LEAGUE_SIZE } from './leagues.js';
 
@@ -13,6 +14,20 @@ const nextMonday = () => {
 
 export async function renderLeague() {
   const root = $('#dash');
+  if (!auth.currentUser?.emailVerified) {
+    root.innerHTML = `<div class="ghome"><a class="gback" href="#/">‹ Map</a>
+      <h2 class="gh">🏆 Weekly competition</h2>
+      <div class="gcard static">
+        <span class="ge">🔒</span><b>League access requires a free account</b>
+        <p class="gfoot">You can continue learning, completing quizzes, and earning progress locally as a guest. Create an account to join a weekly league and sync your competition progress.</p>
+        <button class="btn" id="leagueSignUp" type="button">Create a free account</button>
+        <a class="btn ghost" href="#/">Continue learning</a>
+      </div></div>`;
+    $('#leagueSignUp')?.addEventListener('click', () => {
+      window.dispatchEvent(new CustomEvent('bitsecure:open-auth', { detail: { mode: 'signup' } }));
+    });
+    return;
+  }
   root.innerHTML = `<div class="ghome"><a class="gback" href="#/">‹ Map</a>
     <h2 class="gh">🏆 Weekly competition</h2>
     <div class="gstage"><p>Finding your exclusive batch…</p></div></div>`;

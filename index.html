@@ -116,7 +116,8 @@
           <button class="btn login-submit" id="verification-continue" type="button">Continue to Sign In <span aria-hidden="true">→</span></button>
           <p class="verification-resend-note">Didn't receive the email? Continue to Sign In and try signing in. If your address is still unverified, we'll send a fresh verification email.</p>
         </section>
-        <p class="login-security-note">Your account is managed securely by Firebase Authentication. Never share your password.</p>
+        <button class="btn ghost guest-continue-btn" id="guest-continue-btn" type="button">← Continue as Guest</button>
+        <p class="login-security-note">An account is optional. Create one to unlock the AI Assistant and sync your progress across devices. Never share your password.</p>
       </div>
       <div class="auth-loading-overlay" id="auth-loading" role="status" aria-live="polite" aria-atomic="true">
         <span class="auth-loading-spinner" aria-hidden="true"></span>
@@ -158,14 +159,18 @@
             <button class="btn ghost sm profile-trigger" id="profileBtn" type="button"
               aria-haspopup="true" aria-expanded="false" aria-controls="profileDropdown">
               <span class="profile-avatar" id="profileAvatar" aria-hidden="true">U</span>
-              <span>User Profile</span>
+              <span id="profileTriggerLabel">User Profile</span>
               <span aria-hidden="true">▾</span>
             </button>
             <div class="profile-dropdown" id="profileDropdown" hidden>
               <div class="profile-summary">
-                <strong id="profileName">User</strong>
-                <span id="profileEmail"></span>
+                <strong id="profileName">Guest Mode</strong>
+                <span id="profileEmail">Progress is saved on this device.</span>
               </div>
+              <p class="profile-access-note" id="profileAccessNote">Create a free account to unlock AI chat and sync your learning progress across devices.</p>
+              <button class="profile-menu-item" id="profileSignInBtn" type="button">Sign In</button>
+              <button class="profile-menu-item" id="profileSignUpBtn" type="button">Create Account</button>
+              <button class="profile-menu-item" id="profileSyncBtn" type="button">Sync with Cloud</button>
               <button class="profile-menu-item" id="editUsernameBtn" type="button">Edit Username</button>
               <button class="profile-menu-item" id="changePasswordBtn" type="button">Change Password</button>
               <button class="profile-menu-item danger" id="logoutBtn" type="button">Log out</button>
@@ -445,7 +450,7 @@
           </div>
         </form>
       </dialog>
-    <!-- Assistant is inside the authenticated app shell; its API independently verifies Firebase ID tokens. -->
+    <!-- Guest users can see the Assistant entry point, but the client and API both require a verified account. -->
     <aside class="chatbot-widget" aria-label="BitSecure assistant">
       <section class="chatbot-panel" id="chatbotPanel" aria-label="Chat assistant" aria-live="polite" hidden>
         <header class="chatbot-panel-header">
@@ -478,6 +483,20 @@
       <button class="chatbot-launcher" id="chatbotLauncher" type="button" aria-label="Open BitSecure assistant" aria-controls="chatbotPanel" aria-expanded="false">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-2 2v-9.5A7.5 7.5 0 0 1 10.5 4h2A7.5 7.5 0 0 1 20 11.5Z"/><path d="M8 11h8M8 14.5h5"/></svg>
       </button>
+      <dialog class="chatbot-auth-dialog" id="chatbotAuthDialog" aria-labelledby="chatbotAuthTitle" aria-describedby="chatbotAuthDescription">
+        <div class="chatbot-auth-dialog-content">
+          <div class="chatbot-auth-icon" aria-hidden="true">✦</div>
+          <button class="chatbot-auth-close" id="chatbotAuthClose" type="button" aria-label="Close sign-in prompt">×</button>
+          <p class="chatbot-auth-eyebrow">BITSECURE ASSISTANT</p>
+          <h2 id="chatbotAuthTitle">Unlock your AI learning assistant</h2>
+          <p id="chatbotAuthDescription">The AI Assistant is available to registered users only. Sign in or create a free account to ask networking questions and get personalized learning help.</p>
+          <div class="chatbot-auth-actions">
+            <button class="btn" id="chatbotAuthSignIn" type="button">Sign In</button>
+            <button class="btn ghost" id="chatbotAuthSignUp" type="button">Create Free Account</button>
+          </div>
+          <button class="chatbot-auth-later" id="chatbotAuthLater" type="button">Maybe later</button>
+        </div>
+      </dialog>
     </aside>
     </div>
     <div class="toasts" id="toasts" aria-live="polite"></div>
