@@ -22,7 +22,7 @@ Information is used to authenticate your account, save and restore learning prog
 
 ## 3. Firebase and other service providers
 
-BitSecure uses Firebase Authentication for account sign-in and Firestore for account-related learning progress. Google sign-in is provided through Google's authentication service. The website also loads fonts from Google Fonts. When the Support Us payment option is enabled, Razorpay provides the hosted payment checkout and processes the payment method, donor details, transaction information, and related technical data needed to complete the contribution. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. Each provider's processing is also governed by its own privacy terms and policies.
+BitSecure uses Firebase Authentication for account sign-in and Firestore for account-related learning progress. Google sign-in is provided through Google's authentication service. The website also loads fonts from Google Fonts. When Support Us online payments are used, Razorpay hosts checkout and processes the payment method and transaction information needed to complete a contribution. The Cloudflare Worker verifies checkout signatures, checks payment status and amount with Razorpay, and stores limited transaction metadata (amount in paise, currency, order/payment references, status and timestamps) in Cloud Firestore. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. Direct UPI QR payments go to the displayed payee and are not automatically confirmed by BitSecure. Each provider's processing is also governed by its own privacy terms and policies.
 
 ## 4. Cookies, local storage, and analytics
 

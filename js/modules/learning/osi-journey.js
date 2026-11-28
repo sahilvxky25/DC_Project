@@ -155,7 +155,8 @@ regMod({
       $('[data-tcp-visual]').innerHTML = tcpVisual.map((item, i) => '<span class="osi-packet-chip">' + escape(item) + '</span>').join('');
       $('[data-udp-visual]').innerHTML = udpVisual.map((item, i) => '<span class="osi-packet-chip">' + escape(item) + '</span>').join('');
     };
-\n    const renderPduFlow = protocol => {
+
+    const renderPduFlow = protocol => {
       const labels = direction === 'send'
         ? [{name:'Application data',pdu:'Data'},{name:protocol === 'UDP' ? 'UDP header' : 'TCP header',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'IP header',pdu:'Packet'},{name:'Link header + trailer',pdu:'Frame'},{name:'Signals on medium',pdu:'Bits / symbols'}]
         : [{name:'Signals recovered',pdu:'Bits / symbols'},{name:'Link header + trailer removed',pdu:'Frame'},{name:'IP header examined / removed',pdu:'Packet'},{name:protocol === 'UDP' ? 'UDP header examined / removed' : 'TCP header examined / removed',pdu:protocol === 'UDP' ? 'UDP datagram' : 'TCP segment'},{name:'Application data delivered',pdu:'Data'}];

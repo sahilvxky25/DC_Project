@@ -269,3 +269,14 @@
 @media (max-width: 420px) {
   .support-upi-actions { grid-template-columns: 1fr; }
 }
+
+
+/* Combined UPI + Razorpay contribution experience */
+.support-payment-methods { display: grid; gap: 1rem; min-width: 0; }
+.support-payment-methods .support-payment-card { min-width: 0; }
+.support-online-card { border-color: color-mix(in srgb, var(--accent) 48%, var(--line)); }
+.support-checkout-summary { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .9rem 0; margin: .8rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+.support-checkout-summary strong { color: var(--text); font-size: 1.3rem; }
+.support-checkout-button { width: 100%; justify-content: center; min-height: 48px; }
+.support-checkout-button:disabled { opacity: .55; cursor: not-allowed; }
+.support-payment-footnote { margin: .8rem 0 0 !important; font-size: .76rem !important; }

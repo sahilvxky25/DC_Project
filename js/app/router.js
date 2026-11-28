@@ -139,7 +139,7 @@ export function route() {
       </section>
       <section class="info-section">
         <h2>Services we use</h2>
-        <p>Firebase Authentication supports sign-in and Firestore stores account-related learning progress. Google provides the Google sign-in flow, and Google Fonts supplies website typography. When Support Us payments are enabled, Razorpay hosts checkout and processes the payment and transaction information needed to complete a contribution. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. These providers have their own privacy terms.</p>
+        <p>Firebase Authentication supports sign-in and Firestore stores account-related learning progress. Google provides the Google sign-in flow, and Google Fonts supplies website typography. When Support Us online payments are used, Razorpay hosts checkout and processes the payment. The Cloudflare Worker verifies checkout signatures, confirms payment status and amount with Razorpay, and stores limited transaction metadata (amount, currency, order/payment references, status and timestamps) in Firestore. Direct UPI QR payments go to the displayed payee and are not automatically confirmed by BitSecure. BitSecure does not collect or store card numbers, UPI PINs, or banking passwords. These providers have their own privacy terms.</p>
       </section>
       <section class="info-section">
         <h2>Cookies and browser storage</h2>
