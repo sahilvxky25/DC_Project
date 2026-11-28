@@ -1,6 +1,11 @@
 /* Authenticated BitSecure Assistant client. The server verifies every Firebase ID token. */
 import { auth } from "../auth/firebase-client.js";
 const launcher=document.querySelector("#chatbotLauncher"),panel=document.querySelector("#chatbotPanel"),closeButton=document.querySelector("#chatbotClose");
+const authDialog=document.querySelector("#chatbotAuthDialog");
+const authDialogClose=document.querySelector("#chatbotAuthClose");
+const authDialogLater=document.querySelector("#chatbotAuthLater");
+const authDialogSignIn=document.querySelector("#chatbotAuthSignIn");
+const authDialogSignUp=document.querySelector("#chatbotAuthSignUp");
 const form=document.querySelector("#chatbotForm"),input=document.querySelector("#chatbotInput"),messages=document.querySelector("#chatbotMessages");
 const status=document.querySelector("#chatbotStatus"),sendButton=document.querySelector("#chatbotSend"),newChatButton=document.querySelector("#chatbotNewChat");
 const MAX_HISTORY=10;let history=[],sending=false;
@@ -18,12 +23,26 @@ finally{input.disabled=false;sendButton.disabled=false;input.focus();}}
 if(launcher&&panel&&closeButton&&form&&input&&messages&&status&&sendButton&&newChatButton){
 launcher.addEventListener("click",()=>{
   if(!auth.currentUser?.emailVerified){
-    status.textContent="The AI Assistant is available with a free BitSecure account.";
-    window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signup"}}));
+    if(authDialog&&!authDialog.open)authDialog.showModal();
     return;
   }
   setOpen(panel.hidden);
-});closeButton.addEventListener("click",()=>setOpen(false));
+});
+const closeAuthPrompt=()=>{if(authDialog?.open)authDialog.close();};
+authDialogClose?.addEventListener("click",closeAuthPrompt);
+authDialogLater?.addEventListener("click",closeAuthPrompt);
+authDialog?.addEventListener("click",event=>{
+  if(event.target===authDialog)closeAuthPrompt();
+});
+authDialogSignIn?.addEventListener("click",()=>{
+  closeAuthPrompt();
+  window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signin"}}));
+});
+authDialogSignUp?.addEventListener("click",()=>{
+  closeAuthPrompt();
+  window.dispatchEvent(new CustomEvent("bitsecure:open-auth",{detail:{mode:"signup"}}));
+});
+closeButton.addEventListener("click",()=>setOpen(false));
 document.addEventListener("keydown",event=>{if(event.key==="Escape"&&!panel.hidden)setOpen(false);});
 form.addEventListener("submit",event=>{event.preventDefault();sendMessage(input.value);});
 input.addEventListener("keydown",event=>{if(event.key==="Enter"&&!event.shiftKey){event.preventDefault();form.requestSubmit();}});
