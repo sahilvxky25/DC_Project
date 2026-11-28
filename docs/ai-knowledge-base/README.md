@@ -1,13 +1,13 @@
 # BitSecure AI Knowledge Base
 
-This directory contains curated, version-controlled source material for the future BitSecure RAG assistant. It is designed for two answer domains:
+This directory contains curated, version-controlled source material for the BitSecure assistant. It supports two answer domains:
 
 1. **Data Communications Tutor** — networking concepts, protocol behaviour, calculations, and worked examples.
 2. **BitSecure Platform Assistant** — accurate guidance about the platform, its learning modules, simulations, account features, and limitations.
 
 ## Current status
 
-These are source documents only. Phase 1 now provides an authenticated Gemini chat through the Vercel `/api/chat` function. It verifies Firebase ID-token signatures server-side and keeps the Gemini API key on the server. It does **not** yet add embeddings, a vector database, RAG retrieval, citations, or persistent chat history. See [Phase 1 setup](./PHASE-1-SETUP.md).
+Phase 1 provides an authenticated Grok chat through the Vercel `/api/chat` Edge Function. It validates Firebase ID tokens server-side through Firebase Identity Toolkit and keeps the xAI API key on the server. It does **not** yet add embeddings, a vector database, RAG retrieval, citations, or persistent chat history. See [Phase 1 setup](./PHASE-1-SETUP.md).
 
 ## Document layout
 
