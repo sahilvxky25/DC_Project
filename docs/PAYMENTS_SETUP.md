@@ -47,7 +47,7 @@ Add these Worker variables:
 | `ADMIN_UIDS` | Comma-separated Firebase Auth UID(s) of authorized administrators |
 | `ALLOWED_ORIGINS` | `https://bitsecure-ten.vercel.app` (plus any exact preview/dev origins you intentionally need) |
 
-The Worker accepts `ALLOWED_ORIGIN` as a backwards-compatible single-origin setting. Prefer `ALLOWED_ORIGINS` for a comma-separated allowlist. Do not set it to `*` in production.
+The Worker accepts `ALLOWED_ORIGIN` as a backwards-compatible single-origin setting. Prefer `ALLOWED_ORIGINS` for a comma-separated allowlist. Do not set it to `*` in production. Add Cloudflare rate-limiting/WAF rules for `/api/create-order` and `/api/verify-payment` to reduce automated order creation and abuse; CORS is not an authorization or rate-limiting control.
 
 ### Firebase service account
 
